@@ -109,4 +109,3 @@ When I ask for one of these, read the file and follow it. All are in `../_kaggle
 - ensemble: kaggle-ensemble.md
 - submission report: kaggle-submit.md
 - audit past work: kaggle-audit-existing.md
-
