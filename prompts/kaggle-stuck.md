@@ -5,5 +5,5 @@ Trigger after eight experiments without validated standalone OR ensemble progres
 4. Propose up to three reframes and choose the cheapest informative test. Search reusable adapters before rebuilding.
 5. Evaluate a complementary model against the ensemble, not just the standalone champion.
 6. Plan a small ablation for a successful package; no mandatory five-run follow-up.
-7. Check Claude usage and remaining Modal dollars. Write research/stuck_<date>.md, compact STUCK_REPORT.md and STATE.md with evidence, unknowns and the next bounded campaign.
-8. Continue an affordable test. If Modal is unavailable, try Vast.ai within rules.md limits; if neither GPU provider is available, do useful CPU/research work and checkpoint. If Claude Pro usage/access ends, checkpoint and stop LLM work without paid API fallback. Do not claim a ceiling without evidence.
+7. Check LLM plan usage and remaining Modal dollars. Write research/stuck_<date>.md, compact STUCK_REPORT.md and STATE.md with evidence, unknowns and the next bounded campaign.
+8. Continue an affordable test. If Modal is unavailable, try Vast.ai within rules.md limits; if neither GPU provider is available, do useful CPU/research work and checkpoint. If LLM plan usage/access ends, checkpoint and stop LLM work without paid API fallback. Do not claim a ceiling without evidence.

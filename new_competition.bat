@@ -11,12 +11,14 @@ if exist "%DIR%" (
   exit /b 1
 )
 mkdir "%DIR%"
-> "%DIR%\CLAUDE.md" echo # %NAME% Kaggle competition
->> "%DIR%\CLAUDE.md" echo.
+> "%DIR%\AGENTS.md" echo # %NAME% Kaggle competition
+>> "%DIR%\AGENTS.md" echo.
+>> "%DIR%\AGENTS.md" echo At the start of every session, read ../_kaggle_shared/rules.md in full and follow it. Ignore _backups/.
+>> "%DIR%\AGENTS.md" echo.
+>> "%DIR%\AGENTS.md" echo ## This competition
+>> "%DIR%\AGENTS.md" echo - URL: %URL%
+>> "%DIR%\AGENTS.md" echo - Notes live in STATE.md and the experiment log.
+> "%DIR%\CLAUDE.md" echo @AGENTS.md
 >> "%DIR%\CLAUDE.md" echo @../_kaggle_shared/rules.md
->> "%DIR%\CLAUDE.md" echo.
->> "%DIR%\CLAUDE.md" echo ## This competition
->> "%DIR%\CLAUDE.md" echo - URL: %URL%
->> "%DIR%\CLAUDE.md" echo - Notes live in STATE.md and the experiment log.
 echo Created %DIR%
-echo Next: open Claude Code in that folder and say: start
+echo Next: open Claude Code or Codex in that folder and say: start

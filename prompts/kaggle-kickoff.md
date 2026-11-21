@@ -1,4 +1,4 @@
-Competition URL: $ARGUMENTS; otherwise use CLAUDE.md or CODEX.md.
+Competition URL: $ARGUMENTS; otherwise use AGENTS.md (or CLAUDE.md). If no URL there, ask.
 Proceed without routine confirmation.
 1. Read Overview, Data, Rules and Evaluation. Write research/brief.md: goal, metric, layout, submission format, external-data/LLM/compute rules and deadline.
 2. Run targeted EDA for groups, time, train/test differences and leakage. Investigate original-data provenance where relevant.

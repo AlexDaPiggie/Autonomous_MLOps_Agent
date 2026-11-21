@@ -1,12 +1,13 @@
 # Shared Kaggle setup
 
-- `rules.md`: the rules. Every competition's CLAUDE.md imports it. Edit it once and all competitions change.
+- `rules.md`: the rules. Every competition's AGENTS.md points to it (CLAUDE.md imports AGENTS.md and rules.md). Edit it once and all competitions change.
 - `prompts/`: the prompts (kickoff, research, loop, stuck, skeptic, ensemble, submit, audit). Ask Claude "run the stuck protocol" and it reads the file.
 
 ## New competition
 1. Make the folder inside Coding.
-2. Copy any competition's CLAUDE.md into it. Change the title and the notes lines.
-3. Start Claude Code there and say: "Follow kaggle-kickoff.md for <URL>".
+2. Or run new_competition.bat Folder_Name <URL>. It writes AGENTS.md (canonical) and CLAUDE.md (imports it).
+3. Start Claude Code or Codex there and say: "Follow kaggle-kickoff.md for <URL>".
+4. Existing folders with only CLAUDE.md: move the URL and notes into a new AGENTS.md, then make CLAUDE.md just "@AGENTS.md" and "@../_kaggle_shared/rules.md". Not migrated automatically.
 
 ## Optional: real slash commands (/kaggle-stuck, /kaggle-research, ...)
 Run this once in Windows Command Prompt:
@@ -15,7 +16,16 @@ mkdir "%USERPROFILE%\.claude\commands" & copy "%USERPROFILE%\Coding\_kaggle_shar
 
 Run it again whenever you edit a prompt.
 
+## Platform notes (per machine, not rules)
+- Rules assume the agent can run Kaggle CLI, Modal, vastai and SSH without prompts, submit, and keep working unattended. Both agents can block on approvals.
+- Claude Code: add allow rules in settings for these commands.
+- Codex: default sandbox usually blocks network, so Kaggle CLI, Modal, vastai and SSH fail. Enable network in the workspace-write sandbox and set an approval policy that does not stall. Widening this lets an unattended agent spend money and submit; keep spend limits set on the provider side. Native Windows Codex has a weaker sandbox (WSL recommended). Verify Codex can read ../_kaggle_shared from a competition folder.
+- Codex ignores @imports and does not read ~/.claude/CLAUDE.md. Put your global rules (no co-author lines, dash style, no venvs) in ~/.codex/AGENTS.md.
+- If one agent's usage runs out, the other takes over only when you start it manually. Run "handoff" first.
+- Slash-command copies below are Claude-only. With Codex, ask it to read the prompt file.
+
 ## Claude Pro + Modal defaults (2026-11-20)
+- The LLM plan can be Claude Pro or a Codex plan; rules say "LLM plan".
 - One main Claude session; optional bounded second opinions only when authorized. No mandatory reading/review swarms. Use Claude Pro; no automatic paid API/OpenRouter fallback. Checkpoint when Pro is unavailable.
 - Claude designs a small campaign; a reusable Python runner executes it on Modal, saves predictions and structured results, then Claude reviews the summary.
 - CONFIG.md defaults when no limits exist: $5 total GPU compute across Modal and Vast.ai per competition, $1 per campaign, one active GPU job, 30-minute invocation timeout. Explicit user settings and existing lower limits take precedence; count prior spend and reserve scheduled costs.

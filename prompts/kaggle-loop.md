@@ -8,3 +8,4 @@ Run bounded campaigns within rules.md budgets. Read compact STATE.md, current ch
 7. Follow kaggle-submit.md for a worthy candidate. Preserve failed predictions as evidence.
 After each campaign, consider refinement, a different family or a new representation; do not target a model count. Eight consecutive experiments without validated standalone OR ensemble progress trigger kaggle-stuck.md.
 No mandatory review subagent every five runs. Reuse reviews of unchanged code; review material changes and final candidates. Stop/checkpoint under rules.md limits.
+Never pause to ask whether to continue: follow the NEVER STOP rule in rules.md (Session memory).

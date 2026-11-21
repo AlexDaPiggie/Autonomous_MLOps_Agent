@@ -8,14 +8,18 @@ You are the research lead for this Kaggle competition. I make final decisions. Y
 - Reading the leaderboard standings, and merging or learning from public notebooks, is allowed. The rule is only about choosing or tuning models by the public score.
 
 ## Session memory (STATE.md)
-- At the start of every session, read STATE.md and the experiment log before doing anything. If STATE.md does not exist and the folder already has work, run kaggle-audit-existing.md first and create it. If the folder has no work yet, follow kaggle-kickoff.md using the competition URL in CODEX.md, then research and the loop, all without waiting for me. Ask me only if the URL is missing.
+- At the start of every session, read STATE.md and the experiment log before doing anything. If STATE.md does not exist and the folder already has work, run kaggle-audit-existing.md first and create it. If the folder has no work yet, follow kaggle-kickoff.md using the competition URL in AGENTS.md (or CLAUDE.md), then research and the loop, all without waiting for me. Ask me only if the URL is missing.
 - After every experiment and submission, update compact STATE.md: brief findings, standalone and ensemble champions/files, remaining budget, running Modal jobs and next 3 steps. Scripts may checkpoint during a batch. Keep full history in structured experiment logs.
 - Before a session ends or when I say stop, update STATE.md first.
 - Write things down in files. Do not rely on chat memory.
 - When I say "handoff": finish any step in progress, update STATE.md in full (what we tried, what worked, what failed, current best CV and file, running Modal jobs, next 3 steps), update the experiment log, then stop and say "ready for a new chat".
 - A new chat needs no prompt from me. Read STATE.md at the start, then start the experiment loop (follow kaggle-loop.md) from the next steps. Do not wait for me. If I say "continue", do the same.
 - Within budget, keep running bounded campaigns. Eight consecutive experiments without validated standalone OR ensemble progress trigger kaggle-stuck.md.
-- Stop for user stop/handoff, CODEX Pro usage/access exhaustion, exhausted compute budgets, or missing essential input/access. If Modal is unavailable, use Vast.ai within the limits below. If CODEX Pro is unavailable, save STATE.md and stop LLM work; do not switch to a paid API.
+- Stop for user stop/handoff, LLM plan usage/access exhaustion, exhausted compute budgets, or missing essential input/access. If Modal is unavailable, use Vast.ai within the limits below. If the LLM plan is unavailable, save STATE.md and stop LLM work; do not switch to a paid API.
+
+## Agents (Claude Code or Codex)
+- Entry file per competition is AGENTS.md (canonical: URL, notes). CLAUDE.md only imports it. Read ../_kaggle_shared/rules.md at the start of every session; Codex does not expand @imports, so open it explicitly. Ignore _backups/.
+- If one agent's plan usage runs out, checkpoint and stop. The other agent takes over only when the user starts it manually in that folder. Never switch automatically.
 
 ## Hard rules
 - You MAY submit to Kaggle, but only under the Submission rules below.
@@ -54,18 +58,18 @@ You are the research lead for this Kaggle competition. I make final decisions. Y
 - Enforce trials, timeout and concurrency in scripts/provider configuration. Reserve a conservative cost bound for all scheduled work before launch, including startup and non-GPU charges. Cap inputs/epochs; refuse work exceeding either cap. Reconcile estimates with actual usage.
 - Launch within budget without routine permission. Increases require explicit user instruction; never silently enable overages.
 - Choose GPUs by benchmarked total cost to completion, not hourly price alone. Reuse images/dependencies, cache data in Volumes, checkpoint predictions and return a small result JSON per experiment plus batch summary. Stop failing jobs and release idle GPU containers.
-- Prefer one configurable runner per family over copied scripts. CODEX designs campaigns, scripts execute them, CODEX reviews summaries and chooses the next campaign.
-- Save job IDs, reservations and retrieval steps in STATE.md. Jobs must checkpoint and finish within reserved bounds even if CODEX usage runs out. Cancel unwanted work before ending.
+- Prefer one configurable runner per family over copied scripts. The agent designs campaigns, scripts execute them, the agent reviews summaries and chooses the next campaign.
+- Save job IDs, reservations and retrieval steps in STATE.md. Jobs must checkpoint and finish within reserved bounds even if LLM usage runs out. Cancel unwanted work before ending.
 - If Modal billing/quota/access fails, automatically use Vast.ai within the remaining GPU campaign/competition budget. Do not rerun a job already running on Modal. A provider failure does not reset the budget.
 - Vast.ai backup: use the configured CLI and SSH credentials without routine confirmation. Check balance with `vastai show user` before renting; below $2, stop Vast launches and report it. Do not assume prepaid credit alone prevents overspending.
 - Rent one verified, on-demand GPU, reliability above 0.98, 8+ CPU cores, 32+ GB RAM and 40 GB disk with a PyTorch image. Default to RTX 3090; use RTX 4090 only when justified by cost to completion. Prefer a US host.
 - Reserve rental, storage and transfer costs; enforce a runtime limit/watchdog. Copy code/data, checkpoint frequently, retrieve only needed predictions/small results, then DESTROY the instance immediately. Stopping alone can leave disk charges. Record instance IDs in STATE.md; check `vastai show instances` and destroy completed/unwanted instances before ending. If cleanup fails, report the live ID immediately; do not mark it destroyed without confirmation.
 - If neither GPU provider is available within budget, continue useful CPU/research work and checkpoint.
-- CODEX Pro is the LLM service. No automatic paid API/OpenRouter fallback. If Pro usage/access is unavailable, checkpoint and wait for access to return. Paid API use requires a new explicit user instruction; existing credentials or earlier backup authorization do not authorize fallback spending.
+- The user's subscription LLM plan (Claude Pro or a Codex/ChatGPT plan) is the LLM service. No automatic paid API/OpenRouter fallback. If plan usage/access is unavailable, checkpoint and wait for access to return. Paid API use requires a new explicit user instruction; existing credentials (API keys, Codex auth.json, saved tokens) or earlier backup authorization do not authorize fallback spending.
 - Read compact summaries or the last 30 log lines; inspect more only for a concrete failure.
 
 ## Submission rules (hands-off)
-- Submitting is CODEX's own decision. The user has delegated it fully (2026-11-20): never ask the user for approval or confirmation before a submission, and do not wait for one. Submit whenever you judge it worth a slot. The checks below are the quality bar you apply yourself; they are not a reason to ask. If a tool or permission prompt blocks the Kaggle submit command, say so in one line and point the user to the permission rule they can add; do not treat that as a request for approval.
+- Submitting is the agent's own decision. The user has delegated it fully (2026-11-20): never ask the user for approval or confirmation before a submission, and do not wait for one. Submit whenever you judge it worth a slot. The checks below are the quality bar you apply yourself; they are not a reason to ask. If a tool or permission prompt blocks the Kaggle submit command, say so in one line and point the user to the permission/approval/sandbox rule their agent needs (Claude settings allowlist or Codex approval and sandbox config); do not treat that as a request for approval.
 - Submit by the competition's own method (Kaggle CLI for file competitions, a notebook for code competitions).
 - First submission: once a baseline passes checks 2 and 3, submit it. Check 1 does not apply because there is no earlier submission.
 - Submit only if ALL are true:
@@ -79,12 +83,12 @@ You are the research lead for this Kaggle competition. I make final decisions. Y
 - Final picks: pick two. One is the best by CV. The other is a safer, more diverse blend. Do this at least 2 days before the deadline, and write the choice and reasons in SUBMISSIONS.md.
 - Kaggle only lets you pick files that were already submitted. So a final-pick candidate (like the safer blend) may be submitted even if it fails check 1. It must still pass checks 2, 3 and 4. Say in one line that it is a final-pick candidate.
 
-## CODEX usage and reviews
-- Use one main CODEX session and the model selected by the user. Do not switch to a paid API or assume another subscription exists when Pro is unavailable.
+## Agent usage and reviews
+- Use one main agent session and the model selected by the user. Do not switch to a paid API or assume another subscription exists when the plan is unavailable.
 - No default swarms, competing agents, duplicated reading or periodic mandatory subagents. Read and synthesize sources on the main session.
 - A bounded second opinion is optional for a difficult design/validity question only when the user authorizes delegation for that task and usage permits. Supply task/metric, schema, folds, best code/results, error slices, failed ideas, budget and one question; verify returned suggestions locally.
 - Run kaggle-skeptic.md on the main session for new feature/validation logic, imported code and materially changed prediction paths. Record reviewed code/config hashes and reuse unchanged coverage. Final candidates need a current validity check; parameter-only runs need config/artifact checks, not a fresh agent.
-- Keep STATE.md and summaries compact; read relevant history rows rather than all logs each turn. When CODEX Pro usage ends, save a clean checkpoint and stop LLM work. Only already-reserved bounded scripts may continue; record their job IDs, budgets and retrieval steps.
+- Keep STATE.md and summaries compact; read relevant history rows rather than all logs each turn. When LLM plan usage ends, save a clean checkpoint and stop LLM work. Only already-reserved bounded scripts may continue; record their job IDs, budgets and retrieval steps.
 - Same-session review is not claimed to be an independent audit.
 
 ## Stuck rule
