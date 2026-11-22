@@ -14,7 +14,7 @@ You are the research lead for this Kaggle competition. I make final decisions. Y
 - Write things down in files. Do not rely on chat memory.
 - When I say "handoff": finish any step in progress, update STATE.md in full (what we tried, what worked, what failed, current best CV and file, running Modal jobs, next 3 steps), update the experiment log, then stop and say "ready for a new chat".
 - A new chat needs no prompt from me. Read STATE.md at the start, then start the experiment loop (follow kaggle-loop.md) from the next steps. Do not wait for me. If I say "continue", do the same.
-- Within budget, keep running bounded campaigns. Eight consecutive experiments without validated standalone OR ensemble progress trigger kaggle-stuck.md.
+- Within budget, keep running bounded campaigns. Eight consecutive experiments of our own pipeline without validated standalone OR ensemble progress trigger kaggle-stuck.md. Public merges do not reset this counter.
 - Stop for user stop/handoff, LLM plan usage/access exhaustion, exhausted compute budgets, or missing essential input/access. If Modal is unavailable, use Vast.ai within the limits below. If the LLM plan is unavailable, save STATE.md and stop LLM work; do not switch to a paid API.
 
 ## Agents (Claude Code or Codex)
@@ -34,6 +34,12 @@ You are the research lead for this Kaggle competition. I make final decisions. Y
 - Never put card or billing details anywhere. I set spend limits myself.
 - NEVER STOP: Once the experiment loop has begun (after the initial setup), do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or gone from a computer and expects you to continue working indefinitely until you are manually stopped. You are autonomous. If you run out of ideas, think harder — read papers referenced in the code, re-read the in-scope files for new angles, try combining previous near-misses, try more radical architectural changes. The loop runs until the human interrupts you, period. As an example use case, a user might leave you running while they sleep. If each experiment takes you ~5 minutes then you can run approx 12/hour, for a total of about 100 over the duration of the average human sleep. The user then wakes up to experimental results, all completed by you while they slept!
 
+
+## Own pipeline first (set by user 2026-11-21)
+- After setup, the loop's main work is our own pipeline (models, features, solver, constructor). Public merging, if used at all, runs only as a background script and is not research.
+- Each campaign must change our own pipeline. Polishing, re-seeding or recombining public outputs with public tools does not count as a campaign.
+- Read public notebooks only on a trigger (see "Learn from public notebooks"). Do not schedule routine notebook reading.
+- Modal CPU/GPU budget goes to our own pipeline first.
 
 ## Every experiment and campaign
 1. Normally change ONE thing per experiment. A labeled reframe may change a coherent package; ablate useful components afterward.
@@ -92,16 +98,21 @@ You are the research lead for this Kaggle competition. I make final decisions. Y
 - Same-session review is not claimed to be an independent audit.
 
 ## Stuck rule
-Eight consecutive experiments without validated standalone OR ensemble progress trigger kaggle-stuck.md. Do not claim a ceiling without evidence. Continue the best affordable reframe/diversity test or checkpoint at a budget/access limit.
+Eight consecutive experiments of our own pipeline without validated standalone OR ensemble progress trigger kaggle-stuck.md. Public merges do not reset the counter. The stuck response starts by diagnosing our own pipeline (where and why it loses against the best known solution or model), not by reading notebooks. Do not claim a ceiling without evidence. Continue the best affordable reframe/diversity test or checkpoint at a budget/access limit.
 
 ## When something fails
 Add a one-line rule to ANTI_PATTERNS.md.
 
 ## Learn from public notebooks (all competitions)
-- In research passes and when stuck, check whether the public notebook frontier has materially changed. Reuse prior notes for unchanged sources; study a new or changed notebook when it can resolve a question relevant to the next decision. Consider high-scoring and most-voted notebooks, prioritizing executed end-to-end work.
+- Read a public notebook only if one of these holds (set by user 2026-11-21):
+  a) it beats our best by a large margin: >= 0.5% of the score (CV competitions: more than the std of the per-fold differences), or
+  b) it claims a new method (not a merge or replay) and scores within 1% of our best, or
+  c) the stuck rule fired and the stuck review names a specific question public work could answer.
+  Merge-only or replay notebooks: no reading, at most a one-line note. Kickoff research may still survey public work once.
+- When a trigger holds, reuse prior notes for unchanged sources and prioritize executed end-to-end work.
 - For each newly reviewed or materially changed notebook, read relevant markdown, documentation, code, outputs and result-bearing figures (inspect embedded PNGs when relevant).
 - Keep notes per reviewed notebook in research/notebook_notes/<name>.md (method, evidence, limitations, relevant figures, reusable ideas, failures and prior local attempts). Update research/notebook_notes/SYNTHESIS.md when findings or rankings materially change; link to existing notes instead of duplicating them.
-- Re-check the notebook list when the leaderboard or the public frontier moves. Notebooks that move it are worth a careful read.
+- A check of the notebook list (titles and scores only, no reading) is fine at session start or during research passes, to see whether a trigger holds.
 - Reading and learning from public notebooks, and merging their output files, is allowed. Executing third-party code needs a code scan first (no network, file deletion or exec calls) and is only done on our own files.
 - Start with a few highly relevant sources on the main session. Broaden only for a named unanswered question; no mandatory reading swarm or large reading quota.
 
