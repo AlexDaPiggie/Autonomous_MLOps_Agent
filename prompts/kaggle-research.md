@@ -3,6 +3,18 @@ Find supported approaches and write research/sota_<date>.md. Do not implement du
 2. Reuse existing source notes. Reopen or find sources only when their version changed, their evidence is uncertain, or a named question could change the next decision. Prefer executed end-to-end solutions and findings write-ups with measured results (what worked, what failed, ablations) over high scores without explanation; broaden only for specific gaps.
 2b. Find sources by CATEGORY, not by title or keyword (set by user 2026-11-23). For notebooks: `kaggle kernels list --competition <slug> --sort-by X --page-size 30` for X in commentCount (findings and debates), hotness (new strong work), voteCount (proven classics), dateRun (updates of notebooks we already noted); scoreAscending only to locate the best programs. Union the lists, then rank the pool by CONTENT (pull the source text: measured tables, "did not work"/ablation sections, real search code vs merge-only code), never by title. For discussions use the forum's own sorts (Hot, Most votes, Most comments, Recent) in the browser. Also check: notebooks of a watchlist of proven originators, sources cited in credits sections, and dataset descriptions / linked repos of strong notebooks. For notebooks already noted, compare the new text with the saved copy and re-read only what changed. Keep research/catalog.tsv (ref, author, last run seen, type original/merge/eda, note file, last checked).
 3. For newly reviewed or materially changed sources, read relevant documentation, code, outputs and result-bearing figures. Record source, method, evidence, limitations, reusable code and prior attempts in research/notebook_notes/<name>.md. Update SYNTHESIS.md with material changes and links; do not duplicate unchanged notes.
+3b. Note template (research/notebook_notes/<name>.md; one file per source, or one per reading round for short entries). Discussions use the same template with `Type: discussion` and the thread URL.
+```
+# <owner/slug or thread title> (<date read>, version / last run seen)
+Type: original | merge | eda | discussion   Score: <if any>   Link: <url>
+## Method (plain words)
+## Evidence (numbers, controls, what failed)
+## Limits / doubts
+## Reusable (code, license, data)
+## Tested by us
+- <Exx> <date>: <what we ran> -> <result> (<keep/drop>)   or "not tested yet: <cheapest test>"
+```
+When an experiment tests an idea from a source, add a line under "Tested by us" in that note and put the note file name in the experiments.tsv note column. When a note is written or updated, set its row in research/catalog.tsv to status `noted` with the note file name.
 4. Search local previous solutions for adapters. Where relevant, investigate original-data provenance/generating process and external-data permissions. Treat uncertain generator claims as hypotheses.
 5. Search papers/docs for specific unresolved methods. Filter by inspectable primary evidence and validation quality, not AI authorship or popularity. Record why retained/dropped.
 6. Output idea | source | evidence/limitations | expected benefit (unknown unless supported) | estimated compute cost | leakage risk | cheapest useful test. Distinguish literature observations, hypotheses and locally demonstrated results.
