@@ -107,12 +107,14 @@ Add a one-line rule to ANTI_PATTERNS.md.
 - Read a public notebook only if one of these holds (set by user 2026-11-21):
   a) it beats our best by a large margin: >= 0.5% of the score (CV competitions: more than the std of the per-fold differences), or
   b) it claims a new method (not a merge or replay) and scores within 1% of our best, or
-  c) the stuck rule fired and the stuck review names a specific question public work could answer.
+  c) the stuck rule fired and the stuck review names a specific question public work could answer, or
+  d) it is a findings write-up: it reports experiments with numbers (what worked, what did not, ablations, failure analysis) on a question relevant to our current bottleneck, regardless of its score. Check the markdown first; skip if it is mostly merge/replay.
   Merge-only or replay notebooks: no reading, at most a one-line note. Kickoff research may still survey public work once.
+- When choosing among candidates, rank by evidence quality (measured results, ablations, honest failures) over leaderboard score. A high score with no explanation is a merge until shown otherwise.
 - When a trigger holds, reuse prior notes for unchanged sources and prioritize executed end-to-end work.
 - For each newly reviewed or materially changed notebook, read relevant markdown, documentation, code, outputs and result-bearing figures (inspect embedded PNGs when relevant).
-- Keep notes per reviewed notebook in research/notebook_notes/<name>.md (method, evidence, limitations, relevant figures, reusable ideas, failures and prior local attempts). Update research/notebook_notes/SYNTHESIS.md when findings or rankings materially change; link to existing notes instead of duplicating them.
-- A check of the notebook list (titles and scores only, no reading) is fine at session start or during research passes, to see whether a trigger holds.
+- Keep notes per reviewed notebook in research/notebook_notes/<name>.md (method, evidence, limitations, relevant figures, reusable ideas, failures and prior local attempts; template and the "Tested by us" link to experiments in kaggle-research.md step 3b). Update research/notebook_notes/SYNTHESIS.md when findings or rankings materially change; link to existing notes instead of duplicating them.
+- Find candidates by CATEGORY, not by title or keyword (set by user 2026-11-23): list notebooks sorted by most comments, hottest, most votes and recently run (best score only to locate the best programs), plus a watchlist of proven originators; for discussions use the forum's Hot / Most comments / Most votes sorts. Rank the pooled candidates by content (pulled source text), and re-check already-noted notebooks for changes. Details and note template: kaggle-research.md steps 2b and 3b; keep research/catalog.tsv. This list check (plus pulling source text to rank it) is fine at session start or during research passes, to see whether a trigger holds.
 - Reading and learning from public notebooks, and merging their output files, is allowed. Executing third-party code needs a code scan first (no network, file deletion or exec calls) and is only done on our own files.
 - Start with a few highly relevant sources on the main session. Broaden only for a named unanswered question; no mandatory reading swarm or large reading quota.
 
