@@ -33,6 +33,14 @@ class Intelligence(unittest.TestCase):
         export_state(self.store,"test",self.root)
         self.assertEqual(state.read_text(),"human changed")
 
+    def test_migration_retains_bom_crlf_exactly(self):
+        source=self.root/"STATE.md"
+        raw=b'\xef\xbb\xbf# Notes\r\nhuman text\r\n'
+        source.write_bytes(raw)
+        migrate(self.store,self.root,apply=True)
+        archived=self.store.rows("SELECT content FROM legacy_imports")[0]["content"]
+        self.assertEqual(archived.encode("utf-8"),raw)
+
     def test_portfolio_stagnation_and_exploration(self):
         portfolio=Portfolio(self.store,"test")
         a=portfolio.add("linear","linear inductive bias",expected_gain=.1)

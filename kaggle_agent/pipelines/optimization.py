@@ -16,6 +16,7 @@ def check_knapsack(candidate,weights,values,capacity):
 
 def solve_knapsack(weights,values,capacity,*,seed=42,iterations=100,seconds=2,operator="anneal"):
     require(0<seconds<=1800 and 0<iterations<=100000,"Optimization resource cap")
+    if operator=="exact":return solve_knapsack_exact(weights,values,capacity,seconds=seconds)
     require(operator in {"greedy","local","anneal","restart"},"Unknown neighborhood")
     candidate=[0]*len(weights);check_knapsack(candidate,weights,values,capacity)
     remaining=capacity
@@ -39,3 +40,16 @@ def solve_knapsack(weights,values,capacity,*,seed=42,iterations=100,seconds=2,op
         archive[tuple(proposal)]=new_score
     return dict(candidate=best,score=check_knapsack(best,weights,values,capacity),
                 archive=[dict(candidate=list(k),score=v) for k,v in sorted(archive.items(),key=lambda p:p[1],reverse=True)[:10]],seed=seed)
+
+
+def solve_knapsack_exact(weights,values,capacity,*,seconds=2):
+    import numpy as np
+    from scipy.optimize import milp,Bounds,LinearConstraint
+    require(0<seconds<=1800,"Exact solver time bound required")
+    check_knapsack([0]*len(weights),weights,values,capacity)
+    result=milp(-np.asarray(values,dtype=float),integrality=np.ones(len(weights)),bounds=Bounds(0,1),
+                constraints=LinearConstraint(np.asarray(weights,dtype=float),-np.inf,capacity),options=dict(time_limit=seconds))
+    require(result.x is not None,"Exact solver returned no feasible incumbent")
+    candidate=np.rint(result.x).astype(int).tolist()
+    return dict(candidate=candidate,score=check_knapsack(candidate,weights,values,capacity),
+                archive=[],optimal=bool(result.success),solver_status=int(result.status))

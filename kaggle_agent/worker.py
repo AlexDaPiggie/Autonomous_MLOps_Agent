@@ -27,11 +27,16 @@ def main():
             time.sleep(.1)
     threading.Thread(target=guard,daemon=True).start()
     data=json.loads(Path(plan["dataset"]).read_text(encoding="utf-8"))
-    artifact=run_dataset(data,plan["config"])
+    if plan.get("benchmark_configs"):
+        pair=[run_dataset(data,config) for config in plan["benchmark_configs"]]
+        atomic_write(root/"benchmark-pair.json",json.dumps(pair,allow_nan=False))
+        artifact=pair[-1]
+    else:artifact=run_dataset(data,plan["config"])
     atomic_write(root/"predictions.json",json.dumps(artifact,allow_nan=False))
     result=dict(complete=True,evaluator_hash=plan["evaluator_hash"],config_hash=fingerprint(plan["config"]),
                 data_hash=plan["data_hash"],split_hash=plan["split_hash"],fold_scores=artifact["fold_scores"],
                 score_type=artifact["score_type"],artifacts={"predictions.json":checksum(root/"predictions.json")})
+    if "ensemble_baseline_scores" in artifact:result["ensemble_baseline_scores"]=artifact["ensemble_baseline_scores"]
     atomic_write(root/"result.json",json.dumps(result,allow_nan=False))
 
 

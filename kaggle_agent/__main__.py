@@ -48,7 +48,7 @@ def init(directory,task,demo=False):
 
 def dataset_identity(data):
     if data["task"] in {"classification","regression"}:
-        return dict(data_hash=fingerprint(dict(ids=data["ids"],y=data["y"])),split_hash=fingerprint(dict(ids=data["ids"],folds=data["folds"])))
+        return dict(data_hash=fingerprint(data),split_hash=fingerprint(dict(ids=data["ids"],folds=data["folds"])))
     return dict(data_hash=fingerprint(data),split_hash=fingerprint({k:data[k] for k in ("origins","horizon","times") if k in data} or dict(exact=True)))
 
 
@@ -57,7 +57,7 @@ def load_competition(args,store):
     path=directory/".kaggle-agent"/"profile.json"
     require(path.is_file(),"Run init first, then review profile and dataset")
     profile=json.loads(path.read_text(encoding="utf-8"))
-    validate_profile(profile)
+    validate_profile(profile,check_deadline=False)
     controller=Controller(store,competition_id(directory));controller.register(directory,profile)
     return directory,profile,controller
 
@@ -78,6 +78,7 @@ def run(args,store):
         return dict(dry_run=True,agent=args.agent,campaigns=args.campaigns,trials=args.trials,config=config,
                     paid_execution=False,submissions=False,next_action="Use --execute for bounded local CPU execution")
     require(args.agent=="mock" or args.subscription_confirmed,"Confirm installed CLI uses selected subscription before agent execution")
+    if args.agent!="mock":require(Budget(store).summary()["config"]["confirmed"],"Confirm fixed subscription expenses and billing period in global budget first")
     from kaggle_agent.execution.local import LocalProvider
     from kaggle_agent.execution.identity import code_version
     from kaggle_agent.evaluation.validation import evaluator_version,promote
@@ -110,7 +111,7 @@ def run(args,store):
             campaign=controller.campaign(args.trials,resume=args.command=="resume")
             cp=checkpoint(store,controller.competition,"bounded campaign",directory/".kaggle-agent"/"checkpoint.json")
             agent=MockAgent() if args.agent=="mock" else CLIAdapter(args.agent)
-            agent_result=agent.resume("Review next bounded research task; report protocol JSON. No remote actions.",directory,cp,
+            agent_result=agent.resume("Review next bounded research task; report protocol JSON. No remote actions. You may propose up to four hypothesis/config objects in proposals, using only documented local model families/configs. Propose a distinct useful change, not a repeated equivalent trial.",directory,cp,
                                       authorized=True,seconds=min(args.seconds,300),heartbeat=controller.heartbeat,should_stop=controller.should_stop)
             session=rotate(store,controller.competition,args.agent,cp)
             with store.transaction() as db:
@@ -123,11 +124,17 @@ def run(args,store):
                 if controller.should_stop():break
                 validate_profile(profile)
                 trial_config=config.copy()
-                if args.trials>1:
+                if agent_result.proposals and trial<len(agent_result.proposals):
+                    proposal=agent_result.proposals[trial]
+                    trial_config=proposal["config"]|dict(metric=profile["metric"])
+                elif args.trials>1:
                     if profile["task"] in {"classification","regression"}:trial_config["family"]=("linear","forest","hist","linear")[trial]
                     elif profile["task"]=="optimization":trial_config["operator"]=("greedy","local","anneal","restart")[trial]
                     else:trial_config["family"]=("seasonal_naive","lag_ridge","lag_boosting","seasonal_naive")[trial]
                     trial_config["seed"]=config.get("seed",42)+campaign_index*4+trial
+                from kaggle_agent.execution.gates import validate_config
+                validate_config(profile["task"],trial_config)
+                require(not trial_config.get("blend_sources"),"Use supervised registered-library assessment for blends")
                 # Use a tiny synthetic instance through exactly the selected runner.
                 from kaggle_agent.benchmarks import synthetic
                 smoke_data=synthetic(profile["task"],0)
@@ -142,30 +149,54 @@ def run(args,store):
                 metadata=dict(code_hash=code_version(),config=trial_config,seed=trial_config.get("seed",42),metric=profile["metric"],
                               evaluator_hash=evaluator_version(),dataset_path=str(dataset),dataset_checksum=checksum(dataset),
                               **dataset_identity(data),hypothesis="bounded local baseline/portfolio trial",code_revision=git_revision())
-                try:
-                    key=controller.launch(campaign,metadata,provider,smoke_passed=smoke_passed,seconds=args.seconds,memory_mb=args.memory_mb,
-                                          payload=dict(dataset=str(dataset),config=trial_config,evaluator_hash=evaluator_version(),**dataset_identity(data)))
-                except sqlite3.IntegrityError:
-                    store.event("duplicate_skipped",dict(config=trial_config),controller.competition)
-                    continue
-                state=provider.reconcile(key)
-                if state["state"]!="COMPLETED":
-                    controller.reconcile(provider)
-                    break
-                result=json.loads((jobs/key/"result.json").read_text())
-                controller.finish(key,result,jobs/key)
+                portfolio=Portfolio(store,controller.competition)
+                ranked=portfolio.rank(turn=campaign_index*args.trials+trial)
+                branch=ranked[0]["id"] if ranked else None
+                key=None;parent=None;duplicate=False
+                for fidelity in ("screen","intermediate","full"):
+                    stage_config=trial_config|dict(_fidelity=fidelity)
+                    if fidelity!="full":
+                        stage_config["parameters"]=(stage_config.get("parameters") or {})|dict(iterations=2 if fidelity=="screen" else 10)
+                        if profile["task"]=="optimization":stage_config["iterations"]=10 if fidelity=="screen" else 30
+                    stage_meta=metadata|dict(config=stage_config)
+                    try:
+                        key=controller.launch(campaign,stage_meta,provider,smoke_passed=smoke_passed,seconds=args.seconds,memory_mb=args.memory_mb,
+                                              payload=dict(dataset=str(dataset),config=stage_config,evaluator_hash=evaluator_version(),**dataset_identity(data)),
+                                              fidelity=fidelity,branch=branch,parent=parent)
+                    except sqlite3.IntegrityError:
+                        from kaggle_agent.execution.gates import experiment_fingerprint
+                        previous=store.rows("SELECT id,state FROM experiments WHERE competition=? AND fingerprint=?",(controller.competition,experiment_fingerprint(stage_meta)))
+                        require(previous and previous[0]["state"]=="COMPLETED","Duplicate incomplete/failed trial requires explicit reviewed rerun")
+                        store.event("duplicate_skipped",dict(config=stage_config,fidelity=fidelity),controller.competition)
+                        parent=previous[0]["id"];duplicate=fidelity=="full"
+                        continue
+                    state=provider.reconcile(key)
+                    if state["state"]!="COMPLETED":
+                        controller.reconcile(provider)
+                        if branch:portfolio.update(branch,execution_failed=True)
+                        break
+                    result=json.loads((jobs/key/"result.json").read_text())
+                    controller.finish(key,result,jobs/key)
+                    parent=key
+                if duplicate:continue
+                if key is None or state["state"]!="COMPLETED":break
                 promotion=promote(store,controller.competition,key)
+                if branch:portfolio.update(branch,standalone_gain=max(0.,promotion.get("mean_gain",0.)))
                 with store.transaction() as db:
                     row=db.execute("SELECT result FROM experiments WHERE id=?",(key,)).fetchone()
                     stored=json.loads(row[0]);stored["standalone_improved"]=promotion["improved"]
                     db.execute("UPDATE experiments SET result=? WHERE id=?",(json.dumps(stored),key))
                 completed.append(key)
-            results=store.rows("SELECT state,result FROM experiments WHERE competition=? ORDER BY created",(controller.competition,))
-            check=stagnation([dict(state=r["state"])|(json.loads(r["result"]) if r["result"] else {}) for r in results])
+            if profile["task"] in {"classification","regression"} and not controller.should_stop():
+                ensemble_id=assess_ensemble(store,controller,provider,dataset,data,profile,args.seconds,args.memory_mb)
+                if ensemble_id:completed.append(ensemble_id)
+            results=store.rows("SELECT state,fidelity,result FROM experiments WHERE competition=? ORDER BY created",(controller.competition,))
+            check=stagnation([dict(state=r["state"],fidelity=r["fidelity"])|(json.loads(r["result"]) if r["result"] else {}) for r in results])
             checkpoint_value=checkpoint(store,controller.competition,check["next_action"],directory/".kaggle-agent"/"checkpoint.json")
             if check["research_review"]:
                 store.event("research_review_required",check,controller.competition)
-                transition(store,controller.competition,"BLOCKED","eight completed no-progress trials; research review required")
+                from kaggle_agent.research.review import review_stagnation
+                review_stagnation(store,controller.competition,directory,profile)
                 break
         if controller.should_stop():transition(store,controller.competition,"STOPPED","user stop")
         return dict(completed=completed,state=store.rows("SELECT state FROM competitions WHERE id=?",(controller.competition,))[0]["state"],paid_cents=0)
@@ -174,7 +205,7 @@ def run(args,store):
         transition(store,controller.competition,"STOPPED","keyboard interrupt")
         return dict(state="STOPPED",completed=completed)
     except (ValueError,OSError,RuntimeError) as error:
-        transition(store,controller.competition,"BLOCKED",str(error))
+        transition(store,controller.competition,"STOPPED" if "deadline" in str(error).lower() else "BLOCKED",str(error))
         raise
     finally:
         checkpoint(store,controller.competition,"inspect status and resume bounded campaign",directory/".kaggle-agent"/"checkpoint.json")
@@ -187,11 +218,44 @@ def git_revision():
     return result.stdout.strip() if result.returncode==0 else "unknown"
 
 
+def assess_ensemble(store,controller,provider,dataset,data,profile,seconds,memory_mb):
+    from kaggle_agent.execution.identity import code_version
+    from kaggle_agent.evaluation.validation import evaluator_version,promote
+    from kaggle_agent.execution.gates import experiment_fingerprint
+    comp=store.rows("SELECT champion FROM competitions WHERE id=?",(controller.competition,))[0]
+    candidates=store.rows("SELECT e.*,p.path,p.checksum FROM experiments e JOIN predictions p ON p.experiment=e.id WHERE e.competition=? AND e.state='COMPLETED' AND e.fidelity='full' ORDER BY e.created DESC",(controller.competition,))
+    candidates=[row for row in candidates if json.loads(row["result"])["score_type"]=="base_oof"]
+    candidates.sort(key=lambda r:r["id"]!=comp["champion"])
+    sources=[dict(path=row["path"],sha256=row["checksum"]) for row in candidates[:5]]
+    if len(sources)<2:return None
+    config=dict(metric=profile["metric"],seed=42,blend_sources=sources,baseline_index=0,_fidelity="full")
+    metadata=dict(code_hash=code_version(),config=config,seed=42,metric=profile["metric"],evaluator_hash=evaluator_version(),
+                  dataset_path=str(dataset),dataset_checksum=checksum(dataset),**dataset_identity(data),
+                  hypothesis="Complementary frozen prediction library; conditional meta-CV versus identical single-base combiner",code_revision=git_revision())
+    if store.rows("SELECT id FROM experiments WHERE competition=? AND fingerprint=?",(controller.competition,experiment_fingerprint(metadata))):return None
+    campaign=controller.campaign(1)
+    key=controller.launch(campaign,metadata,provider,smoke_passed=True,seconds=seconds,memory_mb=memory_mb,
+                          payload=dict(dataset=str(dataset),config=config,evaluator_hash=evaluator_version(),**dataset_identity(data)))
+    if provider.reconcile(key)["state"]!="COMPLETED":controller.reconcile(provider);return None
+    root=provider.directory/key
+    controller.finish(key,json.loads((root/"result.json").read_text()),root)
+    promotion=promote(store,controller.competition,key,ensemble=True)
+    with store.transaction() as db:
+        row=db.execute("SELECT result FROM experiments WHERE id=?",(key,)).fetchone()
+        result=json.loads(row[0]);result["ensemble_improved"]=promotion["improved"]
+        db.execute("UPDATE experiments SET result=? WHERE id=?",(json.dumps(result),key))
+        store.event("ensemble_assessment",dict(experiment=key,comparison=promotion),controller.competition,db)
+    return key
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db",type=Path,default=home()/"global.sqlite3")
     sub=parser.add_subparsers(dest="command",required=True)
-    sub.add_parser("doctor");sub.add_parser("budget")
+    sub.add_parser("doctor")
+    budget_parser=sub.add_parser("budget")
+    budget_parser.add_argument("--configure",type=Path)
+    budget_parser.add_argument("--record-charge",type=Path)
     bench=sub.add_parser("benchmark");bench.add_argument("--output",type=Path,default=Path("benchmark-results"))
     initializer=sub.add_parser("init");initializer.add_argument("--competition",required=True);initializer.add_argument("--task",choices=["classification","regression","optimization","forecasting"],default="classification");initializer.add_argument("--demo",action="store_true")
     for name in ("audit","status","report","stop","export","migrate","checkpoint","start","resume"):
@@ -217,7 +281,11 @@ def main(argv=None):
             result=benchmark(args.output)
         else:
             store=Store(args.db)
-            if args.command=="budget":result=Budget(store).summary()
+            if args.command=="budget":
+                budget=Budget(store)
+                if args.configure:budget.configure(**json.loads(args.configure.read_text(encoding="utf-8")))
+                if args.record_charge:budget.record_charge(**json.loads(args.record_charge.read_text(encoding="utf-8")))
+                result=budget.summary()
             elif args.command in {"start","resume"}:result=run(args,store)
             elif args.command=="audit":
                 root=Path(args.competition).resolve()
@@ -225,7 +293,11 @@ def main(argv=None):
                             migration=migrate(store,root),note="Inventory only; no legacy authority inferred; review manual limits")
             elif args.command=="migrate":result=migrate(store,args.competition,apply=args.apply)
             else:
-                directory,profile,controller=load_competition(args,store)
+                directory=Path(args.competition).resolve()
+                stored=store.rows("SELECT * FROM competitions WHERE id=?",(competition_id(directory),))
+                if stored:
+                    profile=json.loads(stored[0]["profile"]);controller=Controller(store,competition_id(directory))
+                else:directory,profile,controller=load_competition(args,store)
                 key=controller.competition
                 if args.command=="stop":
                     controller.request_stop();result=dict(stop_requested=True,next_action="Active controller checkpoints and terminates its local child")

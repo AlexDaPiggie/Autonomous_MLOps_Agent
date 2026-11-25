@@ -39,6 +39,17 @@ def fidelity_agreement(low,full):
                 limitation="Heuristic screen; preserve exploration when rank agreement is weak")
 
 
+def optuna_search(space,objective,*,max_trials=4,seconds=60,seed=42,direction="minimize"):
+    require(0<max_trials<=100 and 0<seconds<=1800,"Invalid Optuna bounds")
+    import optuna
+    study=optuna.create_study(direction=direction,sampler=optuna.samplers.TPESampler(seed=seed))
+    def trial_objective(trial):
+        config={key:trial.suggest_categorical(key,values) for key,values in sorted(space.items())}
+        return objective(config)
+    study.optimize(trial_objective,n_trials=max_trials,timeout=seconds,n_jobs=1)
+    return dict(parameters=study.best_params,score=study.best_value,trials=len(study.trials))
+
+
 class Cache:
     def __init__(self,directory):self.directory=Path(directory)
 

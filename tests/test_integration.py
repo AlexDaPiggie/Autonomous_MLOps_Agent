@@ -37,11 +37,12 @@ class Integration(unittest.TestCase):
                     self.assertEqual(result["completed"],[]) # duplicate fingerprint, no second worker
                     self.assertTrue((directory/".kaggle-agent"/"checkpoint.json").is_file())
             store=Store(db)
-            self.assertEqual(len(store.rows("SELECT * FROM experiments WHERE state='COMPLETED'")),4)
+            self.assertEqual(len(store.rows("SELECT * FROM experiments WHERE state='COMPLETED'")),12)
+            self.assertEqual(len(store.rows("SELECT * FROM experiments WHERE state='COMPLETED' AND fidelity='full'")),4)
             self.assertEqual(len(store.rows("SELECT * FROM costs")),0)
-            self.assertEqual(len(store.rows("SELECT * FROM predictions")),4)
+            self.assertEqual(len(store.rows("SELECT * FROM predictions")),12)
             # Mutation after evaluation blocks promotion even if DB result is complete.
-            row=store.rows("SELECT * FROM predictions")[0]
+            row=store.rows("SELECT p.* FROM predictions p JOIN experiments e ON p.experiment=e.id WHERE e.fidelity='full'")[0]
             exp=store.rows("SELECT * FROM experiments WHERE id=?",(row["experiment"],))[0]
             Path(row["path"]).write_text("{}")
             with self.assertRaises(GateError):promote(store,exp["competition"],exp["id"])
@@ -57,3 +58,15 @@ class Integration(unittest.TestCase):
             code,result=self.invoke(db,"start","--competition",temp,"--execute")
             self.assertEqual(code,0)
             self.assertEqual(result["completed"],[])
+
+    def test_two_trial_campaign_assesses_frozen_ensemble(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);db=root/"db.sqlite3"
+            self.invoke(db,"init","--competition",temp,"--task","regression","--demo")
+            code,result=self.invoke(db,"start","--competition",temp,"--execute","--trials","2")
+            self.assertEqual(code,0,result)
+            self.assertEqual(len(result["completed"]),3) # two full bases plus conditional assessment
+            store=Store(db)
+            ensembles=[json.loads(r["result"]) for r in store.rows("SELECT result FROM experiments WHERE fidelity='full'") if r["result"] and json.loads(r["result"])["score_type"]=="conditional_meta_cv"]
+            self.assertEqual(len(ensembles),1)
+            self.assertIn("ensemble_baseline_scores",ensembles[0])

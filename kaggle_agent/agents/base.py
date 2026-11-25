@@ -18,6 +18,7 @@ class AgentResult:
     next_action: str = "inspect checkpoint"
     termination_reason: str = "unknown"
     usage: dict | None = None
+    proposals: list = field(default_factory=list)
 
 
 def validate_result(value):
@@ -35,6 +36,9 @@ def validate_result(value):
         raise ValueError("Invalid result text")
     if value.get("usage") is not None and not isinstance(value["usage"],dict):
         raise ValueError("Invalid usage")
+    proposals=value.get("proposals",[])
+    if not isinstance(proposals,list) or len(proposals)>4 or any(not isinstance(p,dict) or not isinstance(p.get("hypothesis"),str) or not isinstance(p.get("config"),dict) for p in proposals):
+        raise ValueError("Proposals require up to four hypothesis/config objects")
     return AgentResult(**{k:v for k,v in value.items() if k in AgentResult.__dataclass_fields__})
 
 
@@ -62,8 +66,8 @@ class CLIAdapter:
         if not binary:
             raise FileNotFoundError(self.name)
         if self.name == "codex":
-            return [binary,"exec","--sandbox","read-only","--output-last-message",str(result_path),prompt]
-        return [binary,"--print","--permission-mode","plan","--output-format","json",prompt]
+            return [binary,"exec","--sandbox","read-only","--json","--output-last-message",str(result_path),"-"]
+        return [binary,"--print","--permission-mode","plan","--output-format","json"]
 
     def run(self, task, directory, *, authorized=False, seconds=300, heartbeat=lambda **kw: None,
             should_stop=lambda: False):
@@ -84,7 +88,7 @@ class CLIAdapter:
                   "Return only a JSON object using this protocol: " + json.dumps(template))
         final_path=folder/"final.json"
         outcome = run_process(self.command(prompt,final_path),directory,folder/"output.log",seconds=seconds,
-                              heartbeat=heartbeat,should_stop=lambda:self.cancelled or should_stop())
+                              heartbeat=heartbeat,should_stop=lambda:self.cancelled or should_stop(),input_text=prompt)
         if outcome["termination_reason"] != "exit":
             result = AgentResult("stopped" if outcome["termination_reason"] == "user_stop" else "failed",
                                  checkpoint=str(folder),termination_reason=outcome["termination_reason"])
@@ -107,8 +111,15 @@ class CLIAdapter:
                         value["session_id"] = envelope.get("session_id")
                         value["usage"] = envelope.get("usage")
                     result = validate_result(value)
+                    if self.name=="codex":
+                        for line in raw.splitlines():
+                            try:event=json.loads(line)
+                            except ValueError:continue
+                            if event.get("type")=="thread.started":result.session_id=event.get("thread_id")
+                            if event.get("type")=="turn.completed":result.usage=event.get("usage")
                 except (ValueError,TypeError,KeyError,OSError):
                     result = AgentResult("blocked",checkpoint=str(folder),termination_reason="malformed_output")
+        if result.checkpoint is None:result.checkpoint=str(folder)
         result_path.write_text(json.dumps(asdict(result),indent=2),encoding="utf-8")
         self.last_result = result
         return result

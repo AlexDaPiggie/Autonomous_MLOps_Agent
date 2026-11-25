@@ -58,7 +58,7 @@ def stagnation(results, branches=()):
     """Execution failures don't increment the eight completed own-pipeline counter."""
     count = 0
     for row in reversed(results):
-        if row.get("state") != "COMPLETED" or row.get("public_merge",False):
+        if row.get("state") != "COMPLETED" or row.get("public_merge",False) or row.get("fidelity","full")!="full":
             continue
         if row.get("standalone_improved") or row.get("ensemble_improved"):
             break

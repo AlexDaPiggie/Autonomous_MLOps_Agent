@@ -1,4 +1,5 @@
 import json
+import uuid
 from pathlib import Path
 from kaggle_agent.storage.database import utcnow
 
@@ -6,7 +7,7 @@ from kaggle_agent.storage.database import utcnow
 def atomic_write(path, content):
     path = Path(path)
     path.parent.mkdir(parents=True,exist_ok=True)
-    temp = path.with_suffix(path.suffix + ".tmp")
+    temp = path.with_suffix(path.suffix + "."+uuid.uuid4().hex+".tmp")
     temp.write_text(content,encoding="utf-8")
     temp.replace(path)
 

@@ -14,7 +14,7 @@ def require(condition, message):
         raise GateError(message)
 
 
-def validate_profile(profile):
+def validate_profile(profile, *, check_deadline=True):
     required = {"task", "metric", "direction", "data_hash", "split_hash", "rules_reviewed",
                 "external_resources", "validation", "deadline", "baseline", "constraints"}
     require(required <= profile.keys(), f"Missing profile fields: {sorted(required - profile.keys())}")
@@ -26,7 +26,7 @@ def validate_profile(profile):
     if profile["deadline"]:
         deadline = datetime.fromisoformat(profile["deadline"])
         require(deadline.tzinfo is not None, "Deadline requires timezone")
-        require(deadline > datetime.now(timezone.utc), "Competition deadline passed")
+        if check_deadline:require(deadline > datetime.now(timezone.utc), "Competition deadline passed")
     return fingerprint(profile)
 
 
@@ -44,7 +44,25 @@ def prelaunch(profile, metadata, *, smoke_passed, seconds, memory_mb, provider):
     require(seconds <= profile["constraints"].get("seconds",1800) and memory_mb <= profile["constraints"].get("memory_mb",2048),"Existing stricter resource caps apply")
     require(metadata["data_hash"] == profile["data_hash"] and metadata["split_hash"] == profile["split_hash"], "Data/split mismatch")
     require(metadata["metric"] == profile["metric"], "Metric mismatch")
+    validate_config(profile["task"],metadata["config"])
     return experiment_fingerprint(metadata)
+
+
+def validate_config(task,config):
+    require(isinstance(config,dict),"Config must be a JSON object")
+    require(type(config.get("seed",42)) is int and 0<=config.get("seed",42)<2**32,"Invalid deterministic seed")
+    if config.get("blend_sources"):
+        require(task in {"classification","regression"} and 1<=len(config["blend_sources"])<=5,"Invalid bounded blend library")
+        return
+    if task in {"classification","regression"}:
+        require(config.get("family","linear") in {"linear","forest","hist","catboost","lightgbm","xgboost"},"Unsupported tabular model family")
+    elif task=="forecasting":require(config.get("family","seasonal_naive") in {"seasonal_naive","lag_ridge","lag_boosting"},"Unsupported forecast family")
+    else:require(config.get("operator","anneal") in {"greedy","local","anneal","restart","exact"},"Unknown optimization operator")
+    params=config.get("parameters") or {}
+    require(isinstance(params,dict),"Invalid model parameters")
+    for key in ("iterations","max_depth","max_leaf_nodes"):
+        if key in params:require(type(params[key]) is int and 1<=params[key]<=1000,"Model iteration/depth bound exceeded")
+    require(type(config.get("iterations",100)) is int and 1<=config.get("iterations",100)<=100000,"Search iteration bound exceeded")
 
 
 def artifacts_complete(manifest, root):

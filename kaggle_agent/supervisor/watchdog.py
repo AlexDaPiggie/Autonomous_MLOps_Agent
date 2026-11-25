@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 import time
 import psutil
 
@@ -30,17 +31,22 @@ def terminate_tree(pid, created):
 
 
 def run_process(command, cwd, log_path, *, seconds=1800, memory_mb=1024,
-                heartbeat=lambda **kw: None, should_stop=lambda: False, env=None):
+                heartbeat=lambda **kw: None, should_stop=lambda: False, env=None,input_text=None):
     if not 0 < seconds <= 1800 or not 0 < memory_mb <= 2048:
         raise ValueError("Invalid process bounds")
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     start = time.monotonic()
     reason, peak = "exit", 0
+    descendants={}
     with log_path.open("w", encoding="utf-8") as output:
-        child = subprocess.Popen(command, cwd=cwd, stdout=output, stderr=subprocess.STDOUT,
-                                 stdin=subprocess.DEVNULL, env=env,
-                                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+        # Keep prompts out of Windows .cmd arguments and avoid pipe-buffer deadlocks.
+        with tempfile.TemporaryFile() as input_file:
+            if input_text is not None:
+                input_file.write(input_text.encode("utf-8"));input_file.seek(0)
+            child = subprocess.Popen(command, cwd=cwd, stdout=output, stderr=subprocess.STDOUT,
+                                     stdin=input_file if input_text is not None else subprocess.DEVNULL, env=env,
+                                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
         proc = psutil.Process(child.pid)
         created = proc.create_time()
         try:
@@ -48,7 +54,9 @@ def run_process(command, cwd, log_path, *, seconds=1800, memory_mb=1024,
             while child.poll() is None:
                 elapsed = time.monotonic() - start
                 try:
-                    rss = sum(p.memory_info().rss for p in [proc] + proc.children(recursive=True) if p.is_running())
+                    children=proc.children(recursive=True)
+                    descendants.update({p.pid:p.create_time() for p in children})
+                    rss = sum(p.memory_info().rss for p in [proc] + children if p.is_running())
                 except psutil.NoSuchProcess:
                     rss = 0
                 peak = max(peak, rss)
@@ -64,5 +72,7 @@ def run_process(command, cwd, log_path, *, seconds=1800, memory_mb=1024,
             terminate_tree(child.pid, created)
             child.wait(timeout=5)
             raise
+        finally:
+            for pid,birth in descendants.items():terminate_tree(pid,birth)
     return dict(exit_code=code, termination_reason=reason, elapsed_seconds=time.monotonic()-start,
                 peak_rss_bytes=peak, log=str(log_path), pid=child.pid, process_created=created)

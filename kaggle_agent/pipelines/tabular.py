@@ -65,6 +65,14 @@ def cv_predict(X,y,folds,test_X,*,task,family="linear",seed=42,categorical=(),pa
     return dict(oof=oof.tolist(),test=(test/len(set(folds))).tolist(),seed=seed)
 
 
+def validate_group_folds(groups,folds):
+    require(len(groups)==len(folds),"Group/fold length mismatch")
+    mapping={}
+    for group,fold in zip(groups,folds):
+        require(group not in mapping or mapping[group]==fold,"Group leakage across folds")
+        mapping[group]=fold
+
+
 def make_folds(y,*,task,n_splits=3,seed=42,groups=None):
     import numpy as np
     from sklearn.model_selection import StratifiedKFold,KFold,GroupKFold

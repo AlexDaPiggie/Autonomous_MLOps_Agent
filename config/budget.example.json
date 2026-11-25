@@ -1,0 +1,11 @@
+{
+  "monthly_cents": 4000,
+  "competition_cents": 500,
+  "campaign_cents": 100,
+  "invocation_cents": 100,
+  "concurrency": 1,
+  "reserve_cents": 500,
+  "fixed_cents": 0,
+  "confirmed": false,
+  "billing_day": 1
+}

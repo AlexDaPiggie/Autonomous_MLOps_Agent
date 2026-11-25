@@ -13,7 +13,7 @@ class Controller:
         self.owner = uuid.uuid4().hex
 
     def register(self, path, profile):
-        digest = validate_profile(profile)
+        digest = validate_profile(profile,check_deadline=False)
         with self.store.transaction() as db:
             row = db.execute("SELECT * FROM competitions WHERE id=?", (self.competition,)).fetchone()
             if row:
@@ -66,20 +66,28 @@ class Controller:
             db.execute("INSERT INTO campaigns(id,competition,state,created,max_trials) VALUES(?,?,?,?,?)", (key, self.competition, "PENDING", utcnow(), max_trials))
             return key
 
-    def launch(self, campaign, metadata, provider, *, smoke_passed, seconds=60, memory_mb=512, payload=None, fidelity="full"):
+    def launch(self, campaign, metadata, provider, *, smoke_passed, seconds=60, memory_mb=512, payload=None, fidelity="full",branch=None,parent=None):
         with self.store.transaction() as db:
             comp = self.assert_lease(db)
             require(not comp["stop_requested"], "User stop requested")
             profile = json.loads(comp["profile"])
             digest = prelaunch(profile, metadata, smoke_passed=smoke_passed, seconds=seconds, memory_mb=memory_mb, provider=provider.name)
+            for source in metadata["config"].get("blend_sources",[]):
+                registered=db.execute("SELECT p.*,e.metadata,e.result,e.fidelity FROM predictions p JOIN experiments e ON p.experiment=e.id WHERE p.path=? AND p.checksum=? AND e.competition=? AND e.state='COMPLETED'",(source["path"],source["sha256"],self.competition)).fetchone()
+                require(registered is not None and registered["fidelity"]=="full","Blend sources must be full registered predictions")
+                source_meta=json.loads(registered["metadata"]);source_result=json.loads(registered["result"])
+                require(source_result.get("independently_scored") and source_result["score_type"]=="base_oof","Blend inputs require independently scored base OOF")
+                require(all(metadata[k]==source_meta[k] for k in ("data_hash","split_hash","evaluator_hash","metric","dataset_checksum")),"Incompatible blend source provenance")
             camp = db.execute("SELECT * FROM campaigns WHERE id=? AND competition=?", (campaign, self.competition)).fetchone()
             require(camp and camp["attempts"] < camp["max_trials"], "Campaign trial cap reached")
             require(not db.execute("SELECT 1 FROM remote_jobs j JOIN experiments e ON e.id=j.experiment WHERE e.competition=? AND j.state IN ('INTENT','RUNNING','UNKNOWN')", (self.competition,)).fetchone(), "Reconcile active/ambiguous job first")
             key = uuid.uuid4().hex
-            db.execute("INSERT INTO experiments(id,competition,campaign,fingerprint,state,fidelity,metadata,created) VALUES(?,?,?,?,?,?,?,?)",
-                       (key, self.competition, campaign, digest, "RUNNING", fidelity, json.dumps(metadata), utcnow()))
+            if branch:require(db.execute("SELECT id FROM research_branches WHERE id=? AND competition=?",(branch,self.competition)).fetchone(),"Branch belongs to different competition")
+            if parent:require(db.execute("SELECT id FROM experiments WHERE id=? AND competition=?",(parent,self.competition)).fetchone(),"Parent belongs to different competition")
+            db.execute("INSERT INTO experiments(id,competition,campaign,branch,parent,fingerprint,state,fidelity,metadata,created) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                       (key, self.competition, campaign, branch, parent, digest, "RUNNING", fidelity, json.dumps(metadata), utcnow()))
             db.execute("INSERT INTO remote_jobs(key,experiment,provider,state,heartbeat,details) VALUES(?,?,?,?,?,?)", (key,key,provider.name,"INTENT",utcnow(),json.dumps(dict(seconds=seconds,memory_mb=memory_mb))))
-            db.execute("UPDATE campaigns SET attempts=attempts+1,state='RUNNING' WHERE id=?", (campaign,))
+            db.execute("UPDATE campaigns SET attempts=attempts+?,state='RUNNING' WHERE id=?", (int(fidelity=="full"),campaign))
             if comp["state"] != "PENDING":
                 transition(self.store,self.competition,"PENDING","next bounded experiment",db)
             transition(self.store,self.competition,"TESTING","smoke passed",db)
@@ -107,6 +115,8 @@ class Controller:
             with self.store.transaction() as db:
                 self.assert_lease(db)
                 db.execute("UPDATE remote_jobs SET state=?,job_id=COALESCE(?,job_id),heartbeat=? WHERE key=?", (state,result.get("job_id"),utcnow(),job["key"]))
+                details=json.loads(job["details"]);details["last_provider_status"]=result
+                db.execute("UPDATE remote_jobs SET details=? WHERE key=?",(json.dumps(details),job["key"]))
                 if state == "UNKNOWN":
                     transition(self.store,self.competition,"BLOCKED","ambiguous launch; never duplicate",db)
                 elif state in {"RUNNING","COMPLETED"}:
@@ -135,6 +145,10 @@ class Controller:
                 scores=independently_score(metadata,root)
                 require(len(scores)==len(result["fold_scores"]) and all(abs(a-b)<1e-10 for a,b in zip(scores,result["fold_scores"])),"Reported metric differs from independent evaluator")
                 result=result|dict(fold_scores=scores,independently_scored=True)
+                if metadata["config"].get("blend_sources"):
+                    from pathlib import Path
+                    artifact=json.loads((Path(root)/"predictions.json").read_text())
+                    require(result.get("ensemble_baseline_scores")==artifact["ensemble_baseline_scores"],"Baseline meta-score mismatch")
             require(not self.should_stop(), "Stopped results require explicit recovery review")
             transition(self.store,self.competition,"EVALUATING","independent artifact checks",db)
             db.execute("UPDATE experiments SET state='COMPLETED',result=? WHERE id=?", (json.dumps(result,allow_nan=False),experiment))
@@ -143,6 +157,9 @@ class Controller:
             for relative,digest in result["artifacts"].items():
                 path=str((Path(root)/relative).resolve())
                 db.execute("INSERT INTO predictions VALUES(?,?,?,?,?)",(fingerprint(dict(experiment=experiment,path=path)),experiment,path,digest,json.dumps(metadata)))
+            logs={str(p.resolve()):checksum(p) for p in Path(root).glob("*.log")}
+            self.store.event("experiment_completed",dict(experiment=experiment,logs=logs,stdout_stderr="combined worker.log",
+                             next_action="assess champions and portfolio"),self.competition,db)
             db.execute("UPDATE remote_jobs SET state='COMPLETED' WHERE experiment=?", (experiment,))
             db.execute("UPDATE campaigns SET state='COMPLETED',next_action='review portfolio' WHERE id=?", (exp["campaign"],))
             transition(self.store,self.competition,"COMPLETED","campaign completed; system may continue",db)

@@ -41,4 +41,13 @@ def conditional_blend(candidates,y,metric,*,classification=False,regularization=
     result.update(predictions=predictions.tolist(),score_type="conditional_meta_cv",
                   limitation="Library was selected using these OOF labels; not independent nested pipeline validation",
                   correlations=np.corrcoef(np.column_stack([p[:,1] if p.ndim==2 else p for p in arrays]),rowvar=False).tolist() if len(arrays)>1 else [[1.]])
+    if all("test_predictions" in candidate for candidate in candidates):
+        test_ids=candidates[0]["test_ids"]
+        tests=[np.asarray(aligned(c["test_ids"],c["test_predictions"],test_ids)) for c in candidates]
+        test_features=np.concatenate([np.log(np.clip(p,1e-6,1-1e-6)) for p in tests],axis=1) if classification else np.column_stack(tests)
+        # Full-library refit is for test inference only, never scored as held-out CV.
+        final_model=LogisticRegression(C=1/regularization,max_iter=300,random_state=0) if classification else Ridge(alpha=regularization)
+        final_model.fit(features,y)
+        result["test_predictions"]=(final_model.predict_proba(test_features) if classification else final_model.predict(test_features)).tolist()
+        result["test_ids"]=test_ids
     return result

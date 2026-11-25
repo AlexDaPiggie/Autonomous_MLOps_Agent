@@ -1,5 +1,6 @@
 """Archive known legacy formats verbatim; missing provenance is never fabricated."""
 import json
+import hashlib
 from pathlib import Path
 from kaggle_agent.storage.database import checksum, utcnow
 
@@ -15,21 +16,24 @@ def migrate(store, directory, *, apply=False):
         path = directory/name
         if not path.is_file():
             continue
-        digest = checksum(path)
-        content = path.read_text(encoding="utf-8-sig")
+        raw=path.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
+        content = raw.decode("utf-8")
         seen = store.rows("SELECT checksum FROM legacy_imports WHERE source=?", (str(path),))
         status = "unchanged" if any(r["checksum"] == digest for r in seen) else "conflict_preserved" if seen else "new"
         item = dict(source=str(path), checksum=digest, status=status, warnings=[])
         if name.startswith("prediction_registry"):
             try:
-                records = ([json.loads(line) for line in content.splitlines() if line.strip()]
-                           if name.endswith("jsonl") else json.loads(content))
+                parseable=content.lstrip("\ufeff")
+                records = ([json.loads(line) for line in parseable.splitlines() if line.strip()]
+                           if name.endswith("jsonl") else json.loads(parseable))
                 if not isinstance(records,list):
                     records = [records]
                 item["records"] = len(records)
                 item["warnings"].append("Legacy records archived, not eligible for promotion until full provenance is verified")
             except (ValueError,TypeError):
                 item["warnings"].append("Malformed registry retained verbatim; manual review required")
+        if checksum(path)!=digest:item["warnings"].append("Source changed during snapshot; archive preserves the read snapshot; review before adoption")
         entries.append((str(path),digest,content,utcnow()))
         report.append(item)
     if apply and entries:

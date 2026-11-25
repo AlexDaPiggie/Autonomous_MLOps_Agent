@@ -86,6 +86,10 @@ def promote(store,competition,experiment,*,ensemble=False,margin=0.):
         from pathlib import Path
         independently_score(meta,Path(predictions[0]["path"]).parent)
         require(not ensemble or result.get("score_type") in {"conditional_meta_cv","nested"},"Ensemble needs held-out meta-validation")
+        if ensemble:
+            require("ensemble_baseline_scores" in result,"Paired baseline combiner must use identical meta folds")
+            contribution=paired_improvement(result["fold_scores"],result["ensemble_baseline_scores"],json.loads(comp["profile"])["direction"],margin)
+            if not contribution["improved"]:return contribution
         baseline=comp[column]
         if baseline:
             old=db.execute("SELECT * FROM experiments WHERE id=?",(baseline,)).fetchone()
@@ -112,11 +116,17 @@ def independently_score(metadata,root):
     require(evaluator_version()==metadata["evaluator_hash"],"Evaluator source changed")
     data=json.loads(data_path.read_text(encoding="utf-8"))
     artifact=json.loads((Path(root)/"predictions.json").read_text(encoding="utf-8"))
+    if metadata["config"].get("blend_sources"):
+        from .assessment import assess
+        import numpy as np
+        expected=assess(data,metadata["config"]["blend_sources"],metadata["metric"],metadata["config"].get("baseline_index",0))
+        require(bool(np.allclose(expected["predictions"],artifact["predictions"],rtol=0,atol=1e-10)),"Meta-validation implementation mismatch")
+        require(expected["ensemble_baseline_scores"]==artifact["ensemble_baseline_scores"],"Baseline combiner must use identical permitted rows")
     if data["task"] in {"classification","regression"}:
         result=evaluate(data["ids"],data["y"],data["folds"],artifact["ids"],artifact["predictions"],metadata["metric"])
         aligned(artifact["test_ids"],artifact["test_predictions"],data["test_ids"])
         require(finite(artifact["test_predictions"]),"Nonfinite test prediction")
-        require(result["data_hash"]==metadata["data_hash"] and result["split_hash"]==metadata["split_hash"],"Frozen evaluation identity mismatch")
+        require(fingerprint(data)==metadata["data_hash"] and result["split_hash"]==metadata["split_hash"],"Frozen evaluation identity mismatch")
         return result["fold_scores"]
     if data["task"]=="optimization":
         from kaggle_agent.pipelines.optimization import check_knapsack

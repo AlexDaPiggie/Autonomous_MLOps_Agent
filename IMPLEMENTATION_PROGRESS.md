@@ -84,3 +84,46 @@ migrate/export/benchmark. Local child has its own time/RSS cap if parent is lost
 paths for all four domains in temporary paths with spaces. No inference or cloud calls.
 Next: acceptance hardening (restart/process failures, adapter faults, initializer),
 operator guide, benchmark execution and final scope/limitations audit.
+
+## Final increment and validation (2026-11-24 local date)
+- Integrated screen -> intermediate -> full jobs, parent/branch lineage, incumbent
+  retention and automatic conditional ensemble assessment. Only independently scored
+  full results promote. Fingerprints cover all feature/test data, fixed folds, code,
+  config, seed and evaluator. Frozen blend sources must be registered compatible OOF.
+- Added nested fixed-library stacking and verified outer-label perturbation invariance;
+  exact SciPy knapsack baseline, group-leakage checks, bounded optional Optuna helper.
+- Hardened adapters with stdin transport (no prompt in Windows shell arguments),
+  protocol/checkpoint/observed usage normalization, blocked metered environment and
+  bounded typed configuration proposals. No real inference invoked.
+- Added billing fact imports, stricter configuration validation, overrun invalidation,
+  retained stale reservations, log checksums, descendant cleanup, unique atomic writes.
+- Updated shared precedence, kickoff, README, batch initializer with Python backend,
+  budget examples and OPERATING_GUIDE.md. Manual history and _backups untouched.
+- Actual legacy migration exercise: 5 files, 294 registry records; dry-run/apply/repeat
+  into temporary SQLite; exactly 5 snapshots, all second-import statuses unchanged,
+  source checksums identical. BOM/CRLF round-trip separately tested.
+- Final `python -m unittest discover -v`: **33 passed, 0 failures, 66.148s**.
+  Windows batch wrapper, local process/DB crash, mocked CLI faults, all domain CLI
+  pipelines, duplicate resume, finite/alignment/leakage gates, nested/conditional
+  evaluation, concurrent reservations and rotation covered.
+- `python -m compileall -q kaggle_agent tests`, `git diff --check`, doctor: passed.
+- Additional tiny CPU checks: hist/CatBoost/LightGBM/XGBoost classification/regression
+  (8 checks), calibration + interactions, log-target inverse: passed. LightGBM emitted
+  feature-name warnings and sklearn one probability-sum roundoff warning; no failure.
+- Benchmark: 8 tasks/16 bounded variant runs/2 trials each, 36.095s measured total.
+  Mean retained scores baseline proxy -> upgraded: classification log loss .372776 ->
+  .372776; regression RMSE 3.782812 -> 3.782812; knapsack objective 225 -> 225;
+  forecasting RMSE .600000 -> .024240. Weaker forests rejected. No live medal evidence.
+- Expenditure: $0 paid compute/API calls. No Kaggle submissions, remote push or new
+  subscriptions. Actual existing subscription billing remains unconfirmed; paid
+  execution and submission backends remain deliberately disabled.
+
+## Commits / handoff
+71ad754 reliability foundations; 84def11 research/memory preservation;
+13f70fe evaluation/pipelines/CLI. Final hardening/docs commit follows this entry;
+use `git log -4 --oneline` for its ID. All implementation files are explicitly staged;
+user-owned KAGGLE_UPGRADE_SPEC.md stays untracked and unmodified.
+
+IMPLEMENTATION_REPORT.md maps the eleven upgrades to actual code and identifies
+remaining boundaries. No tests currently fail. Resume future development from those
+boundaries rather than recreating a plan or enabling real spending/submissions.

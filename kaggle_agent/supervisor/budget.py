@@ -1,5 +1,4 @@
 """Integer-cent ledger; uncertain usage stays reserved across period rollover."""
-from calendar import monthrange
 from datetime import datetime, timezone
 import json
 import uuid
@@ -20,15 +19,19 @@ class Budget:
         self.store = store
 
     def configure(self, **settings):
+        if settings.keys()-DEFAULTS.keys():raise BudgetError("Unknown budget setting")
         config = DEFAULTS | settings
+        if type(config["confirmed"]) is not bool:raise BudgetError("Confirmation must be a boolean")
         for key in ("monthly_cents", "competition_cents", "campaign_cents", "invocation_cents",
                     "concurrency", "reserve_cents", "fixed_cents", "billing_day"):
             if type(config[key]) is not int or config[key] < 0:
                 raise BudgetError(f"Invalid integer setting: {key}")
         if not 1 <= config["billing_day"] <= 28 or not 1 <= config["concurrency"] <= 1:
             raise BudgetError("Billing day must be 1..28 and paid concurrency one")
-        if config["monthly_cents"] > 4000 or config["competition_cents"] > 500 or config["campaign_cents"] > 100:
+        if config["monthly_cents"] > 4000 or config["competition_cents"] > 500 or config["campaign_cents"] > 100 or config["invocation_cents"]>100:
             raise BudgetError("Cannot relax approved default caps")
+        if config["confirmed"] and config["fixed_cents"]+config["reserve_cents"]>config["monthly_cents"]:
+            raise BudgetError("Fixed expenses and safety margin already exceed monthly cap")
         with self.store.transaction() as db:
             old = db.execute("SELECT value FROM budget_config WHERE id=1").fetchone()
             if old:
@@ -61,6 +64,22 @@ class Budget:
             return dict(config=config, period=period, committed_cents=total,
                         available_cents=max(0, config["monthly_cents"] - config["reserve_cents"] - total),
                         warnings=[n for n in (50, 75, 90) if total * 100 >= config["monthly_cents"] * n])
+
+    def record_charge(self, *, identifier, actual_cents, kind, period, competition=None, campaign=None):
+        """Import billing facts, including failures/storage/tax; never hide overruns."""
+        if type(actual_cents) is not int or actual_cents<0 or kind not in {"compute","inference","storage","tax","subscription","other"}:
+            raise BudgetError("Invalid billing fact")
+        datetime.fromisoformat(period)
+        with self.store.transaction() as db:
+            previous=db.execute("SELECT * FROM costs WHERE id=?",(identifier,)).fetchone()
+            expected=(period,competition,campaign,kind,actual_cents)
+            if previous:
+                if (previous["period"],previous["competition"],previous["campaign"],previous["kind"],previous["actual"])!=expected:
+                    raise BudgetError("Conflicting billing import")
+                return identifier
+            db.execute("INSERT INTO costs VALUES(?,?,?,?,?,?,?,?,?)",(identifier,period,competition,campaign,kind,actual_cents,actual_cents,"settled",utcnow()))
+            self.store.event("billing_import",dict(id=identifier,kind=kind,actual_cents=actual_cents),db=db)
+        return identifier
 
     def reserve(self, competition, campaign, maximum_cents, *, pricing_known=True, authorized=False):
         if not authorized or not pricing_known or type(maximum_cents) is not int or maximum_cents <= 0:
@@ -99,3 +118,6 @@ class Budget:
                        (actual_cents, "uncertain" if actual_cents is None else "settled", key))
             self.store.event("cost_reconciled", dict(id=key, actual_cents=actual_cents,
                              overrun=actual_cents is not None and actual_cents > row["reserved"]), db=db)
+            if actual_cents is not None and actual_cents>row["reserved"]:
+                config=self.config(db);config["confirmed"]=False
+                db.execute("INSERT OR REPLACE INTO budget_config VALUES(1,?)",(json.dumps(config),))

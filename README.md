@@ -1,5 +1,13 @@
 # Shared Kaggle setup
 
+The executable local supervisor is now available. See [OPERATING_GUIDE.md](OPERATING_GUIDE.md)
+for installation, synthetic examples, migration, recovery, budget configuration and
+current limitations. [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md) records
+preflight evidence, local commits and validation. Existing prompts/manual workflows
+remain available. Controller execution is dry-run by default; paid providers and
+network submissions are disabled. The legacy platform notes below describe the
+manual workflow, and do not authorize spending or submissions under the controller.
+
 - `rules.md`: the rules. Every competition's AGENTS.md points to it (CLAUDE.md imports AGENTS.md and rules.md). Edit it once and all competitions change.
 - `prompts/`: the prompts (kickoff, research, loop, stuck, skeptic, ensemble, submit, audit). Ask Claude "run the stuck protocol" and it reads the file.
 

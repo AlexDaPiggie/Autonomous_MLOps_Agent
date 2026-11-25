@@ -34,10 +34,20 @@ class Performance(unittest.TestCase):
         self.assertFalse(paired_improvement([1,1,1,1,100],[2]*5,"minimize")["improved"])
 
     def test_leakage_and_infeasibility(self):
+        from kaggle_agent.pipelines.tabular import validate_group_folds
+        with self.assertRaises(GateError):validate_group_folds(["person1","person1"],[0,1])
         with self.assertRaises(GateError):check_temporal([1,3],[2,4])
         with self.assertRaises(GateError):check_temporal([1,2],[3,4],feature_available_times=[2,4])
         with self.assertRaises(GateError):check_knapsack([1,1],[5,6],[1,2],10)
         self.assertEqual(fold_target_encode(["x","x"],[1,3],["unseen"]),[2.])
+
+    def test_fingerprint_covers_feature_and_test_data(self):
+        from kaggle_agent.__main__ import dataset_identity
+        data=synthetic("regression",3);changed=copy.deepcopy(data)
+        changed["X"][0][0]+=1
+        self.assertNotEqual(dataset_identity(data)["data_hash"],dataset_identity(changed)["data_hash"])
+        changed=copy.deepcopy(data);changed["test_X"][0][0]+=1
+        self.assertNotEqual(dataset_identity(data)["data_hash"],dataset_identity(changed)["data_hash"])
 
     def test_conditional_blending_complement(self):
         import numpy as np
@@ -50,6 +60,18 @@ class Performance(unittest.TestCase):
         self.assertLess(sum(both["fold_scores"]),sum(one["fold_scores"]))
         self.assertEqual(both["score_type"],"conditional_meta_cv")
         with self.assertRaises(GateError):validate_library([a,b|dict(split_hash="wrong")])
+
+    def test_nested_outer_label_exclusion_and_exact_optimizer(self):
+        from kaggle_agent.evaluation.nested import nested_stack
+        from kaggle_agent.pipelines.optimization import solve_knapsack_exact
+        data=synthetic("regression",17)
+        first=nested_stack(data["X"],data["y"],data["folds"],data["ids"],"rmse",families=("linear",))
+        changed=[value+1000 if fold==0 else value for value,fold in zip(data["y"],data["folds"])]
+        second=nested_stack(data["X"],changed,data["folds"],data["ids"],"rmse",families=("linear",))
+        for i,fold in enumerate(data["folds"]):
+            if fold==0:self.assertAlmostEqual(first["predictions"][i],second["predictions"][i])
+        exact=solve_knapsack_exact([2,3,4],[3,4,5],5)
+        self.assertEqual(exact["score"],7)
 
     def test_fidelity_cache_search(self):
         self.assertIsNone(next_fidelity("screen",False))
