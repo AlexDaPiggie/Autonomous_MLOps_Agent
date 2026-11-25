@@ -46,6 +46,16 @@ def _save(path, value):
     path.write_text(json.dumps(value, indent=2), encoding="utf-8")
 
 
+def plain(text):
+    """Markdown/HTML to readable prose: no tags, badges, link targets or style blocks."""
+    text = re.sub(r"<style.*?</style>", " ", text or "", flags=re.S)
+    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text)          # images and badges
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)       # [text](url) -> text
+    text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+    text = re.sub(r"[#*_`>|]+|-{3,}", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def clean(text, limit):
     text = html.unescape(re.sub(r"<[^>]+>", " ", text or ""))
     return re.sub(r"\s+", " ", text).strip()[:limit]
@@ -62,7 +72,9 @@ def digest_notebook(path, limit=6000):
     for cell in json.loads(raw).get("cells", []):
         source = "".join(cell.get("source", []))
         if cell.get("cell_type") == "markdown":
-            parts.append(source.strip()[:500])
+            prose = plain(source)
+            if prose:
+                parts.append(prose[:500])
         elif cell.get("cell_type") == "code":
             parts.append("```\n" + source.strip()[:700] + "\n```")
             for out in cell.get("outputs", [])[:2]:
@@ -77,7 +89,7 @@ def insight(text, limit=650):
     """The prose of a digest (what the author says), for the short brief section."""
     prose = re.sub(r"```.*?```", " ", text, flags=re.S)
     prose = "\n".join(line for line in prose.splitlines() if not line.startswith("->"))
-    return re.sub(r"\s+", " ", prose).strip()[:limit]
+    return plain(prose)[:limit]
 
 
 def refresh_notebooks(slug, root, per_sort=3, run=kaggle_cli.run):

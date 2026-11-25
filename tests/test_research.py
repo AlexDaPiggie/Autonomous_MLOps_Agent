@@ -101,6 +101,10 @@ class Research(unittest.TestCase):
         self.assertEqual(report["notebooks"], 2)               # notebooks unaffected; non-ASCII author decoded
         self.assertIn("Ali Ğ", (public.folder(self.comp) / "notebooks" / "alice__strong-baseline.md").read_text(encoding="utf-8"))
 
+    def test_markup_noise_is_removed(self):
+        text = public.plain('<div style="color:red">Hello</div> ![b](http://x/y.svg) [the idea](http://z) ## Title **bold**')
+        self.assertEqual(text, "Hello the idea Title bold")
+
     def test_missing_kaggle_cli_never_raises(self):
         os.environ["KA_KAGGLE_CLI"] = json.dumps(["definitely-not-a-program-xyz"])
         report = public.refresh(self.comp, "santa-2026")
