@@ -323,6 +323,12 @@ def printer(settings, st, directory, profile, competition):
                         notes.append(f"{label} " + ("up to date (read within the last day)" if why == "recent" else "will retry later"))
                 got = "; ".join(notes) or "nothing new"
             print(f"  research: {got}" + "".join(f"\n  research problem: {e}" for e in d.get("errors", [])), flush=True)
+        elif kind == "research_analysis":
+            if d.get("analyzed"):
+                print(f"  findings: {d['analyzed']} new notes read, {d['findings']} findings saved, {d['branches']} new ideas queued"
+                      + (f" ({d['waiting']} notes waiting)" if d.get("waiting") else ""), flush=True)
+            elif d.get("error"):
+                print(f"  findings problem: {d['error']} (notes stay pending)", flush=True)
         elif kind == "agent_done":
             print(f"  idea: {d['hypothesis']}", flush=True)
         elif kind == "stage":

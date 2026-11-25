@@ -282,6 +282,20 @@ def run_research(controller, public, directory, slug):
     return box.get("report", dict(errors=["research ended unexpectedly"]))
 
 
+def run_analysis(store, controller, directory, profile, agent, portfolio, way, limits, bounds):
+    """Findings and new ideas from newly read public notes. Never stops a run."""
+    from kaggle_agent.research import analyze
+    if getattr(agent, "name", None) not in {"codex", "claude"}:
+        return dict(skipped="needs a real agent")
+    try:
+        board = runs.leaderboard(store, controller.competition, way, limit=1)
+        best = f"{board[0]['mean']:.6g} (cross-validation)" if board else None
+        return analyze.analyze(directory, profile, agent, portfolio, best=best, seconds=limits["agent_seconds"],
+                               memory_mb=bounds["memory_mb"], heartbeat=controller.heartbeat, should_stop=controller.should_stop)
+    except Exception as error:
+        return dict(error=str(error)[:200])
+
+
 def run_code_campaigns(args, store, directory, profile, controller, agent, on_event=None):
     """on_event(kind, **details) receives live progress (used by `ka go` for its
     one-line-per-trial output, auto-submit and phone alerts)."""
@@ -323,6 +337,8 @@ def _run(args, store, directory, profile, controller, agent, emit):
         for name, hypothesis in DEFAULT_BRANCHES[kind]:
             portfolio.add(name, hypothesis)
     controller.recover_interrupted(provider)
+    if slug:
+        emit("research_analysis", **run_analysis(store, controller, directory, profile, agent, portfolio, way, limits, bounds))
     completed, notes = [], []
     turn = len(store.rows("SELECT id FROM experiments WHERE competition=? AND fidelity='full'", (controller.competition,)))
     for campaign_index in range(args.campaigns):
