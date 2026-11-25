@@ -150,6 +150,42 @@ class KaCommand(unittest.TestCase):
         st = Store(self.root / "home/global.sqlite3")
         self.assertEqual(st.rows("SELECT stop_requested FROM competitions")[0]["stop_requested"], 1)
 
+    def test_git_history_diff_restore(self):
+        import shutil
+        if not shutil.which("git"):
+            self.skipTest("git not installed")
+        self.ka(["setup"], ["claude", "1", "1024", "0.1", "1", "3", "none"])
+        code, out = self.ka(["new", "playground-series-s9e9", "--root", str(self.root)], ["y", "y", "n"])
+        self.assertIn("Git history: on", out)
+        comp = self.root / "playground-series-s9e9"
+        self.assertTrue((comp / ".git").is_dir())
+        self.assertIn(".kaggle-agent/", (comp / ".gitignore").read_text())
+        args = argparse.Namespace(dir=str(comp), campaigns=1, trials=2, agent=None,
+                                  mock_agent=MockCoder([("baseline logistic", BASELINE), ("hist with interaction feature", IMPROVED)]))
+        with redirect_stdout(io.StringIO()):
+            ka.cmd_go(args, scripted([]))
+        code, out = self.ka(["history", "--dir", str(comp)])
+        self.assertEqual(code, 0, out)
+        self.assertIn("NEW CHAMPION", out)
+        self.assertIn("champion-001", out)
+        self.assertIn("champion-002", out)
+        st = Store(self.root / "home/global.sqlite3")
+        runs = st.rows("SELECT id,result FROM experiments WHERE fidelity='full' AND result LIKE '%git_commit%' ORDER BY created")
+        self.assertEqual(len(runs), 2)
+        first = runs[0]["id"]
+        code, out = self.ka(["diff", first, "--dir", str(comp)])
+        self.assertEqual(code, 0, out)
+        self.assertIn("HistGradientBoosting", out)      # champion (hist) vs the first (logistic) run
+        code, out = self.ka(["restore", "champion", "--dir", str(comp)])
+        self.assertEqual(code, 0, out)
+        self.assertIn("HistGradientBoosting", (comp / "restored/champion/train.py").read_text())
+        # Data and supervisor state never enter git.
+        from kaggle_agent import vcs
+        tracked = vcs.git(comp, "ls-files")
+        self.assertNotIn("data/", tracked)
+        self.assertNotIn(".kaggle-agent", tracked)
+        self.assertIn("agent_code/train.py", tracked)
+
     def test_go_requires_rules_and_setup(self):
         code, out = self.ka(["new", "playground-series-s9e9", "--root", str(self.root)], ["y", "n", "n"])
         self.assertEqual(code, 0, out)

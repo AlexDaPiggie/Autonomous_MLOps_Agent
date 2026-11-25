@@ -41,6 +41,12 @@ You are the research lead for this Kaggle competition. I make final decisions. Y
 - Read public notebooks only on a trigger (see "Learn from public notebooks"). Do not schedule routine notebook reading.
 - Modal CPU/GPU budget goes to our own pipeline first.
 
+## Code versions (git)
+- Each competition folder is its own local git repository (created by `ka new`). Never push unless I ask.
+- After each completed experiment, commit the changed code files only: `git add <files>` then `git commit -m "<idea> · cv <score>"`. Never commit data, predictions, models or .kaggle-agent/.
+- If `.kaggle-agent/profile.json` exists, `register-run --code <files>` commits them for you and tags champions; then do not commit them again.
+- To see or compare versions use `git log`, `git diff`, or `ka history`, `ka diff <run>`, `ka restore <run>`. Never rewrite or reset history.
+
 ## Every experiment and campaign
 1. Normally change ONE thing per experiment. A labeled reframe may change a coherent package; ablate useful components afterward.
 2. Save complete OOF/test predictions for completed runs, including failed ideas. Label interrupted artifacts partial and unusable for selection; never fabricate missing predictions.

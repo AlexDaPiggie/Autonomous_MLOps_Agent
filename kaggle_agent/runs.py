@@ -83,7 +83,21 @@ def register(store, controller, directory, profile, *, oof=None, test=None, solu
                    mean=sum(result["fold_scores"]) / len(result["fold_scores"]))
     if fidelity == "full":
         summary["promotion"] = promote_and_vault(store, controller.competition, key, directory, profile)
+    summary["git_commit"] = version_registered(store, controller.competition, directory, profile, key, code, summary, hypothesis)
     return summary
+
+
+def version_registered(store, competition, directory, profile, key, code, summary, hypothesis):
+    """Commit the registered code files at their real paths (inside the competition folder)."""
+    from kaggle_agent import vcs
+    improved = bool((summary.get("promotion") or {}).get("improved"))
+    outcome = "NEW CHAMPION" if improved else ("no improvement" if summary["fidelity"] == "full" else summary["fidelity"])
+    def act():
+        commit = vcs.commit_files(directory, code, vcs.message(key, profile["metric"], summary["mean"], outcome + " (registered)", hypothesis))
+        if commit:
+            vcs.record(store, key, commit, vcs.tag_champion(directory, commit) if improved else None)
+        return commit
+    return vcs.safe(store, competition, act)
 
 
 def promote_and_vault(store, competition, key, directory, profile, *, ensemble=False):

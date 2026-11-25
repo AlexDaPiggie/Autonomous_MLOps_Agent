@@ -173,6 +173,12 @@ class Upgrades(unittest.TestCase):
         self.assertEqual(code, 0, result)
         self.assertTrue(result["promotion"]["improved"])
         self.assertEqual(len(result["fold_scores"]), 4)
+        import shutil
+        if shutil.which("git"):  # registered code is committed at its real path and tagged
+            from kaggle_agent import vcs
+            self.assertTrue(result["git_commit"])
+            self.assertIn("manual.py", vcs.git(directory, "ls-files"))
+            self.assertIn("champion-001", vcs.git(directory, "tag"))
         code, result = self.invoke(*args)
         self.assertEqual(code, 2)
         self.assertIn("Duplicate", result["reason"])

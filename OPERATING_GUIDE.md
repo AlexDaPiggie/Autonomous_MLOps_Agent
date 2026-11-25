@@ -20,6 +20,7 @@ competition folder (except `setup` and `new`).
 | `ka submit [run-id]` | Builds the file in the sample_submission format from the best run (or a given run), checks columns/IDs/values, shows CV and quota, asks y/n (`--yes` skips), sends with the Kaggle CLI and logs it. |
 | `ka submit --auto on/off` | Auto-submit: after each campaign with a new champion, sends the best run once if the daily limit allows, always keeping 1 slot for you. Uses CV only; public scores are shown, never used. |
 | `ka stop`, `ka usage` | Safe stop; agent sessions per day and limit hits. |
+| `ka history`, `ka diff [run]`, `ka restore <run>` | Git history of the code. `ka new` makes the folder its own local repo (never pushed) with a code-only .gitignore. After every trial that reached a scored stage, the supervisor writes the run's exact code to `agent_code/` and commits it (`run <id> · <metric> <cv> · <outcome> · <idea>`); champions are tagged `champion-NNN`. `register-run --code` commits your files at their real paths. Agents never run git. Missing git never blocks a run. |
 
 Submission files: probabilities for roc_auc/log_loss binary columns, one column per class
 when the sample has per-class columns, three space-separated labels for map3, labels for

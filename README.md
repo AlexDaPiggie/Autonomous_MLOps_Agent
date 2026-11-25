@@ -47,6 +47,9 @@ Run inside the competition folder (except setup/new), or add `--dir <folder>`.
 | `ka submit --auto on` / `off` | Automatic submission of each new best run |
 | `ka stop` | Stop a running `ka go` safely |
 | `ka usage` | Agent sessions per day and limit hits |
+| `ka history` | Code version (git commit) of every scored run, champions tagged |
+| `ka diff [run-id]` | Code changes between the champion and a run (`--against <run>` to compare two runs) |
+| `ka restore <run-id>` / `champion` | Copy a past run's code into `restored/<run-id>/` |
 
 ### Advanced: `python -m kaggle_agent ...`
 `ka` uses these under the hood. `.` = the competition folder you are in.

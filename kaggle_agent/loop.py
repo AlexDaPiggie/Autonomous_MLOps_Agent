@@ -209,6 +209,17 @@ def screen_reliable(store, competition):
     return rho >= .3, rho >= .5, agreement
 
 
+def version(store, competition, directory, profile, workspace, experiment, mean, outcome, hypothesis, *, champion=False):
+    """Commit this trial's exact code to the competition's git history (never blocks the run)."""
+    from kaggle_agent import vcs
+    def act():
+        commit = vcs.commit_agent_code(directory, workspace, vcs.message(experiment, profile["metric"], mean, outcome, hypothesis))
+        tag = vcs.tag_champion(directory, commit) if champion else None
+        vcs.record(store, experiment, commit, tag)
+        return commit
+    return vcs.safe(store, competition, act)
+
+
 def save_lessons(store, controller, result, experiment=None):
     from kaggle_agent.research.retrieval import Knowledge
     knowledge = Knowledge(store)
@@ -357,6 +368,8 @@ def _run(args, store, directory, profile, controller, agent, emit):
                 emit("outcome", outcome=outcome)
                 portfolio.update(branch["id"], execution_failed=outcome.startswith(("screen failed", "full failed")))
                 notes.append(dict(hypothesis=hypothesis, outcome=outcome))
+                if parent and not outcome.startswith("duplicate"):  # a scored stage exists: keep the attempt in git
+                    version(store, controller.competition, directory, profile, workspace, parent, None, outcome, hypothesis)
                 continue
             promotion = runs.promote_and_vault(store, controller.competition, key, directory, profile)
             with store.transaction() as db:
@@ -367,6 +380,9 @@ def _run(args, store, directory, profile, controller, agent, emit):
             portfolio.update(branch["id"], standalone_gain=max(0., promotion.get("mean_gain", 0.) or 0.),
                              improved=bool(promotion.get("improved")))
             completed.append(key)
+            commit = version(store, controller.competition, directory, profile, workspace, key, statistics.mean(stored["fold_scores"]),
+                             "NEW CHAMPION" if promotion.get("improved") else "no improvement", hypothesis,
+                             champion=bool(promotion.get("improved")))
             emit("outcome", outcome="champion" if promotion.get("improved") else "no improvement", experiment=key,
                  mean=statistics.mean(stored["fold_scores"]), gain=promotion.get("mean_gain"), hypothesis=hypothesis)
             notes.append(dict(hypothesis=hypothesis, outcome="champion" if promotion.get("improved") else "no improvement",

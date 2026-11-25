@@ -189,3 +189,14 @@ static script checks are guard rails, not isolation.
 ## Cleanup (2026-11-24)
 Removed at the user's request: benchmark-results/ (regenerable), __pycache__/, the outdated
 IMPLEMENTATION_REPORT.md and _backups/ (both remain in git history). KAGGLE_UPGRADE_SPEC.md kept (untracked).
+
+## Git versioning of competition code (2026-11-24, Claude, user-requested)
+- `kaggle_agent/vcs.py`: per-competition local repo, code-only .gitignore (data, predictions,
+  models, .kaggle-agent excluded), supervisor-made commits only (agents still have no git/shell),
+  `agent_code/` holds each trial's exact code, champion tags `champion-NNN`, commit hash stored in
+  the run's result (`git_commit`, `git_tag`). Failures are logged as `git_skipped`, never fatal.
+- Hooks: code loop (every trial with a scored stage), register-run (files at real paths), ka new.
+- `ka history`, `ka diff [run] [--against run]`, `ka restore <run|champion> [--to dir]`.
+- rules.md: "Code versions (git)" section for manual sessions.
+- Tests: tests/test_ka.py git flow + register-run commit check. Suite 49 tests, 48 passed,
+  1 skipped (Windows batch), Linux container.

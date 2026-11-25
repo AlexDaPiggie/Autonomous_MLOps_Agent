@@ -8,6 +8,9 @@
     ka submit [run-id]       send the best run now   (ka submit --auto on|off)
     ka stop                  ask a running `ka go` to stop safely
     ka usage                 agent sessions per day
+    ka history               code version of every scored run (git)
+    ka diff [run-id]         what changed versus the champion
+    ka restore <run-id>      copy a past run's code into restored/<run-id>/
 
 Run every command except setup and new from inside the competition folder.
 The long `python -m kaggle_agent ...` commands still work for advanced use.
@@ -246,6 +249,12 @@ def finish_new(args, ask, target, slug, facts, *, sample):
     if sample or profile["task"] == "optimization":
         auto = yes(ask("Turn on auto-submit (sends each new best run, keeps 1 daily slot for you)? (y/n)", "n")) and not args.yes
     submissions.save_settings(target, slug=slug, sample=sample, auto=auto, daily_limit=int(facts.get("daily_limit") or 5), reserve=1)
+    try:
+        from kaggle_agent import vcs
+        vcs.ensure_repo(target)
+        print("Git history: on (local only; code is committed after every scored run)")
+    except Exception as error:
+        print(f"Git history: off ({error}). Install Git for Windows to version the code.")
     print(f"\nReady: {target}")
     if not rules:
         print("Read the rules, then set \"rules_reviewed\": true in .kaggle-agent/profile.json before `ka go`.")
@@ -432,6 +441,44 @@ def cmd_stop(args, ask):
     return 0
 
 
+# ---------------------------------------------------------------- git history
+def cmd_history(args, ask):
+    from kaggle_agent import vcs
+    directory = find_competition(args.dir)
+    entries = vcs.log(directory, args.limit)
+    if not entries:
+        print("No code history yet. It starts with the first scored run of `ka go` or `register-run`.")
+        return 0
+    for e in entries:
+        tags = f"  [{', '.join(e['tags'])}]" if e["tags"] else ""
+        print(f"{e['commit']}  {e['date']}  {e['subject']}{tags}")
+    print("\nCompare with the champion: ka diff <run-id>   Get old code back: ka restore <run-id>")
+    return 0
+
+
+def cmd_diff(args, ask):
+    from kaggle_agent import vcs
+    directory = find_competition(args.dir)
+    base = vcs.latest_champion(directory) if not args.against else vcs.find_run(directory, args.against)
+    if args.run:
+        target = vcs.find_run(directory, args.run)
+    else:
+        target = vcs.git(directory, "rev-parse", "HEAD").strip()
+    text = vcs.diff(directory, base, target)
+    print(text if text.strip() else "No code differences.")
+    return 0
+
+
+def cmd_restore(args, ask):
+    from kaggle_agent import vcs
+    directory = find_competition(args.dir)
+    commit = vcs.latest_champion(directory) if args.run == "champion" else vcs.find_run(directory, args.run)
+    destination = Path(args.to) if args.to else directory / "restored" / args.run[:8]
+    path, count = vcs.restore(directory, commit, destination)
+    print(f"Copied {count} file(s) from {args.run} to {path}. Nothing else changed.")
+    return 0
+
+
 # ---------------------------------------------------------------- submit
 def cmd_submit(args, ask):
     from kaggle_agent import submit as submissions
@@ -485,6 +532,12 @@ def parser():
     go.add_argument("--campaigns", type=int);go.add_argument("--trials", type=int);go.add_argument("--agent", choices=["claude", "codex"])
     for name in ("status", "dash", "stop", "usage"):
         sub.add_parser(name)
+    h = sub.add_parser("history", help="code versions of every scored run (git)")
+    h.add_argument("--limit", type=int, default=30)
+    d = sub.add_parser("diff", help="code changes between the champion and a run")
+    d.add_argument("run", nargs="?");d.add_argument("--against", help="compare with this run instead of the champion")
+    r = sub.add_parser("restore", help="copy a past run's code into a folder")
+    r.add_argument("run", help="run id from `ka history`, or champion");r.add_argument("--to")
     s = sub.add_parser("submit", help="submit the best run now, or turn auto-submit on/off")
     s.add_argument("run", nargs="?");s.add_argument("--auto", choices=["on", "off"]);s.add_argument("--yes", action="store_true")
     for name, command in sub.choices.items():
@@ -494,7 +547,8 @@ def parser():
     return p
 
 
-COMMANDS = dict(setup=cmd_setup, new=cmd_new, go=cmd_go, status=cmd_status, dash=cmd_dash, stop=cmd_stop, usage=cmd_usage, submit=cmd_submit)
+COMMANDS = dict(setup=cmd_setup, new=cmd_new, go=cmd_go, status=cmd_status, dash=cmd_dash, stop=cmd_stop, usage=cmd_usage,
+                submit=cmd_submit, history=cmd_history, diff=cmd_diff, restore=cmd_restore)
 
 
 def main(argv=None, ask=ask_console):
@@ -504,7 +558,7 @@ def main(argv=None, ask=ask_console):
     except KeyboardInterrupt:
         print("\nInterrupted. Progress is saved; run `ka go` to continue.")
         return 130
-    except (GateError, ValueError, OSError, RuntimeError) as error:
+    except (GateError, ValueError, OSError, RuntimeError) as error:  # GitError is a RuntimeError
         print(f"ka: {friendly(error)}", file=sys.stderr)
         return 2
 
