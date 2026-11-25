@@ -25,6 +25,7 @@ from kaggle_agent import kaggle_cli
 
 SORTS = ("voteCount", "hotness", "commentCount", "dateRun")   # proven, new, debated, updated
 META = "kaggle/meta-kaggle"
+RETRY_HOURS = 6   # after a failed step, wait this long before trying it again (force ignores it)
 REF = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 csv.field_size_limit(2**31 - 1)
 
@@ -220,11 +221,16 @@ def refresh(directory, slug, *, max_age_hours=24, force=False, run=kaggle_cli.ru
         if not force and now - state.get(name + "_at", 0) < max_age_hours * 3600:
             report[name + "_skipped"] = "recent"
             continue
+        if not force and now - state.get(name + "_failed_at", 0) < RETRY_HOURS * 3600:
+            report[name + "_skipped"] = "failed recently, retrying later"
+            continue
         try:
             report |= step(slug, root, run=run)
             state[name + "_at"] = now
+            state.pop(name + "_failed_at", None)
         except (kaggle_cli.KaggleError, ValueError, OSError, KeyError, subprocess.TimeoutExpired, zipfile.BadZipFile) as error:
             report["errors"].append(f"{name}: {str(error)[:200]}")
+            state[name + "_failed_at"] = now
     root.mkdir(parents=True, exist_ok=True)
     _save(state_path, state)
     _save(root / "last-report.json", report)   # so a problem is still visible after the terminal closes

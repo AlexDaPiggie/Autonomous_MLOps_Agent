@@ -14,6 +14,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 import statistics
+import threading
 
 from kaggle_agent import runs
 from kaggle_agent import submit as submissions
@@ -261,6 +262,26 @@ def save_lessons(store, controller, result, experiment=None):
                       outcomes=[], license="own", experiment=experiment), competition=controller.competition)
 
 
+RESEARCH_HEARTBEAT = 10   # seconds; the supervisor lease lasts 30
+
+
+def run_research(controller, public, directory, slug):
+    """Public research can take minutes. Run it in a thread and keep renewing the lease meanwhile."""
+    box = {}
+
+    def work():
+        try:
+            box["report"] = public.refresh(directory, slug)
+        except Exception as error:   # research must never stop a run
+            box["report"] = dict(errors=[f"research: {str(error)[:200]}"])
+    thread = threading.Thread(target=work, daemon=True)
+    thread.start()
+    while thread.is_alive():
+        thread.join(RESEARCH_HEARTBEAT)
+        controller.heartbeat()
+    return box.get("report", dict(errors=["research ended unexpectedly"]))
+
+
 def run_code_campaigns(args, store, directory, profile, controller, agent, on_event=None):
     """on_event(kind, **details) receives live progress (used by `ka go` for its
     one-line-per-trial output, auto-submit and phone alerts)."""
@@ -296,7 +317,7 @@ def _run(args, store, directory, profile, controller, agent, emit):
     if slug:
         from kaggle_agent.research import public
         emit("research_start")
-        emit("research", **public.refresh(directory, slug))
+        emit("research", **run_research(controller, public, directory, slug))
     portfolio = Portfolio(store, controller.competition)
     if not store.rows("SELECT id FROM research_branches WHERE competition=?", (controller.competition,)):
         for name, hypothesis in DEFAULT_BRANCHES[kind]:

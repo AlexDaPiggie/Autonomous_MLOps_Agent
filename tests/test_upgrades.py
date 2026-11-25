@@ -224,6 +224,30 @@ class Upgrades(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("OOF", result["reason"])
 
+    def test_slow_research_keeps_the_lease_alive(self):
+        from unittest.mock import patch
+        import time
+        from kaggle_agent import loop, submit
+        from kaggle_agent.research import public
+        from kaggle_agent.supervisor.controller import Controller
+        directory, _ = self.competition()
+        submit.save_settings(directory, slug="demo-comp")
+        beats = []
+        original = Controller.heartbeat
+        during = []
+        def slow(*a, **k):
+            start = len(beats)
+            time.sleep(0.4)
+            during.append(len(beats) - start)
+            return dict(errors=[])
+        def counting(self, **k):
+            beats.append(1)
+            return original(self, **k)
+        store = Store(self.db)
+        with patch.object(public, "refresh", slow), patch.object(loop, "RESEARCH_HEARTBEAT", 0.05), patch.object(Controller, "heartbeat", counting):
+            run(self.code_args(directory, MockCoder([("baseline logistic", BASELINE)]), trials=1), store)
+        self.assertGreaterEqual(during[0], 4)     # lease renewed while research was running
+
     def test_resume_after_interrupted_run(self):
         directory, _ = self.competition()
         store = Store(self.db)
