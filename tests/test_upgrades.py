@@ -345,6 +345,31 @@ kt.save(d, oof, Ridge().fit(X, y).predict(T))
         self.assertEqual(statuses[loser], "parked")
         self.assertIn(loser, [r["id"] for r in portfolio.rank(turn=3)])  # exploration still revisits
 
+    def test_agent_environment_hides_api_keys_instead_of_blocking(self):
+        from kaggle_agent.agents.base import agent_environment
+        saved = dict(os.environ)
+        try:
+            os.environ.update(OPENAI_API_KEY="x", GEMINI_API_KEY="y", ANTHROPIC_BASE_URL="z", ANTHROPIC_AUTH_TOKEN="t", PATH_KEEP="ok")
+            env = agent_environment()
+            for name in ("OPENAI_API_KEY", "GEMINI_API_KEY", "ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN"):
+                self.assertNotIn(name, env)
+            self.assertEqual(env["PATH_KEEP"], "ok")
+            # A fake CLI sees no key and the run is not blocked.
+            fake = self.root / "fake_codex.py"
+            fake.write_text("import json,os,sys\nsys.stdin.read()\nout=sys.argv[sys.argv.index('--output-last-message')+1]\n"
+                            "open(out,'w').write(json.dumps(dict(status='completed',session_id=None,experiment_ids=[],checkpoint=None,"
+                            "next_action='x',termination_reason=str(sorted(k for k in os.environ if 'API_KEY' in k)))))\n")
+            adapter = CLIAdapter("codex")
+            adapter.binary = lambda: sys.executable
+            original = adapter.command
+            adapter.command = lambda prompt, result_path=None, **kw: [sys.executable, str(fake), "--output-last-message", str(result_path)]
+            result = adapter.run("task", self.root, authorized=True, seconds=30)
+            self.assertEqual(result.status, "completed")
+            self.assertEqual(result.termination_reason, "[]")
+        finally:
+            os.environ.clear()
+            os.environ.update(saved)
+
     def test_adapter_parsing_and_flags(self):
         self.assertEqual(json.loads(extract_json('Here you go:\n```json\n{"a": 1}\n```')), {"a": 1})
         codex, claude = CLIAdapter("codex"), CLIAdapter("claude")

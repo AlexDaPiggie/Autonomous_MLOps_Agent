@@ -58,6 +58,17 @@ def validate_result(value):
     return AgentResult(**{k:v for k,v in value.items() if k in AgentResult.__dataclass_fields__})
 
 
+METERED = {"ANTHROPIC_AUTH_TOKEN","ANTHROPIC_BASE_URL","OPENAI_BASE_URL","OPENAI_API_BASE","CODEX_API_KEY",
+           "CLAUDE_CODE_USE_BEDROCK","CLAUDE_CODE_USE_VERTEX","AWS_BEARER_TOKEN_BEDROCK","OPENROUTER_API_KEY"}
+
+
+def agent_environment():
+    """Copy of the environment without anything that could switch a CLI to paid API use."""
+    return {k: v for k, v in os.environ.items()
+            if not (k.upper().endswith("API_KEY") or k.upper().endswith("_TOKEN") and k.upper().startswith(("ANTHROPIC", "OPENAI"))
+                    or k.upper() in METERED)}
+
+
 def extract_json(text):
     """The protocol object, also when the agent wraps it in a ```json fence or prose."""
     text = text.strip()
@@ -121,10 +132,10 @@ class CLIAdapter:
             should_stop=lambda: False, mode="propose", read_dirs=()):
         if not authorized:
             return AgentResult("blocked",termination_reason="agent_execution_not_enabled")
-        # Same-user agents cannot be safely isolated from credentials. Adapters only
-        # support reviewed research tasks, not arbitrary provider execution.
-        if any(k.endswith("API_KEY") or k in {"ANTHROPIC_AUTH_TOKEN","OPENAI_BASE_URL","ANTHROPIC_BASE_URL"} for k in os.environ):
-            return AgentResult("blocked",termination_reason="metered_provider_environment_present")
+        # Never let the CLI bill per use: it gets an environment without API keys or
+        # alternate endpoints, so it can only use your subscription login. Unrelated
+        # keys you have set (Gemini, Firecrawl, ...) stay in your shell, untouched.
+        env = agent_environment()
         if not self.binary():
             return AgentResult("blocked",termination_reason="missing_binary")
         run_id = uuid.uuid4().hex
@@ -137,8 +148,11 @@ class CLIAdapter:
         prompt = (task + "\nRead shared rules explicitly. No paid work, remote mutations, submissions or pushes. "
                   "Return only a JSON object using this protocol: " + json.dumps(template))
         final_path=folder/"final.json"
+        removed = sorted(set(os.environ) - set(env))
+        if removed:  # names only, never values
+            (folder/"removed_env.txt").write_text("Hidden from the agent: " + ", ".join(removed) + "\n", encoding="utf-8")
         outcome = run_process(self.command(prompt,final_path,mode=mode,read_dirs=read_dirs),directory,folder/"output.log",seconds=seconds,
-                              heartbeat=heartbeat,should_stop=lambda:self.cancelled or should_stop(),input_text=prompt)
+                              heartbeat=heartbeat,should_stop=lambda:self.cancelled or should_stop(),input_text=prompt,env=env)
         if outcome["termination_reason"] != "exit":
             result = AgentResult("stopped" if outcome["termination_reason"] == "user_stop" else "failed",
                                  checkpoint=str(folder),termination_reason=outcome["termination_reason"])
