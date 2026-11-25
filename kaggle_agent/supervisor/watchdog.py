@@ -7,7 +7,9 @@ import time
 import psutil
 
 
-def terminate_tree(pid, created):
+def terminate_tree(pid, created, popen=None):
+    """Stop a process tree. Pass the Popen object for our own child so that
+    Popen (not psutil) reaps it and keeps the real exit code (Linux/macOS)."""
     try:
         parent = psutil.Process(pid)
         if abs(parent.create_time() - created) > .01:
@@ -18,8 +20,17 @@ def terminate_tree(pid, created):
                 proc.terminate()
             except psutil.NoSuchProcess:
                 pass
-        parent.terminate()
-        _, alive = psutil.wait_procs(children + [parent], timeout=2)
+        if popen is not None:
+            popen.terminate()
+            try:
+                popen.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                popen.kill()
+            waited = children
+        else:
+            parent.terminate()
+            waited = children + [parent]
+        _, alive = psutil.wait_procs(waited, timeout=2)
         for proc in alive:
             try:
                 proc.kill()
@@ -32,7 +43,8 @@ def terminate_tree(pid, created):
 
 def run_process(command, cwd, log_path, *, seconds=1800, memory_mb=1024,
                 heartbeat=lambda **kw: None, should_stop=lambda: False, env=None,input_text=None):
-    if not 0 < seconds <= 1800 or not 0 < memory_mb <= 2048:
+    from kaggle_agent.supervisor.limits import MAX_SECONDS, memory_ceiling_mb
+    if not 0 < seconds <= MAX_SECONDS or not 0 < memory_mb <= max(2048, memory_ceiling_mb()):
         raise ValueError("Invalid process bounds")
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -64,12 +76,12 @@ def run_process(command, cwd, log_path, *, seconds=1800, memory_mb=1024,
                           else "memory_limit" if rss > memory_mb * 1024**2 else "exit")
                 heartbeat(pid=child.pid, process_created=created)
                 if reason != "exit":
-                    terminate_tree(child.pid, created)
+                    terminate_tree(child.pid, created, child)
                     break
                 time.sleep(.05)
             code = child.wait(timeout=5)
         except BaseException:
-            terminate_tree(child.pid, created)
+            terminate_tree(child.pid, created, child)
             child.wait(timeout=5)
             raise
         finally:

@@ -25,7 +25,10 @@ class Portfolio:
             db.execute("INSERT INTO research_branches VALUES(?,?,?,?,?,?)",(key,self.competition,name,"active",json.dumps(details),utcnow()))
         return key
 
-    def update(self, key, *, status=None, standalone_gain=0., ensemble_gain=0., cost_cents=0, execution_failed=False):
+    def update(self, key, *, status=None, standalone_gain=0., ensemble_gain=0., cost_cents=0, execution_failed=False,
+               improved=None, park_after=4):
+        """Record one trial. A branch with park_after trials and no win is parked
+        automatically (parked branches still get revisited by the exploration quota)."""
         require(status is None or status in {"active","parked","exhausted"},"Invalid branch status")
         require(type(cost_cents) is int and cost_cents >= 0,"Invalid branch cost")
         with self.store.transaction() as db:
@@ -34,24 +37,44 @@ class Portfolio:
             if status == "active" and row["status"] != "active":
                 require(db.execute("SELECT count(*) FROM research_branches WHERE competition=? AND status='active'",(self.competition,)).fetchone()[0] < 5,"Active branch cap")
             details = json.loads(row["details"])
+            details.setdefault("wins",0)
             details["spent_cents"] += cost_cents
             details["failures"] += int(execution_failed)
             details["trials"] += int(not execution_failed)
+            win = improved if improved is not None else (standalone_gain > 0 or ensemble_gain > 0)
+            details["wins"] += int(bool(win) and not execution_failed)
             details["standalone_gain"] = max(details["standalone_gain"],standalone_gain)
             details["ensemble_gain"] = max(details["ensemble_gain"],ensemble_gain)
-            db.execute("UPDATE research_branches SET status=?,details=?,updated=? WHERE id=?",(status or row["status"],json.dumps(details,allow_nan=False),utcnow(),key))
+            new_status = status or row["status"]
+            if status is None and row["status"] == "active" and details["trials"] >= park_after and details["wins"] == 0:
+                new_status = "parked"
+                self.store.event("branch_parked",dict(branch=key,name=row["name"],trials=details["trials"]),self.competition,db)
+            db.execute("UPDATE research_branches SET status=?,details=?,updated=? WHERE id=?",(new_status,json.dumps(details,allow_nan=False),utcnow(),key))
 
     def rank(self, turn=0):
+        """Active branches by an upper-confidence score on their observed win rate.
+
+        Uses real results: wins/trials from completed runs, a bonus for branches
+        tried less, the user's prior expected_gain/feasibility, and a penalty for
+        execution failures. Every fourth turn is exploration: the least-tried
+        branch, parked ones included.
+        """
         rows = self.store.rows("SELECT * FROM research_branches WHERE competition=? AND status!='exhausted'",(self.competition,))
-        now = datetime.now(timezone.utc)
+        total = 0
         for row in rows:
-            d = json.loads(row["details"])
-            age = (now-datetime.fromisoformat(row["updated"])).total_seconds()/86400
-            row["priority"] = d["feasibility"] * (d["expected_gain"] + .25*d["uncertainty"] + .1*d["novelty"]) / (1+d["cost_cents"]) / (1+d["failures"]) + min(age,30)*.001
-            row["details"] = d
+            row["details"] = json.loads(row["details"])
+            total += row["details"]["trials"]
+        for row in rows:
+            d = row["details"]
+            trials, wins = d["trials"], d.get("wins",0)
+            rate = (wins + 1) / (trials + 2)  # prior: one win in two tries
+            bonus = math.sqrt(2 * math.log(total + 2) / (trials + 1))
+            prior = d["expected_gain"] + .1 * d["novelty"]
+            row["priority"] = d["feasibility"] * (rate + .5 * bonus + prior) / (1 + d["failures"]) / (1 + d["cost_cents"] / 100)
         if turn % 4 == 3:  # explicit 25% exploration quota, including parked directions
             return sorted(rows,key=lambda r:(r["details"]["trials"],r["updated"]))
-        return sorted(rows,key=lambda r:r["priority"],reverse=True)
+        active = [r for r in rows if r["status"] == "active"] or rows
+        return sorted(active,key=lambda r:r["priority"],reverse=True)
 
 
 def stagnation(results, branches=()):

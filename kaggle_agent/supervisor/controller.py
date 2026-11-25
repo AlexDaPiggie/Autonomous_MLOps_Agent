@@ -1,8 +1,10 @@
 """Lease-protected durable controller; launch intents precede external effects."""
 import json
+from pathlib import Path
+import sqlite3
 import time
 import uuid
-from kaggle_agent.execution.gates import prelaunch, acceptance, require, validate_profile
+from kaggle_agent.execution.gates import prelaunch, acceptance, artifacts_complete, require, validate_profile
 from kaggle_agent.storage.database import fingerprint, utcnow
 from .lifecycle import transition
 
@@ -67,11 +69,13 @@ class Controller:
             return key
 
     def launch(self, campaign, metadata, provider, *, smoke_passed, seconds=60, memory_mb=512, payload=None, fidelity="full",branch=None,parent=None):
+        from kaggle_agent.supervisor.limits import Limits
+        limits = Limits(self.store).get()
         with self.store.transaction() as db:
             comp = self.assert_lease(db)
             require(not comp["stop_requested"], "User stop requested")
             profile = json.loads(comp["profile"])
-            digest = prelaunch(profile, metadata, smoke_passed=smoke_passed, seconds=seconds, memory_mb=memory_mb, provider=provider.name)
+            digest = prelaunch(profile, metadata, smoke_passed=smoke_passed, seconds=seconds, memory_mb=memory_mb, provider=provider.name, limits=limits)
             for source in metadata["config"].get("blend_sources",[]):
                 registered=db.execute("SELECT p.*,e.metadata,e.result,e.fidelity FROM predictions p JOIN experiments e ON p.experiment=e.id WHERE p.path=? AND p.checksum=? AND e.competition=? AND e.state='COMPLETED'",(source["path"],source["sha256"],self.competition)).fetchone()
                 require(registered is not None and registered["fidelity"]=="full","Blend sources must be full registered predictions")
@@ -79,7 +83,10 @@ class Controller:
                 require(source_result.get("independently_scored") and source_result["score_type"]=="base_oof","Blend inputs require independently scored base OOF")
                 require(all(metadata[k]==source_meta[k] for k in ("data_hash","split_hash","evaluator_hash","metric","dataset_checksum")),"Incompatible blend source provenance")
             camp = db.execute("SELECT * FROM campaigns WHERE id=? AND competition=?", (campaign, self.competition)).fetchone()
-            require(camp and camp["attempts"] < camp["max_trials"], "Campaign trial cap reached")
+            require(camp and (fidelity != "full" or camp["attempts"] < camp["max_trials"]), "Campaign trial cap reached")
+            # Screen/intermediate stages count too: at most three launches per trial.
+            launches = db.execute("SELECT count(*) FROM experiments WHERE campaign=?", (campaign,)).fetchone()[0]
+            require(launches < 3 * camp["max_trials"], "Campaign launch cap reached (3 stages per trial)")
             require(not db.execute("SELECT 1 FROM remote_jobs j JOIN experiments e ON e.id=j.experiment WHERE e.competition=? AND j.state IN ('INTENT','RUNNING','UNKNOWN')", (self.competition,)).fetchone(), "Reconcile active/ambiguous job first")
             key = uuid.uuid4().hex
             if branch:require(db.execute("SELECT id FROM research_branches WHERE id=? AND competition=?",(branch,self.competition)).fetchone(),"Branch belongs to different competition")
@@ -138,7 +145,17 @@ class Controller:
             require(exp and exp["state"] == "RUNNING", "Experiment not active")
             acceptance(result,json.loads(exp["metadata"]),root)
             metadata=json.loads(exp["metadata"])
-            if "dataset_path" in metadata:
+            if metadata["config"].get("script_sha256") and (Path(root)/"code").is_dir():
+                from kaggle_agent.execution.script import code_hash
+                require(code_hash(Path(root)/"code")==metadata["config"]["script_sha256"],"Script changed after launch")
+            if "data_spec" in metadata:
+                from kaggle_agent.evaluation.validation import independently_score
+                from kaggle_agent.execution.identity import code_version
+                require(metadata["code_hash"]==code_version(),"Experiment code changed after launch")
+                scores=independently_score(metadata,root)
+                require(len(scores)==len(result["fold_scores"]) and all(abs(a-b)<1e-9 for a,b in zip(scores,result["fold_scores"])),"Reported metric differs from independent evaluator")
+                result=result|dict(fold_scores=scores,independently_scored=True)
+            elif "dataset_path" in metadata:
                 from kaggle_agent.evaluation.validation import independently_score
                 from kaggle_agent.execution.identity import code_version
                 require(metadata["code_hash"]==code_version(),"Experiment code changed after launch")
@@ -146,13 +163,11 @@ class Controller:
                 require(len(scores)==len(result["fold_scores"]) and all(abs(a-b)<1e-10 for a,b in zip(scores,result["fold_scores"])),"Reported metric differs from independent evaluator")
                 result=result|dict(fold_scores=scores,independently_scored=True)
                 if metadata["config"].get("blend_sources"):
-                    from pathlib import Path
                     artifact=json.loads((Path(root)/"predictions.json").read_text())
                     require(result.get("ensemble_baseline_scores")==artifact["ensemble_baseline_scores"],"Baseline meta-score mismatch")
             require(not self.should_stop(), "Stopped results require explicit recovery review")
             transition(self.store,self.competition,"EVALUATING","independent artifact checks",db)
             db.execute("UPDATE experiments SET state='COMPLETED',result=? WHERE id=?", (json.dumps(result,allow_nan=False),experiment))
-            from pathlib import Path
             from kaggle_agent.storage.database import checksum
             for relative,digest in result["artifacts"].items():
                 path=str((Path(root)/relative).resolve())
@@ -163,3 +178,34 @@ class Controller:
             db.execute("UPDATE remote_jobs SET state='COMPLETED' WHERE experiment=?", (experiment,))
             db.execute("UPDATE campaigns SET state='COMPLETED',next_action='review portfolio' WHERE id=?", (exp["campaign"],))
             transition(self.store,self.competition,"COMPLETED","campaign completed; system may continue",db)
+
+    def record(self, metadata, result, root, *, fidelity="full", branch=None, parent=None, source="manual"):
+        """Register a run that happened outside the supervisor (manual or Modal).
+
+        The scores in `result` are ignored: they are recomputed here from the
+        frozen data and the copied artifacts, exactly as for supervised runs.
+        """
+        from kaggle_agent.evaluation.validation import independently_score
+        from kaggle_agent.execution.gates import experiment_fingerprint
+        require(fidelity in {"screen","intermediate","full"},"Unknown fidelity")
+        with self.store.transaction() as db:
+            comp=self.assert_lease(db)
+            profile=json.loads(comp["profile"])
+            require(metadata["data_hash"]==profile["data_hash"] and metadata["split_hash"]==profile["split_hash"],"Data/split mismatch: files changed since the profile was frozen")
+            require(metadata["metric"]==profile["metric"],"Metric mismatch")
+            if branch:require(db.execute("SELECT id FROM research_branches WHERE id=? AND competition=?",(branch,self.competition)).fetchone(),"Unknown branch")
+            if parent:require(db.execute("SELECT id FROM experiments WHERE id=? AND competition=?",(parent,self.competition)).fetchone(),"Unknown parent")
+            artifacts_complete(result["artifacts"],root)
+            scores=independently_score(metadata,root)
+            result=result|dict(fold_scores=scores,independently_scored=True,source=source)
+            key=Path(root).name
+            try:
+                db.execute("INSERT INTO experiments(id,competition,campaign,branch,parent,fingerprint,state,fidelity,metadata,result,created) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                           (key,self.competition,None,branch,parent,experiment_fingerprint(metadata),"COMPLETED",fidelity,json.dumps(metadata),json.dumps(result,allow_nan=False),utcnow()))
+            except sqlite3.IntegrityError:
+                require(False,"Duplicate run: same code, config, data, folds and seed already registered")
+            for relative,digest in result["artifacts"].items():
+                path=str((Path(root)/relative).resolve())
+                db.execute("INSERT INTO predictions VALUES(?,?,?,?,?)",(fingerprint(dict(experiment=key,path=path)),key,path,digest,json.dumps(metadata)))
+            self.store.event("experiment_registered",dict(experiment=key,source=source,fidelity=fidelity,fold_scores=scores),self.competition,db)
+        return key,result

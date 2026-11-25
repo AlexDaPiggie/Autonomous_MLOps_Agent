@@ -12,8 +12,9 @@ from kaggle_agent.supervisor.watchdog import run_process,terminate_tree
 class LocalProvider:
     name="local"
 
-    def __init__(self,directory,*,seconds=60,memory_mb=1024,heartbeat=lambda **kw:None,should_stop=lambda:False):
+    def __init__(self,directory,*,seconds=60,memory_mb=1024,threads=1,heartbeat=lambda **kw:None,should_stop=lambda:False):
         self.directory=Path(directory).resolve()
+        self.threads=threads
         self.seconds=seconds;self.memory_mb=memory_mb
         self.heartbeat=heartbeat;self.should_stop=should_stop
 
@@ -29,7 +30,8 @@ class LocalProvider:
             atomic_write(root/"status.json",json.dumps(state))
             self.heartbeat(**process)
         env=os.environ.copy()
-        env.update(OMP_NUM_THREADS="1",OPENBLAS_NUM_THREADS="1",MKL_NUM_THREADS="1",NUMEXPR_NUM_THREADS="1")
+        t=str(self.threads)
+        env.update(OMP_NUM_THREADS=t,OPENBLAS_NUM_THREADS=t,MKL_NUM_THREADS=t,NUMEXPR_NUM_THREADS=t,KAGGLE_AGENT_THREADS=t)
         env.update(KAGGLE_AGENT_MAX_SECONDS=str(self.seconds),KAGGLE_AGENT_MAX_MB=str(self.memory_mb))
         # Resolve package from its installed/source location even outside repository.
         env["PYTHONPATH"]=str(Path(__file__).resolve().parents[2])

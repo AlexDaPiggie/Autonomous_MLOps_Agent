@@ -51,3 +51,41 @@ def conditional_blend(candidates,y,metric,*,classification=False,regularization=
         result["test_predictions"]=(final_model.predict_proba(test_features) if classification else final_model.predict(test_features)).tolist()
         result["test_ids"]=test_ids
     return result
+
+
+def hill_climb_weights(arrays,y,metric,direction,*,rounds=40):
+    """Caruana-style greedy blend: add (with replacement) the model that helps most.
+
+    arrays: list of OOF prediction arrays aligned with y. Returns weights that
+    sum to 1. Stops when no addition improves the metric.
+    """
+    import numpy as np
+    from .validation import metric_score
+    sign=1 if direction=="maximize" else -1
+    counts=np.zeros(len(arrays));blend=None;best=-np.inf
+    def value(p):return sign*metric_score(metric,y,p.tolist())
+    for _ in range(rounds):
+        choice=None
+        for k,a in enumerate(arrays):
+            n=counts.sum()
+            trial=a if blend is None else (blend*n+a)/(n+1)
+            v=value(trial)
+            if v>best+1e-12:best,choice,candidate=v,k,trial
+        if choice is None:break
+        counts[choice]+=1;blend=candidate
+    return counts/counts.sum()
+
+
+def conditional_hill_climb(arrays,y,folds,metric,direction,*,rounds=40):
+    """Honest hill-climb score: weights fit on other folds, scored on the held-out fold."""
+    import numpy as np
+    from .validation import metric_score
+    y=np.asarray(y);folds=np.asarray(folds);stack=np.stack(arrays)
+    oof=np.zeros_like(stack[0],dtype=float);scores=[]
+    for fold in sorted(set(folds.tolist())-{-1}):
+        train=folds!=fold;valid=folds==fold
+        w=hill_climb_weights([a[train] for a in arrays],y[train],metric,direction,rounds=rounds)
+        oof[valid]=np.tensordot(w,stack[:,valid],axes=1)
+        scores.append(metric_score(metric,y[valid].tolist(),oof[valid].tolist()))
+    weights=hill_climb_weights(arrays,y,metric,direction,rounds=rounds)
+    return dict(oof=oof,fold_scores=scores,weights=weights.tolist())

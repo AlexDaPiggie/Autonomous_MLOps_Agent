@@ -6,6 +6,15 @@ from kaggle_agent.execution.gates import require
 from kaggle_agent.storage.database import fingerprint, checksum
 
 
+CLASSIFICATION_METRICS={"accuracy","balanced_accuracy","log_loss","roc_auc","map3"}
+MAXIMIZE={"accuracy","balanced_accuracy","roc_auc","map3","r2","objective"}
+
+
+def direction(metric):
+    """Metric direction for automatic blending; profiles still state theirs explicitly."""
+    return "maximize" if metric in MAXIMIZE else "minimize"
+
+
 def aligned(ids, predictions, expected_ids):
     require(len(ids)==len(predictions)==len(expected_ids),"Prediction length mismatch")
     require(len(set(ids))==len(ids) and len(set(expected_ids))==len(expected_ids),"Duplicate prediction IDs")
@@ -26,16 +35,24 @@ def metric_score(metric,y,predictions):
     require(finite(predictions),"Nonfinite predictions")
     y=np.asarray(y);p=np.asarray(predictions)
     require(len(y)==len(p) and len(y)>0,"Invalid metric rows")
-    if metric in {"accuracy","log_loss","roc_auc"}:
+    if metric in CLASSIFICATION_METRICS:
         require(p.ndim==2 and p.shape[1]>=2,"Classification requires ordered class probabilities")
-        require(bool(np.all((p>=0)&(p<=1))) and bool(np.allclose(p.sum(axis=1),1)),"Invalid probabilities")
+        require(bool(np.all((p>=0)&(p<=1))) and bool(np.allclose(p.sum(axis=1),1,atol=1e-4)),"Invalid probabilities")
         if metric=="accuracy":return float(metrics.accuracy_score(y,p.argmax(axis=1)))
+        if metric=="balanced_accuracy":return float(metrics.balanced_accuracy_score(y,p.argmax(axis=1)))
         if metric=="log_loss":return float(metrics.log_loss(y,p,labels=list(range(p.shape[1]))))
+        if metric=="map3":
+            top=np.argsort(-p,axis=1,kind="stable")[:,:3]
+            hits=(top==y[:,None])
+            return float(np.mean((hits/np.arange(1,top.shape[1]+1)).sum(axis=1)))
         return float(metrics.roc_auc_score(y,p[:,1] if p.shape[1]==2 else p,multi_class="ovr"))
     require(p.ndim==1,"Regression predictions must be one dimensional")
     if metric=="rmse":return float(np.sqrt(metrics.mean_squared_error(y,p)))
     if metric=="mae":return float(metrics.mean_absolute_error(y,p))
     if metric=="r2":return float(metrics.r2_score(y,p))
+    if metric=="rmsle":
+        require(bool(np.all(y>-1)) and bool(np.all(p>-1)),"RMSLE needs values above -1")
+        return float(np.sqrt(metrics.mean_squared_log_error(y,p)))
     if metric=="mape":
         require(bool(np.all(y!=0)),"MAPE undefined for zero targets")
         return float(np.mean(np.abs((y-p)/y)))
@@ -78,7 +95,7 @@ def promote(store,competition,experiment,*,ensemble=False,margin=0.):
         require(row is not None and row["state"]=="COMPLETED" and row["fidelity"]=="full","Only completed full validation can promote")
         result=json.loads(row["result"]);meta=json.loads(row["metadata"])
         require(result.get("independently_scored") is True,"Independent scoring required")
-        require("dataset_path" in meta,"Frozen dataset provenance required for promotion")
+        require("dataset_path" in meta or "data_spec" in meta,"Frozen dataset provenance required for promotion")
         predictions=db.execute("SELECT * FROM predictions WHERE experiment=?",(experiment,)).fetchall()
         require(bool(predictions),"Registered prediction artifacts required")
         for prediction in predictions:
@@ -111,6 +128,8 @@ def evaluator_version():
 def independently_score(metadata,root):
     """Recompute from frozen labels/splits and artifact bytes in the parent process."""
     from pathlib import Path
+    if "data_spec" in metadata:
+        return independently_score_tables(metadata,root)
     data_path=Path(metadata["dataset_path"])
     require(checksum(data_path)==metadata["dataset_checksum"],"Frozen dataset changed")
     require(evaluator_version()==metadata["evaluator_hash"],"Evaluator source changed")
@@ -138,3 +157,26 @@ def independently_score(metadata,root):
         expected_ids.extend(data["times"][origin:origin+data["horizon"]]);folds.extend([fold]*data["horizon"])
     labels=dict(zip(data["times"],data["values"]))
     return evaluate(expected_ids,[labels[i] for i in expected_ids],folds,artifact["ids"],artifact["predictions"],metadata["metric"])["fold_scores"]
+
+
+def independently_score_tables(metadata,root):
+    """Real-table and plugin runs: frozen files, evaluator and (for optimization) scorer."""
+    from pathlib import Path
+    from kaggle_agent import data as tables
+    spec=metadata["data_spec"];data_root=Path(metadata["data_root"])
+    require(evaluator_version()==metadata["evaluator_hash"],"Evaluator source changed")
+    if spec.get("kind")=="optimization":
+        from kaggle_agent.pipelines.plugin import identity,score_solution
+        current=identity(data_root,spec)
+        require(current["data_hash"]==metadata["data_hash"] and current["split_hash"]==metadata["split_hash"],"Frozen data or scorer changed")
+        return [score_solution(data_root,spec,Path(root)/spec["solution_name"])]
+    current=tables.identity(data_root,spec)
+    require(current["data_hash"]==metadata["data_hash"] and current["split_hash"]==metadata["split_hash"],"Frozen tables or folds changed")
+    if metadata["config"].get("blend_sources"):
+        from .assessment import assess_tables
+        import numpy as np
+        expected=assess_tables(data_root,spec,metadata["task"],metadata["config"]["blend_sources"],metadata["metric"])
+        _,oof=tables.read_predictions(Path(root)/"oof.csv",n_classes=len(tables.class_order(data_root,spec)) if metadata["task"]=="classification" else None)
+        require(bool(np.allclose(expected["oof"],oof,rtol=0,atol=1e-6)),"Meta-validation implementation mismatch")
+    fidelity=metadata["config"].get("_fidelity","full")
+    return tables.score(data_root,spec,metadata["task"],metadata["metric"],root,subset=fidelity!="full")

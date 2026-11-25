@@ -26,6 +26,14 @@ def main():
                 os._exit(124)
             time.sleep(.1)
     threading.Thread(target=guard,daemon=True).start()
+    if plan.get("data_spec"):
+        from kaggle_agent.pipelines.tabular import run_tables
+        scores=run_tables(plan["data_root"],plan["data_spec"],plan["task"],plan["config"]["metric"],plan["config"],root)
+        result=dict(complete=True,evaluator_hash=plan["evaluator_hash"],config_hash=fingerprint(plan["config"]),
+                    data_hash=plan["data_hash"],split_hash=plan["split_hash"],fold_scores=scores,score_type="base_oof",
+                    artifacts={name:checksum(root/name) for name in ("oof.csv","test.csv")})
+        atomic_write(root/"result.json",json.dumps(result,allow_nan=False))
+        return
     data=json.loads(Path(plan["dataset"]).read_text(encoding="utf-8"))
     if plan.get("benchmark_configs"):
         pair=[run_dataset(data,config) for config in plan["benchmark_configs"]]

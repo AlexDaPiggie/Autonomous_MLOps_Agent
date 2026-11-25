@@ -34,7 +34,8 @@ def run_dataset(data,config):
             validate_group_folds(data["groups"],data["folds"])
         prediction=cv_predict(data["X"],data["y"],data["folds"],data["test_X"],task=task,
                               family=config.get("family","linear"),seed=seed,categorical=data.get("categorical",()),
-                              parameters=config.get("parameters"),**config.get("options",{}))
+                              parameters=config.get("parameters"),seeds=config.get("seeds",1),
+                              full_refit=config.get("full_refit",False),**config.get("options",{}))
         result=evaluate(data["ids"],data["y"],data["folds"],data["ids"],prediction["oof"],config["metric"])
         return dict(ids=data["ids"],predictions=prediction["oof"],test_ids=data["test_ids"],test_predictions=prediction["test"],fold_scores=result["fold_scores"],score_type="base_oof")
     if task=="optimization":
