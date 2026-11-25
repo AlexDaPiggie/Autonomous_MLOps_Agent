@@ -42,7 +42,8 @@ else:
 def scripted(answers):
     queue = list(answers)
     def ask(question, default=None):
-        return queue.pop(0) if queue else (default or "")
+        answer = queue.pop(0) if queue else ""
+        return answer if answer != "" else (default or "")   # like the real prompt: Enter keeps the default
     return ask
 
 
@@ -82,8 +83,20 @@ class KaCommand(unittest.TestCase):
         log = self.root / "submissions.log"
         return [json.loads(l) for l in log.read_text().splitlines()] if log.exists() else []
 
+    def test_setup_can_be_answered_again_before_saving(self):
+        # First pass: 3 trials, then "n"; second pass keeps defaults with Enter except trials = 2; then save.
+        answers = ["claude", "", "", "1", "1024", "0.1", "1", "3", "none", "n",
+                   "", "", "", "", "", "", "", "2", "", "y"]
+        code, out = self.ka(["setup"], answers)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out.count("Your answers:"), 2)
+        settings = ka.load_settings()
+        self.assertEqual((settings["campaigns"], settings["trials"]), (1, 2))
+        from kaggle_agent.supervisor.limits import Limits
+        self.assertEqual(Limits(ka.store()).get()["threads"], 1)          # Enter kept the earlier answer
+
     def test_full_everyday_flow(self):
-        code, out = self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none"])
+        code, out = self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none", "y"])
         self.assertEqual(code, 0, out)
         code, out = self.ka(["new", "https://www.kaggle.com/competitions/playground-series-s9e9", "--root", str(self.root)],
                             ["y", "y", "y"])  # detection right, rules read, auto-submit on
@@ -158,7 +171,7 @@ class KaCommand(unittest.TestCase):
         import shutil
         if not shutil.which("git"):
             self.skipTest("git not installed")
-        self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none"])
+        self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none", "y"])
         code, out = self.ka(["new", "playground-series-s9e9", "--root", str(self.root)], ["y", "y", "n"])
         self.assertIn("Git history: on", out)
         comp = self.root / "playground-series-s9e9"

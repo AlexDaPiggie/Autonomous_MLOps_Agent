@@ -114,31 +114,46 @@ def cmd_setup(args, ask):
     except Exception as error:
         print(f"  kaggle CLI: {error}")
     ready = [n for n, i in found.items() if i.get("available")]
-    agent = ask("Which agent should write the code (claude/codex)?", settings["agent"] if settings["agent"] in ready or not ready else ready[0])
-    if agent not in {"claude", "codex"}:
-        raise GateError("Choose claude or codex")
-    agents = settings.get("agents") or {}
-    current = agents.get(agent) or {}
-    model = ask(f"{agent} model (empty = {agent}'s own default)", current.get("model", ""))
-    effort = ask(f"{agent} effort: low, medium, high, xhigh (empty = default)", current.get("effort", ""))
-    CLIAdapter(agent, model=model, effort=effort)   # validates the effort word
-    agents[agent] = {k: v for k, v in dict(model=model.strip(), effort=effort.strip().lower()).items() if v}
-    threads = int(ask(f"CPU threads per run (this machine has {machine_threads()})", str(max(1, machine_threads() // 2))))
-    memory = int(ask(f"Memory per run in MB (machine {machine_memory_mb()}, max {memory_ceiling_mb()})", str(min(8192, memory_ceiling_mb()))))
-    hours = float(ask("Max hours per run", "1"))
-    campaigns = int(ask("Campaigns per `ka go`", str(settings["campaigns"])))
-    trials = int(ask("Trials per campaign (1-4)", str(settings["trials"])))
-    alerts = settings.get("alerts") or {}
-    choice = ask("Phone alerts: ntfy, telegram or none?", "ntfy" if alerts.get("ntfy_topic") else "telegram" if alerts.get("telegram_token") else "none").lower()
-    if choice == "ntfy":
-        import secrets
-        topic = ask("ntfy topic (keep it secret; subscribe to it in the ntfy app)", alerts.get("ntfy_topic") or "ka-" + secrets.token_hex(6))
-        alerts = dict(ntfy_topic=topic)
-    elif choice == "telegram":
-        alerts = dict(telegram_token=ask("Telegram bot token", alerts.get("telegram_token", "")),
-                      telegram_chat=ask("Telegram chat id", alerts.get("telegram_chat", "")))
-    else:
-        alerts = {}
+    def collect(settings, current_limits):
+        agent = ask("Which agent should write the code (claude/codex)?", settings["agent"] if settings["agent"] in ready or not ready else ready[0])
+        if agent not in {"claude", "codex"}:
+            raise GateError("Choose claude or codex")
+        agents = settings.get("agents") or {}
+        current = agents.get(agent) or {}
+        model = ask(f"{agent} model (empty = {agent}'s own default)", current.get("model", ""))
+        effort = ask(f"{agent} effort: low, medium, high, xhigh (empty = default)", current.get("effort", ""))
+        CLIAdapter(agent, model=model, effort=effort)   # validates the effort word
+        agents[agent] = {k: v for k, v in dict(model=model.strip(), effort=effort.strip().lower()).items() if v}
+        threads = int(ask(f"CPU threads per run (this machine has {machine_threads()})", str(current_limits.get("threads") or max(1, machine_threads() // 2))))
+        memory = int(ask(f"Memory per run in MB (machine {machine_memory_mb()}, max {memory_ceiling_mb()})", str(current_limits.get("memory_mb") or min(8192, memory_ceiling_mb()))))
+        hours = float(ask("Max hours per run", f"{(current_limits.get('seconds') or 3600) / 3600:g}"))
+        campaigns = int(ask("Campaigns per `ka go`", str(settings["campaigns"])))
+        trials = int(ask("Trials per campaign (1-4)", str(settings["trials"])))
+        alerts = settings.get("alerts") or {}
+        choice = ask("Phone alerts: ntfy, telegram or none?", "ntfy" if alerts.get("ntfy_topic") else "telegram" if alerts.get("telegram_token") else "none").lower()
+        if choice == "ntfy":
+            import secrets
+            topic = ask("ntfy topic (keep it secret; subscribe to it in the ntfy app)", alerts.get("ntfy_topic") or "ka-" + secrets.token_hex(6))
+            alerts = dict(ntfy_topic=topic)
+        elif choice == "telegram":
+            alerts = dict(telegram_token=ask("Telegram bot token", alerts.get("telegram_token", "")),
+                          telegram_chat=ask("Telegram chat id", alerts.get("telegram_chat", "")))
+        else:
+            alerts = {}
+        return dict(agent=agent, agents=agents, campaigns=campaigns, trials=trials, alerts=alerts, threads=threads, memory=memory, hours=hours)
+    limits_now = {k: v for k, v in Limits(store()).get().items() if k in {"threads", "memory_mb", "seconds"}}
+    while True:
+        got = collect(settings, limits_now)
+        print("\nYour answers:")
+        print(f"  agent {got['agent']} ({describe_choice(got['agents'].get(got['agent'], {}))}) · threads {got['threads']} · memory {got['memory']} MB · "
+              f"{got['hours']:g} h per run · {got['campaigns']} campaigns × {got['trials']} trials · alerts: "
+              + ("ntfy" if got["alerts"].get("ntfy_topic") else "telegram" if got["alerts"].get("telegram_token") else "none"))
+        if ask("Save these? y = save, n = answer again (your answers become the defaults)", "y").strip().lower() in {"y", "yes", ""}:
+            break
+        settings.update(agent=got["agent"], agents=got["agents"], campaigns=got["campaigns"], trials=got["trials"], alerts=got["alerts"])
+        limits_now = dict(threads=got["threads"], memory_mb=got["memory"], seconds=int(got["hours"] * 3600))
+    agent, agents, campaigns, trials, alerts = got["agent"], got["agents"], got["campaigns"], got["trials"], got["alerts"]
+    threads, memory, hours = got["threads"], got["memory"], got["hours"]
     settings.update(agent=agent, agents=agents, campaigns=campaigns, trials=trials, alerts=alerts)
     save_settings(settings)
     from kaggle_agent.supervisor.budget import Budget
