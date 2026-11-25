@@ -167,3 +167,21 @@ Kaggle data at full scale, Parquet path (pyarrow optional). `execution/efficienc
 remains unused (smoke runs are deduplicated by code hash instead).
 Still disabled: paid providers, network submissions. Agents run as the user; the
 static script checks are guard rails, not isolation.
+
+## Everyday `ka` command (2026-11-24, Claude, user-requested)
+- `kaggle_agent/ka.py` (+ console script `ka`): setup, new, go, status, dash, submit
+  (one command; `--auto on|off`), stop, usage. Friendly errors.
+- `kaggle_cli.py`: official Kaggle CLI wrapper (download/unzip with path check, submit,
+  submissions list, competition info, metric-name mapping). KA_KAGGLE_CLI swaps it in tests.
+- `submit.py`: champion selection (better of standalone/ensemble CV), sample_submission
+  format building and checks, daily quota with 1 reserved slot, submission log table,
+  auto mode (once per new champion, after each campaign), public score refresh (display only).
+  User authorized real submissions through these commands; agents still cannot submit.
+- `dashboard.py` (rebuilt by export_state), `notify.py` (ntfy/Telegram, best effort).
+- Loop emits live events; `run()` passes `on_event`. Profile non-identity fields may now be
+  edited (logged as profile_updated); identity fields stay frozen.
+- Tests: `tests/test_ka.py` (fake Kaggle CLI, scripted answers, mock coder): full flow incl.
+  auto-submit, confirm/cancel, quota exhaustion, label/probability formats, dashboard, stop.
+  Suite: 48 tests, 47 passed, 1 skipped (Windows batch) in a Linux container.
+- Not verified: the real Kaggle CLI/API output formats on your machine (CSV columns of
+  `competitions submissions`, competition info fields), real phone alerts.

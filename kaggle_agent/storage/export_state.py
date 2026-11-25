@@ -28,4 +28,9 @@ def export_state(store, competition, directory):
     atomic_write(target/"local_leaderboard.md","\n".join(leaderboard)+"\n")
     preds = store.rows("SELECT p.* FROM predictions p JOIN experiments e ON e.id=p.experiment WHERE e.competition=?",(competition,))
     atomic_write(target/"prediction_registry.jsonl","".join(json.dumps(row)+"\n" for row in preds))
+    try:  # progress page for `ka dash`; never let a display problem break a run
+        from kaggle_agent.dashboard import build
+        build(store,competition,directory,json.loads(comp["profile"]))
+    except Exception:
+        pass
     return str(target)

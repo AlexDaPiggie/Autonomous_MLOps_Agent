@@ -146,7 +146,7 @@ def run(args,store):
                 controller.reconcile(ScriptProvider(directory/".kaggle-agent"/"jobs"))
                 still=store.rows("SELECT j.* FROM remote_jobs j JOIN experiments e ON e.id=j.experiment WHERE e.competition=? AND j.state IN ('INTENT','RUNNING','UNKNOWN')",(controller.competition,))
                 require(not still,"A previous run is still active or ambiguous; check status before resuming")
-            return run_code_campaigns(args,store,directory,profile,controller,agent)
+            return run_code_campaigns(args,store,directory,profile,controller,agent,on_event=getattr(args,"on_event",None))
         except KeyboardInterrupt:
             controller.request_stop();transition(store,controller.competition,"STOPPED","keyboard interrupt")
             return dict(state="STOPPED")

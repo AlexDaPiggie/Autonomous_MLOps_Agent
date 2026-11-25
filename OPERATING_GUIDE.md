@@ -5,6 +5,31 @@ It does not run a cloud service. All development used mocks and synthetic data, 
 zero paid jobs/inference, submissions or remote pushes. Historical competition
 folders, backups, and manually authored handoffs are preserved.
 
+## Everyday use: `ka` (2026-11-24)
+
+`ka` wraps everything below into short commands. Run them from inside the
+competition folder (except `setup` and `new`).
+
+| Command | What it does |
+|---|---|
+| `ka setup` | Once. Checks Claude/Codex/Kaggle CLIs, asks agent, CPU threads, RAM, hours per run, campaigns/trials, phone alerts (ntfy or Telegram). Saves `~/.kaggle-agent/settings.json` and limits. Confirms you use your existing plan (paid APIs stay blocked). |
+| `ka new <url>` | Creates the folder (AGENTS.md/CLAUDE.md), downloads and unzips the data, detects train/test/sample files, ID, target, task and the metric (from Kaggle), asks you to confirm, freezes folds, asks if you read the rules and whether to turn on auto-submit. Optimization: `ka new <url> --optimization --scorer my_scorer.py --solution-name submission.csv`. |
+| `ka go` | Starts or resumes the code-writing loop with your saved settings. Prints one block per trial (idea, screen/full scores, outcome), blends after each campaign, auto-submits a new best run if auto-submit is on, sends phone alerts. Ctrl+C or `ka stop` stops safely. |
+| `ka status` | Best CV, recent runs, champions, submissions with public scores, deadline and final-pick reminder. |
+| `ka dash` | Opens `.kaggle-agent/views/dashboard.html`: score chart, recent runs, branches, submissions. Reloads every 30 s; rebuilt after every run. Read-only. |
+| `ka submit [run-id]` | Builds the file in the sample_submission format from the best run (or a given run), checks columns/IDs/values, shows CV and quota, asks y/n (`--yes` skips), sends with the Kaggle CLI and logs it. |
+| `ka submit --auto on/off` | Auto-submit: after each campaign with a new champion, sends the best run once if the daily limit allows, always keeping 1 slot for you. Uses CV only; public scores are shown, never used. |
+| `ka stop`, `ka usage` | Safe stop; agent sessions per day and limit hits. |
+
+Submission files: probabilities for roc_auc/log_loss binary columns, one column per class
+when the sample has per-class columns, three space-separated labels for map3, labels for
+accuracy-type metrics, raw values for regression, the solution file for optimization.
+Kaggle's CLI cannot select final submissions: in the last two days `ka status` reminds you to
+pick the best-CV submission plus one different-model hedge on the website.
+Submission settings live in `.kaggle-agent/submission.json`; changing them never changes the
+frozen profile. Profile notes (deadline, target_score, rules_reviewed) may be edited; task,
+metric, data and folds may not.
+
 ## Real competitions (second upgrade, 2026-11-24)
 
 This section supersedes older notes below that call real data conversion a manual

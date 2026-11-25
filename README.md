@@ -8,6 +8,20 @@ remain available. Controller execution is dry-run by default; paid providers and
 network submissions are disabled. The legacy platform notes below describe the
 manual workflow, and do not authorize spending or submissions under the controller.
 
+## Quick start: the `ka` command
+
+Install once (from this folder), then three commands per competition:
+
+    python -m pip install -e ".[models]" kaggle
+    ka setup                                   # agent, CPU/RAM, phone alerts (once)
+    ka new https://www.kaggle.com/competitions/<slug>
+    cd ..\<slug>
+    ka go                                      # agent writes and runs experiments; live progress
+    ka status    ka dash    ka submit    ka submit --auto on|off    ka stop    ka usage
+
+If `ka` is not found, Python's Scripts folder is not on PATH: use `python -m kaggle_agent.ka ...`.
+Details: "Everyday use" in OPERATING_GUIDE.md.
+
 Second upgrade (2026-11-24): real CSV/Parquet competitions with frozen folds, user-set
 limits, `register-run` (log and independently score any run, including manual and Modal
 work), an automatic code-writing mode (`start --mode code`), an optimization scorer plugin

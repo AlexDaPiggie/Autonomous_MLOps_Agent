@@ -219,7 +219,19 @@ def save_lessons(store, controller, result, experiment=None):
                       outcomes=[], license="own", experiment=experiment), competition=controller.competition)
 
 
-def run_code_campaigns(args, store, directory, profile, controller, agent):
+def run_code_campaigns(args, store, directory, profile, controller, agent, on_event=None):
+    """on_event(kind, **details) receives live progress (used by `ka go` for its
+    one-line-per-trial output, auto-submit and phone alerts)."""
+    def emit(kind, **details):
+        if on_event is not None:
+            try:
+                on_event(kind, **details)
+            except Exception:
+                pass
+    return _run(args, store, directory, profile, controller, agent, emit)
+
+
+def _run(args, store, directory, profile, controller, agent, emit):
     from kaggle_agent.agents.session_manager import checkpoint, rotate
     from kaggle_agent.evaluation.validation import direction
     from kaggle_agent.research.branches import Portfolio, stagnation
@@ -259,6 +271,7 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
             ranked = portfolio.rank(turn=turn)
             turn += 1
             branch = ranked[0]
+            emit("trial_start", campaign=campaign_index + 1, campaigns=args.campaigns, trial=trial + 1, trials=args.trials, branch=branch["name"])
             history = [dict(state=r["state"], fidelity=r["fidelity"]) | (json.loads(r["result"]) if r["result"] else {})
                        for r in store.rows("SELECT state,fidelity,result FROM experiments WHERE competition=? ORDER BY created", (controller.competition,))]
             stuck = stagnation(history)["completed_without_progress"] >= 3
@@ -275,7 +288,9 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
             if result.status != "completed":
                 target = {"waiting_limit": "WAITING_LIMIT", "stopped": "STOPPED", "failed": "FAILED"}.get(result.status, "BLOCKED")
                 transition(store, controller.competition, target, result.termination_reason)
+                emit("stopped", state=target, reason=result.termination_reason)
                 return dict(completed=completed, state=target, reason=result.termination_reason, notes=notes)
+            emit("agent_done", hypothesis=(result.hypothesis or "agent experiment")[:200])
             save_lessons(store, controller, result)
             for new in result.new_branches:
                 try:
@@ -296,6 +311,7 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
                 passed, error = smoke_test(smoke, directory, profile, workspace, entry, env)
             hypothesis = (result.hypothesis or "agent experiment")[:500]
             if not passed:
+                emit("outcome", outcome="smoke failed", detail=(error or "")[-300:])
                 portfolio.update(branch["id"], execution_failed=True)
                 store.event("trial_smoke_failed", dict(hypothesis=hypothesis, error=(error or "")[-1500:]), controller.competition)
                 notes.append(dict(hypothesis=hypothesis, outcome="smoke failed"))
@@ -327,6 +343,9 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
                     break
                 controller.finish(key, json.loads((jobs / key / "result.json").read_text()), jobs / key)
                 parent = key
+                stage_scores = json.loads(store.rows("SELECT result FROM experiments WHERE id=?", (key,))[0]["result"])["fold_scores"]
+                emit("stage", fidelity=fidelity, mean=statistics.mean(stage_scores),
+                     std=statistics.stdev(stage_scores) if len(stage_scores) > 1 else 0.)
                 if fidelity == "screen" and screen_can_block:
                     scores = json.loads(store.rows("SELECT result FROM experiments WHERE id=?", (key,))[0]["result"])["fold_scores"]
                     go, why = screen_gate(store, controller.competition, scores, way)
@@ -335,6 +354,7 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
                         key = None
                         break
             if key is None:
+                emit("outcome", outcome=outcome)
                 portfolio.update(branch["id"], execution_failed=outcome.startswith(("screen failed", "full failed")))
                 notes.append(dict(hypothesis=hypothesis, outcome=outcome))
                 continue
@@ -347,6 +367,8 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
             portfolio.update(branch["id"], standalone_gain=max(0., promotion.get("mean_gain", 0.) or 0.),
                              improved=bool(promotion.get("improved")))
             completed.append(key)
+            emit("outcome", outcome="champion" if promotion.get("improved") else "no improvement", experiment=key,
+                 mean=statistics.mean(stored["fold_scores"]), gain=promotion.get("mean_gain"), hypothesis=hypothesis)
             notes.append(dict(hypothesis=hypothesis, outcome="champion" if promotion.get("improved") else "no improvement",
                               experiment=key, mean=statistics.mean(stored["fold_scores"])))
         if kind == "tables" and not controller.should_stop():
@@ -355,6 +377,7 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
             except GateError as error:
                 blend = dict(error=str(error))
             if blend:
+                emit("blend", **{k: v for k, v in blend.items() if k in {"experiment", "combiner", "fold_scores", "promotion", "error"}})
                 notes.append(dict(ensemble=blend))
                 if blend.get("experiment"):
                     completed.append(blend["experiment"])
@@ -362,6 +385,7 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
                    for r in store.rows("SELECT state,fidelity,result FROM experiments WHERE competition=? ORDER BY created", (controller.competition,))]
         check = stagnation(history)
         checkpoint(store, controller.competition, check["next_action"], Path(directory) / ".kaggle-agent" / "checkpoint.json")
+        emit("campaign_end", campaign=campaign_index + 1, campaigns=args.campaigns, stuck=check["research_review"])
         if check["research_review"]:
             from kaggle_agent.research.review import review_stagnation
             review_stagnation(store, controller.competition, directory, profile)

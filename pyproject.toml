@@ -19,6 +19,7 @@ optimization = ["ortools>=9"]
 
 [project.scripts]
 kaggle-agent = "kaggle_agent.__main__:main"
+ka = "kaggle_agent.ka:main"
 
 [tool.setuptools.packages.find]
 include = ["kaggle_agent*"]

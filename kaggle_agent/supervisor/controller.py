@@ -19,7 +19,14 @@ class Controller:
         with self.store.transaction() as db:
             row = db.execute("SELECT * FROM competitions WHERE id=?", (self.competition,)).fetchone()
             if row:
-                require(row["profile_hash"] == digest and row["path"] == str(path), "Profile changed: version/import explicitly before running")
+                require(row["path"] == str(path), "Competition moved: version/import explicitly before running")
+                if row["profile_hash"] != digest:
+                    # Identity fields are frozen; notes like deadline or target score may change.
+                    old = json.loads(row["profile"])
+                    frozen = ("task","metric","direction","data_hash","split_hash","data","validation")
+                    require(all(old.get(k) == profile.get(k) for k in frozen), "Profile identity changed (task, metric, data or folds): start a new competition folder")
+                    db.execute("UPDATE competitions SET profile=?,profile_hash=? WHERE id=?", (json.dumps(profile), digest, self.competition))
+                    self.store.event("profile_updated", {k: profile.get(k) for k in profile if old.get(k) != profile.get(k)}, self.competition, db)
             else:
                 db.execute("INSERT INTO competitions(id,path,profile,profile_hash) VALUES(?,?,?,?)",
                            (self.competition, str(path), json.dumps(profile), digest))
