@@ -124,7 +124,7 @@ operator guide, benchmark execution and final scope/limitations audit.
 use `git log -4 --oneline` for its ID. All implementation files are explicitly staged;
 user-owned KAGGLE_UPGRADE_SPEC.md stays untracked and unmodified.
 
-IMPLEMENTATION_REPORT.md maps the eleven upgrades to actual code and identifies
+IMPLEMENTATION_REPORT.md (removed 2026-11-24; see git history) mapped the eleven upgrades to code and identified
 remaining boundaries. No tests currently fail. Resume future development from those
 boundaries rather than recreating a plan or enabling real spending/submissions.
 
@@ -185,3 +185,7 @@ static script checks are guard rails, not isolation.
   Suite: 48 tests, 47 passed, 1 skipped (Windows batch) in a Linux container.
 - Not verified: the real Kaggle CLI/API output formats on your machine (CSV columns of
   `competitions submissions`, competition info fields), real phone alerts.
+
+## Cleanup (2026-11-24)
+Removed at the user's request: benchmark-results/ (regenerable), __pycache__/, the outdated
+IMPLEMENTATION_REPORT.md and _backups/ (both remain in git history). KAGGLE_UPGRADE_SPEC.md kept (untracked).
