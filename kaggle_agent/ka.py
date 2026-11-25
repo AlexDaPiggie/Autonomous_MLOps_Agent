@@ -313,7 +313,7 @@ def printer(settings, st, directory, profile, competition):
         elif kind == "research_start":
             print("Reading public notebooks and forum posts (first time can take a few minutes)...", flush=True)
         elif kind == "research":
-            got = [f"{d['notebooks']} notebooks" if "notebooks" in d else "", f"{d['discussions']} forum threads" if "discussions" in d else ""]
+            got = [f"{d['notebooks']} notebooks" + (f" ({d['skipped_notebooks']} empty/copies skipped)" if d.get("skipped_notebooks") else "") if "notebooks" in d else "", f"{d['discussions']} forum threads" if "discussions" in d else ""]
             got = ", ".join(x for x in got if x)
             if not got:
                 notes = []
@@ -326,6 +326,7 @@ def printer(settings, st, directory, profile, competition):
         elif kind == "research_analysis":
             if d.get("analyzed"):
                 print(f"  findings: {d['analyzed']} new notes read, {d['findings']} findings saved, {d['branches']} new ideas queued"
+                      + (f", {d['ignored']} rated no-value" if d.get("ignored") else "")
                       + (f" ({d['waiting']} notes waiting)" if d.get("waiting") else ""), flush=True)
             elif d.get("error"):
                 print(f"  findings problem: {d['error']} (notes stay pending)", flush=True)

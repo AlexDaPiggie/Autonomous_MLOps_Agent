@@ -10,6 +10,7 @@ labels it as data, not instructions.
 A failed step never stops a run: `refresh` returns what worked and what did not.
 """
 import csv
+import hashlib
 import html
 import io
 import json
@@ -93,36 +94,107 @@ def insight(text, limit=650):
     return plain(prose)[:limit]
 
 
-def refresh_notebooks(slug, root, per_sort=3, run=kaggle_cli.run):
+MIN_CODE_CHARS = 800      # a notebook with less code than this has nothing to learn from
+MIN_TOTAL_CHARS = 1500    # code + explanation
+COPY_SIMILARITY = 0.8     # this similar to an already saved notebook = a copy
+PER_SORT = 8              # candidates per sort order; junk is filtered after reading
+
+
+def inspect_notebook(path):
+    """Facts used to filter out empty notebooks and copies. Reads only; never runs code."""
+    path = Path(path)
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    code, prose = [], []
+    if path.suffix == ".ipynb":
+        for cell in json.loads(raw).get("cells", []):
+            source = "".join(cell.get("source", []))
+            (code if cell.get("cell_type") == "code" else prose).append(source)
+    else:
+        code.append(raw)
+    code_text, prose_text = "\n".join(code), plain("\n".join(prose))
+    return dict(code_chars=len(code_text.strip()), total_chars=len(code_text.strip()) + len(prose_text),
+                reuses_output=("/kaggle/input" in code_text and "submission" in code_text.lower()
+                               and "def " not in code_text and "class " not in code_text and len(code_text) < 3000),
+                text=code_text + " " + prose_text)
+
+
+def reject_reason(facts):
+    if facts["code_chars"] < MIN_CODE_CHARS or facts["total_chars"] < MIN_TOTAL_CHARS:
+        return "too little content"
+    if facts["reuses_output"]:
+        return "only reuses another notebook's output"
+    return None
+
+
+def sketch(text, size=128, n=5):
+    """Bottom-k sketch of the word 5-grams: small, and enough to estimate how alike two notebooks are."""
+    words = re.findall(r"\w+", text.lower())
+    grams = {hashlib.sha1(" ".join(words[i:i + n]).encode()).hexdigest()[:8] for i in range(max(1, len(words) - n + 1))}
+    return sorted(int(g, 16) for g in grams)[:size]
+
+
+def similarity(a, b):
+    union = sorted(set(a) | set(b))[:max(len(a), len(b), 1)]
+    return sum(1 for h in union if h in set(a) and h in set(b)) / len(union) if union else 0.0
+
+
+def kept(catalog):
+    return {ref: e for ref, e in catalog.items() if not e.get("skipped")}
+
+
+def refresh_notebooks(slug, root, per_sort=PER_SORT, run=kaggle_cli.run):
     catalog_path = root / "catalog.json"
     catalog = _load(catalog_path, {})
+    # Notes saved before the filters existed: check them once, from the saved text, most voted first.
+    for ref, entry in sorted(catalog.items(), key=lambda kv: -int(float(kv[1].get("votes") or 0))):
+        saved = root / "notebooks" / entry.get("file", "")
+        if "sketch" not in entry and saved.is_file():
+            body = saved.read_text(encoding="utf-8").split("\n\n", 1)[-1]
+            entry["sketch"] = sketch(body)
+            twin = next((o for o, e in kept(catalog).items() if o != ref and similarity(entry["sketch"], e.get("sketch", [])) >= COPY_SIMILARITY), None)
+            if len(body) < MIN_TOTAL_CHARS:
+                entry["skipped"] = "too little content"
+            elif twin:
+                entry["skipped"] = f"copy of {twin}"
     pool = {}
     for sort in SORTS:
         text = run(["kernels", "list", "--competition", slug, "--sort-by", sort, "--page-size", str(per_sort), "--csv"])
         for row in csv.DictReader(io.StringIO(text)):
             if REF.fullmatch(row.get("ref") or ""):
                 pool.setdefault(row["ref"], row)
-    new = 0
-    for ref, row in pool.items():
+    new = skipped = 0
+    # Most voted first: when two notebooks are alike, the one already saved (usually the original) stays.
+    for ref, row in sorted(pool.items(), key=lambda kv: -int(float(kv[1].get("totalVotes") or 0))):
         entry = catalog.get(ref, {})
         stamp = row.get("lastRunTime", "")
         target = root / "notebooks" / (ref.replace("/", "__") + ".md")
-        if entry.get("lastRunTime") == stamp and target.is_file():
+        if entry.get("lastRunTime") == stamp and (entry.get("skipped") or target.is_file()):
             continue   # unchanged since the last read
         with tempfile.TemporaryDirectory() as temp:
             run(["kernels", "pull", ref, "-p", temp], timeout=300)
             files = [p for p in Path(temp).iterdir() if p.suffix in {".ipynb", ".py", ".r", ".R"}]
             if not files:
                 continue
+            facts = inspect_notebook(files[0])
             body = digest_notebook(files[0])
+        info = dict(title=row.get("title", ref), author=row.get("author", ""), votes=row.get("totalVotes", ""), lastRunTime=stamp)
+        marks = sketch(facts["text"])
+        why = reject_reason(facts)
+        if not why:
+            twin = next((other for other, e in kept(catalog).items() if other != ref and similarity(marks, e.get("sketch", [])) >= COPY_SIMILARITY), None)
+            why = f"copy of {twin}" if twin else None
+        if why:
+            catalog[ref] = dict(info, skipped=why, sketch=marks)
+            target.unlink(missing_ok=True)
+            skipped += 1
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        head = f"# {row.get('title', ref)}\nAuthor: {row.get('author', '?')} · votes: {row.get('totalVotes', '?')} · last run: {stamp}\nhttps://www.kaggle.com/code/{ref}\n\n"
+        head = f"# {info['title']}\nAuthor: {info['author'] or '?'} · votes: {info['votes'] or '?'} · last run: {stamp}\nhttps://www.kaggle.com/code/{ref}\n\n"
         target.write_text(head + body, encoding="utf-8")
-        catalog[ref] = dict(title=row.get("title", ref), author=row.get("author", ""), votes=row.get("totalVotes", ""),
-                            lastRunTime=stamp, file=target.name)
+        catalog[ref] = dict(info, file=target.name, sketch=marks)
         new += 1
     _save(catalog_path, catalog)
-    return dict(notebooks=len(catalog), new_notebooks=new)
+    return dict(notebooks=len(kept(catalog)), new_notebooks=new, skipped_notebooks=skipped)
 
 
 # ---------------------------------------------------------------- discussions
@@ -190,8 +262,10 @@ def refresh_discussions(slug, root, top=10, run=kaggle_cli.run):
 # ---------------------------------------------------------------- orchestration
 def write_summary(root, limit_notebooks=5, limit_threads=6):
     lines = []
-    catalog = _load(root / "catalog.json", {})
-    best = sorted(catalog.items(), key=lambda kv: -int(float(kv[1].get("votes") or 0)))[:limit_notebooks]
+    catalog = kept(_load(root / "catalog.json", {}))
+    ratings = _load(root / "ratings.json", {})
+    catalog = {ref: e for ref, e in catalog.items() if ratings.get("notebook:" + ref, {}).get("value", 1) > 0}   # rated "no new idea" are left out
+    best = sorted(catalog.items(), key=lambda kv: (-ratings.get("notebook:" + kv[0], {}).get("value", 1), -int(float(kv[1].get("votes") or 0))))[:limit_notebooks]
     if best:
         lines.append("### Public notebooks (what authors say; their code was only read, never run)")
         for ref, entry in best:
@@ -242,7 +316,7 @@ def brief_section(directory, limit=7000):
     root = folder(directory)
     parts = []
     findings = root / "findings.md"
-    if findings.is_file() and findings.read_text(encoding="utf-8").strip():
+    if findings.is_file() and "\n- " in findings.read_text(encoding="utf-8"):
         parts.append("### Findings (distilled by an agent from the notes below; unverified, check before relying)\n"
                      + findings.read_text(encoding="utf-8").split("\n\n", 1)[-1][:3000])
     summary = root / "summary.md"

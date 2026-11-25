@@ -10,6 +10,7 @@ The agent runs read-only, the notes are labelled as other people's text, and its
 validated JSON: findings are plain text, ideas become capped research branches.
 """
 import hashlib
+import json
 import re
 
 from kaggle_agent.execution.gates import GateError
@@ -24,7 +25,7 @@ HEADER = ("# Findings from public notebooks and forum threads\n"
 
 def items(root):
     found = {}
-    for ref, entry in public._load(root / "catalog.json", {}).items():
+    for ref, entry in public.kept(public._load(root / "catalog.json", {})).items():
         path = root / "notebooks" / entry.get("file", "")
         if path.is_file():
             found["notebook:" + ref] = path
@@ -43,11 +44,28 @@ def votes(path):
     return int(found.group(1)) if found else 0
 
 
-def pending(root):
-    """Notes not analyzed yet, or changed since, most voted first."""
+def author_record(portfolio):
+    """Wins and trials of experiment branches that came from each notebook author's ideas."""
+    record = {}
+    for row in portfolio.store.rows("SELECT details FROM research_branches WHERE competition=?", (portfolio.competition,)):
+        details = json.loads(row["details"])
+        source = details.get("source") or ""
+        if source.startswith("research:notebook:"):
+            author = source.split(":", 2)[2].split("/")[0]
+            wins, trials = record.get(author, (0, 0))
+            record[author] = (wins + details.get("wins", 0), trials + details.get("trials", 0))
+    return record
+
+
+def pending(root, record=None):
+    """Notes not analyzed yet, or changed since. Authors whose earlier ideas won come first, then most voted."""
     seen = public._load(root / "analyzed.json", {})
+    record = record or {}
+
+    def wins(key):
+        return record.get(key.split(":", 1)[1].split("/")[0], (0, 0))[0] if key.startswith("notebook:") else 0
     todo = [(key, path) for key, path in items(root).items() if seen.get(key) != fingerprint(path)]
-    return sorted(todo, key=lambda kp: -votes(kp[1]))
+    return sorted(todo, key=lambda kp: (-wins(kp[0]), -votes(kp[1])))
 
 
 def load_findings(root):
@@ -83,17 +101,21 @@ def build_prompt(profile, notes, findings, best, branch_names):
     for key, path in notes:
         lines += [f"### {key}", path.read_text(encoding="utf-8", errors="replace")[:PER_ITEM], ""]
     lines += ["Answer using the JSON protocol below.",
+              "In \"ratings\": one entry per new note, {\"key\": the ### key above, \"value\": 0-3, \"reason\": a few words}. "
+              "0 = no new idea (copy, nearly empty, only reuses someone's output); 1 = weak; 2 = useful; "
+              "3 = strong, with evidence such as a shown score. Make no findings from notes you rate 0.",
               "In \"lessons\": only NEW or corrected findings, at most 6, one line each: the technique, the evidence "
               "(score or reason, and which note), and whether the author verified it.",
-              "In \"new_branches\": up to 3 experiments we could try next (name + one-sentence hypothesis) that differ "
-              "from our current branches and fit our metric. Empty lists are fine if the notes hold nothing useful."]
+              "In \"new_branches\": up to 3 experiments we could try next (name + one-sentence hypothesis, and \"source\": "
+              "the ### key of the note it came from) that differ from our current branches and fit our metric. "
+              "Empty lists are fine if the notes hold nothing useful."]
     return "\n".join(lines)
 
 
 def analyze(directory, profile, agent, portfolio, *, best=None, seconds=600, memory_mb=None,
             heartbeat=lambda **kw: None, should_stop=lambda: False):
     root = public.folder(directory)
-    todo = pending(root)
+    todo = pending(root, author_record(portfolio))
     if not todo:
         return dict(skipped="nothing new")
     batch = todo[:MAX_ITEMS]
@@ -108,12 +130,18 @@ def analyze(directory, profile, agent, portfolio, *, best=None, seconds=600, mem
     queued = 0
     for idea in result.new_branches:
         try:
-            portfolio.add(idea["name"], idea["hypothesis"], source="research")
+            portfolio.add(idea["name"], idea["hypothesis"], source="research:" + idea["source"].replace("research:", "") if idea.get("source") else "research")
             queued += 1
         except GateError:   # five active branches already: keep the idea in the findings instead
             merged = merge(merged, ["Idea not queued (branch list full): " + idea["hypothesis"]])
     save_findings(root, merged)
+    ratings = public._load(root / "ratings.json", {})
+    keys = {key for key, _ in batch}
+    ratings.update({r["key"]: dict(value=r["value"], reason=r["reason"]) for r in result.ratings if r["key"] in keys})
+    public._save(root / "ratings.json", ratings)
     seen = public._load(root / "analyzed.json", {})
     seen.update({key: fingerprint(path) for key, path in batch})
     public._save(root / "analyzed.json", seen)
-    return dict(analyzed=len(batch), findings=len(merged) - len(findings), branches=queued, waiting=len(todo) - len(batch))
+    public.write_summary(root)   # ratings decide which notebooks the brief shows
+    return dict(analyzed=len(batch), findings=len(merged) - len(findings), branches=queued, waiting=len(todo) - len(batch),
+                ignored=sum(1 for r in result.ratings if r["key"] in keys and r["value"] == 0))

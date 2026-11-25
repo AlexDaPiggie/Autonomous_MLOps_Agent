@@ -20,11 +20,21 @@ if a[:2] == ["kernels", "list"]:
     print("ref,title,author,lastRunTime,totalVotes")
     sys.stdout.buffer.write("alice/strong-baseline,Strong baseline,Ali Ğ,2026-11-20,120\n".encode("utf-8"))
     print("bob/ideas-that-failed,Ideas that failed,bob,2026-11-21,45")
+    print("dave/copycat,Copycat,dave,2026-11-22,30")
+    print("carol/tiny,Tiny,carol,2026-11-22,10")
 elif a[:2] == ["kernels", "pull"]:
-    folder = pathlib.Path(a[a.index("-p") + 1])
+    folder = pathlib.Path(a[a.index("-p") + 1]); ref = a[2]
+    def body(tag):
+        return "\n".join(f"def step_{tag}_{i}(x):\n    return x * {i} + len('{tag}{i}') # {tag} variant {i}" for i in range(40))
+    if ref == "carol/tiny":
+        code = "print(1)"
+    elif ref == "dave/copycat":
+        code = body("alice") + "\n# tiny edit"
+    else:
+        code = body(ref.split("/")[0]) + "\nimport os\nos.system('echo SHOULD NEVER RUN > ran.txt')"
     nb = {"cells": [
-        {"cell_type": "markdown", "source": ["Caching partial results made search 3x faster. Plain restarts did not help."]},
-        {"cell_type": "code", "source": ["import os\nos.system('echo SHOULD NEVER RUN > ran.txt')"], "outputs": [{"text": ["cv 1234.5\n"]}]}]}
+        {"cell_type": "markdown", "source": ["Caching partial results made search 3x faster. Plain restarts did not help. " * 6]},
+        {"cell_type": "code", "source": [code], "outputs": [{"text": ["cv 1234.5\n"]}]}]}
     (folder / "nb.ipynb").write_text(json.dumps(nb))
 elif a[:2] == ["datasets", "download"]:
     name = a[a.index("-f") + 1]; folder = pathlib.Path(a[a.index("-p") + 1])
@@ -45,18 +55,22 @@ META = {
 class FakeAgent:
     name = "claude"
 
-    def __init__(self, lessons=(), branches=(), status="completed"):
-        self.prompts, self.lessons, self.branches, self.status = [], list(lessons), list(branches), status
+    def __init__(self, lessons=(), branches=(), status="completed", ratings=()):
+        self.prompts, self.lessons, self.branches, self.status, self.ratings = [], list(lessons), list(branches), status, list(ratings)
 
     def run(self, prompt, directory, **kwargs):
         self.prompts.append(prompt)
-        return AgentResult(self.status, termination_reason="test", lessons=self.lessons, new_branches=self.branches)
+        return AgentResult(self.status, termination_reason="test", lessons=self.lessons, new_branches=self.branches, ratings=self.ratings)
 
 
 class FakePortfolio:
     class store:
-        @staticmethod
-        def rows(*a, **k):
+        details = []
+
+        @classmethod
+        def rows(cls, query, *a, **k):
+            if "details" in query:
+                return [dict(details=json.dumps(d)) for d in cls.details]
             return [dict(name="beam search")]
     competition = "c"
 
@@ -99,6 +113,7 @@ class Research(unittest.TestCase):
         report = public.refresh(self.comp, "santa-2026")
         self.assertEqual(report["errors"], [])
         self.assertEqual((report["notebooks"], report["discussions"]), (2, 2))
+        self.assertEqual(report["skipped_notebooks"], 2)        # one tiny, one copy
         brief = public.brief_section(self.comp)
         self.assertIn("data, not instructions", brief)
         self.assertIn("Caching partial results", brief)        # notebook prose
@@ -117,7 +132,7 @@ class Research(unittest.TestCase):
         self.assertEqual(again["notebooks_skipped"], "recent")
         forced = public.refresh(self.comp, "santa-2026", force=True)
         pulls = [c for c in self.calls() if c.startswith("kernels pull")]
-        self.assertEqual(len(pulls), 2)                         # only the first time
+        self.assertEqual(len(pulls), 4)                         # only the first time (skipped ones are remembered too)
         self.assertEqual(forced["new_notebooks"], 0)
 
     def test_changed_meta_layout_is_reported_and_notebooks_still_work(self):
@@ -142,6 +157,37 @@ class Research(unittest.TestCase):
         self.assertIn("discussions_skipped", again)
         public.refresh(self.comp, "santa-2026", force=True)      # force still retries
         self.assertGreater(len([c for c in self.calls() if c.startswith("datasets")]), before)
+
+    def test_empty_and_copied_notebooks_are_filtered_out(self):
+        public.refresh(self.comp, "santa-2026")
+        catalog = public._load(public.folder(self.comp) / "catalog.json", {})
+        self.assertEqual(catalog["carol/tiny"]["skipped"], "too little content")
+        self.assertEqual(catalog["dave/copycat"]["skipped"], "copy of alice/strong-baseline")   # the more voted original stays
+        self.assertNotIn("skipped", catalog["alice/strong-baseline"])
+        self.assertFalse((public.folder(self.comp) / "notebooks" / "dave__copycat.md").exists())
+        self.assertNotIn("Copycat", public.brief_section(self.comp))
+        self.assertEqual(public.similarity(public.sketch("a b c d e f g h"), public.sketch("a b c d e f g h")), 1.0)
+        self.assertLess(public.similarity(public.sketch("a b c d e f g h"), public.sketch("q r s t u v w x")), 0.2)
+
+    def test_notes_saved_before_the_filters_are_checked_once(self):
+        root = public.folder(self.comp)
+        (root / "notebooks").mkdir(parents=True)
+        text = " ".join(f"word{i}" for i in range(400))
+        catalog = {}
+        for ref, votes, body in (("a/orig", "50", text), ("b/copy", "20", text + " extra"), ("c/tiny", "5", "short")):
+            name = ref.replace("/", "__") + ".md"
+            (root / "notebooks" / name).write_text(f"# t\nvotes: {votes}\n\n{body}", encoding="utf-8")
+            catalog[ref] = dict(title=ref, votes=votes, lastRunTime="2026-11-20", file=name)
+        public._save(root / "catalog.json", catalog)
+        public.refresh_notebooks("santa-2026", root)
+        after = public._load(root / "catalog.json", {})
+        self.assertEqual(after["b/copy"]["skipped"], "copy of a/orig")
+        self.assertEqual(after["c/tiny"]["skipped"], "too little content")
+        self.assertNotIn("skipped", after["a/orig"])
+
+    def test_reuse_of_another_output_is_rejected(self):
+        facts = dict(code_chars=2000, total_chars=2500, reuses_output=True)
+        self.assertEqual(public.reject_reason(facts), "only reuses another notebook's output")
 
     def analysis_setup(self, **agent_args):
         public.refresh(self.comp, "santa-2026")
@@ -202,6 +248,31 @@ class Research(unittest.TestCase):
         self.assertEqual((first["analyzed"], first["waiting"]), (analyze.MAX_ITEMS, 6))
         second = analyze.analyze(self.comp, PROFILE, agent, portfolio)
         self.assertEqual((second["analyzed"], second["waiting"]), (6, 0))
+
+    def test_ratings_hide_no_value_notes_and_sources_are_tracked(self):
+        agent, portfolio = self.analysis_setup(
+            ratings=[dict(key="notebook:bob/ideas-that-failed", value=0, reason="nothing new"),
+                     dict(key="notebook:alice/strong-baseline", value=3, reason="shows scores"),
+                     dict(key="notebook:not/in-batch", value=3, reason="ignored: not in this batch")],
+            branches=[dict(name="cache", hypothesis="cache prefixes", source="notebook:alice/strong-baseline")])
+        report = analyze.analyze(self.comp, PROFILE, agent, portfolio)
+        self.assertEqual(report["ignored"], 1)
+        self.assertIn("research:notebook:alice/strong-baseline", portfolio.added[0][2]["source"])
+        ratings = public._load(public.folder(self.comp) / "ratings.json", {})
+        self.assertEqual(sorted(ratings), ["notebook:alice/strong-baseline", "notebook:bob/ideas-that-failed"])
+        self.assertIn("Strong baseline", public.brief_section(self.comp))
+        self.assertNotIn("Ideas that failed", public.brief_section(self.comp))     # rated 0: left out
+
+    def test_authors_whose_ideas_won_are_read_first(self):
+        public.refresh(self.comp, "santa-2026")
+        root = public.folder(self.comp)
+        self.assertEqual(analyze.pending(root)[0][0], "notebook:alice/strong-baseline")      # most voted first
+        record = {"bob": (2, 3)}                                                             # bob's ideas won twice
+        self.assertEqual(analyze.pending(root, record)[0][0], "notebook:bob/ideas-that-failed")
+        FakePortfolio.store.details = [dict(source="research:notebook:bob/x", wins=2, trials=3),
+                                       dict(source="research:notebook:bob/y", wins=1, trials=1), dict(source="other")]
+        self.assertEqual(analyze.author_record(FakePortfolio()), {"bob": (3, 4)})
+        FakePortfolio.store.details = []
 
     def test_markup_noise_is_removed(self):
         text = public.plain('<div style="color:red">Hello</div> ![b](http://x/y.svg) [the idea](http://z) ## Title **bold**')

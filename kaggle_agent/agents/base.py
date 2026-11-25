@@ -24,6 +24,7 @@ class AgentResult:
     entry: str | None = None
     lessons: list = field(default_factory=list)
     new_branches: list = field(default_factory=list)
+    ratings: list = field(default_factory=list)   # research analysis: [{key, value 0-3, reason}]
 
 
 def validate_result(value):
@@ -55,10 +56,19 @@ def validate_result(value):
     cleaned=[]
     for b in (branches if isinstance(branches,list) else [branches])[:3]:
         if isinstance(b,dict) and b.get("hypothesis"):
-            cleaned.append(dict(name=str(b.get("name") or b["hypothesis"])[:60],hypothesis=str(b["hypothesis"])[:500]))
+            cleaned.append(dict(name=str(b.get("name") or b["hypothesis"])[:60],hypothesis=str(b["hypothesis"])[:500],
+                                **({"source":str(b["source"])[:120]} if b.get("source") else {})))
         elif isinstance(b,str) and b.strip():
             cleaned.append(dict(name=" ".join(b.split()[:4])[:60],hypothesis=b[:500]))
     value["new_branches"]=cleaned
+    ratings=[]
+    for r in (value.get("ratings") if isinstance(value.get("ratings"),list) else [])[:40]:
+        try:
+            if isinstance(r,dict) and r.get("key") and 0<=int(r.get("value"))<=3:
+                ratings.append(dict(key=str(r["key"])[:200],value=int(r["value"]),reason=str(r.get("reason",""))[:200]))
+        except (TypeError,ValueError):
+            pass
+    value["ratings"]=ratings
     proposals=value.get("proposals",[])
     if not isinstance(proposals,list) or len(proposals)>4 or any(not isinstance(p,dict) or not isinstance(p.get("hypothesis"),str) or not isinstance(p.get("config"),dict) for p in proposals):
         raise ValueError("Proposals require up to four hypothesis/config objects")
