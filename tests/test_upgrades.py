@@ -240,6 +240,8 @@ class Upgrades(unittest.TestCase):
         result = run(self.code_args(directory, agent, trials=3), store)
         outcomes = [n["outcome"] for n in result["notes"]]
         self.assertEqual(outcomes[2], "smoke failed")
+        self.assertIn("Official scoring", agent.prompts[0])      # the brief carries the frozen scorer
+        self.assertIn("def score(solution_path, data_dir)", agent.prompts[0])
         best = directory / ".kaggle-agent/best/solution.txt"
         self.assertTrue(best.is_file())
         champion = store.rows("SELECT champion FROM competitions")[0]["champion"]
@@ -379,6 +381,17 @@ kt.save(d, oof, Ridge().fit(X, y).predict(T))
         adapter.command = lambda prompt, result_path=None, **kw: [sys.executable, str(fake)]
         result = adapter.run("task", self.root, authorized=True, seconds=30)
         self.assertEqual((result.status, result.termination_reason), ("blocked", "authentication"))
+
+    def test_protocol_is_lenient_on_optional_fields(self):
+        from kaggle_agent.agents.base import validate_result
+        value = dict(status="completed", session_id=None, experiment_ids=[], checkpoint=None, next_action="x",
+                     termination_reason="task_completed", entry="solve.py", hypothesis="h",
+                     lessons="one lesson", new_branches=["Use subtraction and division for shorter chains", {"hypothesis": "reuse registers"}])
+        result = validate_result(value)
+        self.assertEqual(result.entry, "solve.py")
+        self.assertEqual(result.lessons, ["one lesson"])
+        self.assertEqual([b["hypothesis"] for b in result.new_branches], ["Use subtraction and division for shorter chains", "reuse registers"])
+        self.assertIsNone(validate_result(value | dict(entry="../evil.sh")).entry)
 
     def test_adapter_parsing_and_flags(self):
         self.assertEqual(json.loads(extract_json('Here you go:\n```json\n{"a": 1}\n```')), {"a": 1})

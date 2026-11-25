@@ -44,9 +44,12 @@ def contract(profile):
         return """Write a Python solver. Use the toolkit:
     from kaggle_agent import toolkit as kt
     o = kt.optimization()   # data_dir, files, solution (output path), best (current best solution or None), smoke, seed, threads
-Read the data files from o["data_dir"]. Start from o["best"] when it exists (warm start).
+Read the data files from o["data_dir"] (paths in the scorer are relative to it).
+Start from o["best"] (the current best solution file) when it is not None. Otherwise start from a valid
+baseline (for example a sample submission in the data files) so the output is always complete and valid.
 Write the solution to o["solution"]. When o["smoke"] is True, run for a few seconds only.
-The supervisor scores the file with the competition scorer; infeasible solutions fail."""
+Verify each part with the same rules as the scorer before writing, and keep the old part if a new one is
+invalid or not better. The supervisor scores the file with the competition scorer; infeasible solutions fail."""
     return """Write a Python training script. Use the toolkit:
     from kaggle_agent import toolkit as kt
     d = kt.load()                 # train/test DataFrames, y (encoded), folds, task, metric, classes, smoke, threads, seed
@@ -65,7 +68,18 @@ def build_brief(store, controller, directory, profile, branch, *, stagnating, la
     board = runs.leaderboard(store, controller.competition, way, limit=8)
     lines = [f"# Experiment brief", "",
              f"Task: {profile['task']}. Metric: {profile['metric']} ({way}).",
-             f"Branch to pursue: {branch['name']} - {branch['details']['hypothesis']}", ""]
+             f"Branch to pursue: {branch['name']} - {branch['details']['hypothesis']}", "",
+             "You cannot run shell commands or read files outside this folder and the data folder. Everything you",
+             "need is in this brief: do not try to look elsewhere. Write the code; the supervisor runs it on a small",
+             "smoke test and sends you the error log if it fails.", ""]
+    task = Path(directory) / ".kaggle-agent" / "task.md"
+    if task.is_file():
+        lines += ["## Problem (competition rules)", task.read_text(encoding="utf-8")[:12000], ""]
+    if profile["data"]["kind"] == "optimization":
+        scorer = Path(directory) / profile["data"]["scorer"]
+        lines += ["## Official scoring (frozen copy of the scorer the supervisor uses)", "```python",
+                  scorer.read_text(encoding="utf-8")[:12000], "```",
+                  f"Data files (relative to the data root): {', '.join(profile['data'].get('files', []))}", ""]
     summary = Path(directory) / ".kaggle-agent" / "data_summary.md"
     if summary.is_file():
         lines += ["## Data", summary.read_text(encoding="utf-8")[:6000], ""]
@@ -99,7 +113,8 @@ def build_brief(store, controller, directory, profile, branch, *, stagnating, la
               "Reply with ONLY a JSON object: {\"status\":\"completed\",\"session_id\":null,\"experiment_ids\":[],"
               "\"checkpoint\":null,\"next_action\":\"...\",\"termination_reason\":\"task_completed\","
               f"\"hypothesis\":\"one sentence: what you changed and why\",\"entry\":\"{default_entry(profile)}\","
-              "\"lessons\":[\"what the previous results taught you\"],\"new_branches\":[]}"]
+              "\"lessons\":[\"what the previous results taught you\"],"
+              "\"new_branches\":[{\"name\":\"short name\",\"hypothesis\":\"one sentence\"}]}"]
     return "\n".join(lines)
 
 

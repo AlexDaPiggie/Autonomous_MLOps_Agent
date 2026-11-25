@@ -260,6 +260,12 @@ def finish_new(args, ask, target, slug, facts, *, sample):
         print("Git history: on (local only; code is committed after every scored run)")
     except Exception as error:
         print(f"Git history: off ({error}). Install Git for Windows to version the code.")
+    task = target / ".kaggle-agent" / "task.md"
+    if not task.exists():
+        task.write_text(f"# {slug}: competition rules\n\n(Paste the Overview > Evaluation section and the Data page rules here.\n"
+                        "The agent reads this file in every brief.)\n", encoding="utf-8")
+    print(f"Paste the competition's rules (Overview > Evaluation, and the Data page) into {task}. "
+          "The agent reads it before every trial" + (" and needs it for optimization puzzles." if profile["task"] == "optimization" else "."))
     print(f"\nReady: {target}")
     if not rules:
         print("Read the rules, then set \"rules_reviewed\": true in .kaggle-agent/profile.json before `ka go`.")

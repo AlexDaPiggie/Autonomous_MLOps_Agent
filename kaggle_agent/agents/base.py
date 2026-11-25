@@ -41,17 +41,24 @@ def validate_result(value):
         raise ValueError("Invalid result text")
     if value.get("usage") is not None and not isinstance(value["usage"],dict):
         raise ValueError("Invalid usage")
+    # Optional code-mode fields are cleaned, never fatal: a slightly different shape
+    # (e.g. branches as plain strings) must not throw away a good script.
+    value = dict(value)
     for key in ("hypothesis","entry"):
         if value.get(key) is not None and not isinstance(value[key],str):
-            raise ValueError(f"Invalid {key}")
+            value[key] = str(value[key])
     if value.get("entry") and (Path(value["entry"]).name!=value["entry"] or not value["entry"].endswith(".py")):
-        raise ValueError("entry must be a .py file name in the workspace")
-    lessons=value.get("lessons",[])
-    if not isinstance(lessons,list) or len(lessons)>10 or any(not isinstance(x,str) or len(x)>1000 for x in lessons):
-        raise ValueError("lessons: up to ten short strings")
-    branches=value.get("new_branches",[])
-    if not isinstance(branches,list) or len(branches)>3 or any(not isinstance(b,dict) or not isinstance(b.get("name"),str) or not isinstance(b.get("hypothesis"),str) for b in branches):
-        raise ValueError("new_branches: up to three name/hypothesis objects")
+        value["entry"] = None
+    lessons=value.get("lessons") or []
+    value["lessons"]=[str(x)[:1000] for x in (lessons if isinstance(lessons,list) else [lessons])][:10]
+    branches=value.get("new_branches") or []
+    cleaned=[]
+    for b in (branches if isinstance(branches,list) else [branches])[:3]:
+        if isinstance(b,dict) and b.get("hypothesis"):
+            cleaned.append(dict(name=str(b.get("name") or b["hypothesis"])[:60],hypothesis=str(b["hypothesis"])[:500]))
+        elif isinstance(b,str) and b.strip():
+            cleaned.append(dict(name=" ".join(b.split()[:4])[:60],hypothesis=b[:500]))
+    value["new_branches"]=cleaned
     proposals=value.get("proposals",[])
     if not isinstance(proposals,list) or len(proposals)>4 or any(not isinstance(p,dict) or not isinstance(p.get("hypothesis"),str) or not isinstance(p.get("config"),dict) for p in proposals):
         raise ValueError("Proposals require up to four hypothesis/config objects")
