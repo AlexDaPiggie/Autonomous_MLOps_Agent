@@ -57,12 +57,12 @@ class CLIAdapter:
         result = subprocess.run([binary,"--version"],capture_output=True,text=True,timeout=15)
         return dict(available=result.returncode == 0,version=result.stdout.strip())
 
-    def command(self, prompt):
+    def command(self, prompt, result_path=None):
         binary = self.binary()
         if not binary:
             raise FileNotFoundError(self.name)
         if self.name == "codex":
-            return [binary,"exec","--sandbox","read-only",prompt]
+            return [binary,"exec","--sandbox","read-only","--output-last-message",str(result_path),prompt]
         return [binary,"--print","--permission-mode","plan","--output-format","json",prompt]
 
     def run(self, task, directory, *, authorized=False, seconds=300, heartbeat=lambda **kw: None,
@@ -82,7 +82,8 @@ class CLIAdapter:
         template = asdict(AgentResult("completed",termination_reason="task_completed"))
         prompt = (task + "\nRead shared rules explicitly. No paid work, remote mutations, submissions or pushes. "
                   "Return only a JSON object using this protocol: " + json.dumps(template))
-        outcome = run_process(self.command(prompt),directory,folder/"output.log",seconds=seconds,
+        final_path=folder/"final.json"
+        outcome = run_process(self.command(prompt,final_path),directory,folder/"output.log",seconds=seconds,
                               heartbeat=heartbeat,should_stop=lambda:self.cancelled or should_stop())
         if outcome["termination_reason"] != "exit":
             result = AgentResult("stopped" if outcome["termination_reason"] == "user_stop" else "failed",
@@ -99,14 +100,14 @@ class CLIAdapter:
                 result = AgentResult("failed",checkpoint=str(folder),termination_reason="agent_exit")
             else:
                 try:
-                    value = json.loads(raw)
+                    value = json.loads(final_path.read_text(encoding="utf-8") if self.name == "codex" else raw)
                     if self.name == "claude" and "result" in value:
                         envelope = value
                         value = json.loads(envelope["result"])
                         value["session_id"] = envelope.get("session_id")
                         value["usage"] = envelope.get("usage")
                     result = validate_result(value)
-                except (ValueError,TypeError,KeyError):
+                except (ValueError,TypeError,KeyError,OSError):
                     result = AgentResult("blocked",checkpoint=str(folder),termination_reason="malformed_output")
         result_path.write_text(json.dumps(asdict(result),indent=2),encoding="utf-8")
         self.last_result = result

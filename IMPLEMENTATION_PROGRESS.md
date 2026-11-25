@@ -59,3 +59,12 @@ gates, process-tree watchdog, explicitly selected CLI adapters (disabled by defa
 Tests found and fixed SQLite Windows connection lifetime and ledger SQL arity.
 `python -m unittest discover -v`: 8 tests passed after fixes. No live CLI calls.
 Next: migration/export/retrieval/portfolio/session memory, then evaluator/pipelines.
+
+## Increment 2
+Added non-destructive legacy archive/import with SQLite backup/dry-run/conflicts,
+generated STATE/leaderboard/registry views under .kaggle-agent (human files intact),
+3-5 direction portfolio with exploration/parked revisits, separate stagnation types,
+FTS attributed summaries/negative outcomes and compact persisted session rotation.
+Legacy test fixtures mirror inspected E002 registry shape; no sibling files changed.
+`python -m unittest discover -v`: 12 tests passed. SQL arity and backup handle issues
+found by first run and fixed. Codex adapter now uses documented last-message file.

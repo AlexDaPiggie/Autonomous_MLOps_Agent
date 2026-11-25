@@ -126,5 +126,5 @@ class Store:
                 conn.execute("INSERT INTO events(competition,kind,details,created) VALUES(?,?,?,?)", args)
 
     def backup(self, destination):
-        with self.connect() as source, sqlite3.connect(destination) as target:
+        with self.connect() as source, sqlite3.connect(destination, factory=ClosingConnection) as target:
             source.backup(target)
