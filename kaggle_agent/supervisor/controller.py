@@ -80,6 +80,8 @@ class Controller:
                        (key, self.competition, campaign, digest, "RUNNING", fidelity, json.dumps(metadata), utcnow()))
             db.execute("INSERT INTO remote_jobs(key,experiment,provider,state,heartbeat,details) VALUES(?,?,?,?,?,?)", (key,key,provider.name,"INTENT",utcnow(),json.dumps(dict(seconds=seconds,memory_mb=memory_mb))))
             db.execute("UPDATE campaigns SET attempts=attempts+1,state='RUNNING' WHERE id=?", (campaign,))
+            if comp["state"] != "PENDING":
+                transition(self.store,self.competition,"PENDING","next bounded experiment",db)
             transition(self.store,self.competition,"TESTING","smoke passed",db)
             transition(self.store,self.competition,"RUNNING","launch intent persisted",db)
         try:
@@ -107,6 +109,12 @@ class Controller:
                 db.execute("UPDATE remote_jobs SET state=?,job_id=COALESCE(?,job_id),heartbeat=? WHERE key=?", (state,result.get("job_id"),utcnow(),job["key"]))
                 if state == "UNKNOWN":
                     transition(self.store,self.competition,"BLOCKED","ambiguous launch; never duplicate",db)
+                elif state in {"RUNNING","COMPLETED"}:
+                    comp=db.execute("SELECT state FROM competitions WHERE id=?",(self.competition,)).fetchone()
+                    if comp[0]=="BLOCKED":
+                        transition(self.store,self.competition,"PENDING","job reconciled",db)
+                        transition(self.store,self.competition,"TESTING","recovered persisted checks",db)
+                        transition(self.store,self.competition,"RUNNING","original job recovered",db)
                 elif state in {"FAILED","STOPPED"}:
                     db.execute("UPDATE experiments SET state=?,failure_reason=? WHERE id=?", (state,"provider terminal",job["experiment"]))
                     transition(self.store,self.competition,state,"provider terminal",db)
@@ -119,9 +127,22 @@ class Controller:
             exp = db.execute("SELECT * FROM experiments WHERE id=? AND competition=?", (experiment,self.competition)).fetchone()
             require(exp and exp["state"] == "RUNNING", "Experiment not active")
             acceptance(result,json.loads(exp["metadata"]),root)
+            metadata=json.loads(exp["metadata"])
+            if "dataset_path" in metadata:
+                from kaggle_agent.evaluation.validation import independently_score
+                from kaggle_agent.execution.identity import code_version
+                require(metadata["code_hash"]==code_version(),"Experiment code changed after launch")
+                scores=independently_score(metadata,root)
+                require(len(scores)==len(result["fold_scores"]) and all(abs(a-b)<1e-10 for a,b in zip(scores,result["fold_scores"])),"Reported metric differs from independent evaluator")
+                result=result|dict(fold_scores=scores,independently_scored=True)
             require(not self.should_stop(), "Stopped results require explicit recovery review")
             transition(self.store,self.competition,"EVALUATING","independent artifact checks",db)
             db.execute("UPDATE experiments SET state='COMPLETED',result=? WHERE id=?", (json.dumps(result,allow_nan=False),experiment))
+            from pathlib import Path
+            from kaggle_agent.storage.database import checksum
+            for relative,digest in result["artifacts"].items():
+                path=str((Path(root)/relative).resolve())
+                db.execute("INSERT INTO predictions VALUES(?,?,?,?,?)",(fingerprint(dict(experiment=experiment,path=path)),experiment,path,digest,json.dumps(metadata)))
             db.execute("UPDATE remote_jobs SET state='COMPLETED' WHERE experiment=?", (experiment,))
             db.execute("UPDATE campaigns SET state='COMPLETED',next_action='review portfolio' WHERE id=?", (exp["campaign"],))
             transition(self.store,self.competition,"COMPLETED","campaign completed; system may continue",db)

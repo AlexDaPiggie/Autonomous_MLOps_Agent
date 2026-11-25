@@ -41,6 +41,7 @@ def prelaunch(profile, metadata, *, smoke_passed, seconds, memory_mb, provider):
     require(provider in {"mock", "local"}, "Paid/remote providers disabled: isolation and authorization required")
     require(smoke_passed is True, "Real-path smoke test required")
     require(0 < seconds <= 1800 and 0 < memory_mb <= 2048, "Resource caps exceed defaults")
+    require(seconds <= profile["constraints"].get("seconds",1800) and memory_mb <= profile["constraints"].get("memory_mb",2048),"Existing stricter resource caps apply")
     require(metadata["data_hash"] == profile["data_hash"] and metadata["split_hash"] == profile["split_hash"], "Data/split mismatch")
     require(metadata["metric"] == profile["metric"], "Metric mismatch")
     return experiment_fingerprint(metadata)

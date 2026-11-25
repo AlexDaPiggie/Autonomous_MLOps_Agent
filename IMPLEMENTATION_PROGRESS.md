@@ -68,3 +68,19 @@ FTS attributed summaries/negative outcomes and compact persisted session rotatio
 Legacy test fixtures mirror inspected E002 registry shape; no sibling files changed.
 `python -m unittest discover -v`: 12 tests passed. SQL arity and backup handle issues
 found by first run and fixed. Codex adapter now uses documented last-message file.
+
+## Increment 3
+Added independent ID-based metric recomputation from frozen dataset/checksum, code
+and evaluator identities, variance-aware full-fidelity promotion, prediction artifact
+registry, ordinary OOF and conditional meta-CV blending, disabled submission checks.
+Added CPU tabular linear/forest/hist and opt-in boosting adapters, categorical
+preprocessing, calibration/log targets/interactions, fold-only encoding, group splits;
+feasible knapsack greedy/local/anneal/restart archive; seasonal/lag forecasting with
+rolling origins and as-of checks. Added bounded fidelity/search/cache utilities and
+eight synthetic benchmark tasks (two seeds/domain; baseline is explicitly a proxy).
+CLI now supports doctor/init/audit/status/budget/report/start/resume/stop/checkpoint/
+migrate/export/benchmark. Local child has its own time/RSS cap if parent is lost.
+`python -m unittest discover -v`: 20 tests passed in 23.288s, including full CLI
+paths for all four domains in temporary paths with spaces. No inference or cloud calls.
+Next: acceptance hardening (restart/process failures, adapter faults, initializer),
+operator guide, benchmark execution and final scope/limitations audit.
