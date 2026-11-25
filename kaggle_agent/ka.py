@@ -315,7 +315,14 @@ def printer(settings, st, directory, profile, competition):
         elif kind == "research":
             got = [f"{d['notebooks']} notebooks" if "notebooks" in d else "", f"{d['discussions']} forum threads" if "discussions" in d else ""]
             got = ", ".join(x for x in got if x)
-            print(f"  research: {got or 'nothing new'}" + "".join(f"\n  research problem: {e}" for e in d.get("errors", [])), flush=True)
+            if not got:
+                notes = []
+                for name, label in (("notebooks", "notebooks"), ("discussions", "forum threads")):
+                    why = d.get(name + "_skipped")
+                    if why:
+                        notes.append(f"{label} " + ("up to date (read within the last day)" if why == "recent" else "will retry later"))
+                got = "; ".join(notes) or "nothing new"
+            print(f"  research: {got}" + "".join(f"\n  research problem: {e}" for e in d.get("errors", [])), flush=True)
         elif kind == "agent_done":
             print(f"  idea: {d['hypothesis']}", flush=True)
         elif kind == "stage":
