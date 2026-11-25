@@ -83,7 +83,7 @@ class KaCommand(unittest.TestCase):
         return [json.loads(l) for l in log.read_text().splitlines()] if log.exists() else []
 
     def test_full_everyday_flow(self):
-        code, out = self.ka(["setup"], ["claude", "1", "1024", "0.1", "1", "3", "none"])
+        code, out = self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none"])
         self.assertEqual(code, 0, out)
         code, out = self.ka(["new", "https://www.kaggle.com/competitions/playground-series-s9e9", "--root", str(self.root)],
                             ["y", "y", "y"])  # detection right, rules read, auto-submit on
@@ -158,7 +158,7 @@ class KaCommand(unittest.TestCase):
         import shutil
         if not shutil.which("git"):
             self.skipTest("git not installed")
-        self.ka(["setup"], ["claude", "1", "1024", "0.1", "1", "3", "none"])
+        self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none"])
         code, out = self.ka(["new", "playground-series-s9e9", "--root", str(self.root)], ["y", "y", "n"])
         self.assertIn("Git history: on", out)
         comp = self.root / "playground-series-s9e9"
@@ -197,6 +197,36 @@ class KaCommand(unittest.TestCase):
         code, out = self.ka(["go", "--dir", str(self.root / "playground-series-s9e9")])
         self.assertEqual(code, 2)
         self.assertIn("rules", out)
+
+    def test_agent_model_and_effort(self):
+        from unittest.mock import patch
+        from kaggle_agent.agents.base import CLIAdapter
+        with patch.object(CLIAdapter, "binary", return_value="codex"):
+            command = CLIAdapter("codex", model="gpt-x", effort="high").command("p", "out.json", mode="code")
+        self.assertIn("--model", command)
+        self.assertIn('model_reasoning_effort="high"', command)
+        self.assertEqual(command[-1], "-")
+        with patch.object(CLIAdapter, "binary", return_value="claude"):
+            command = CLIAdapter("claude", model="opus", effort="high").command("p", mode="code")
+            plain = CLIAdapter("claude").command("p", mode="code")
+        self.assertEqual(command[command.index("--model") + 1], "opus")
+        self.assertNotIn("--model", plain)
+        with self.assertRaises(ValueError):
+            CLIAdapter("codex", effort="turbo")
+        with tempfile.TemporaryDirectory() as temp, tempfile.TemporaryDirectory() as home:
+            os.environ["KAGGLE_AGENT_HOME"] = home
+            folder = Path(temp) / "comp"
+            (folder / ".kaggle-agent").mkdir(parents=True)
+            (folder / ".kaggle-agent" / "profile.json").write_text("{}", encoding="utf-8")
+            out = io.StringIO()
+            with redirect_stdout(out):
+                self.assertEqual(ka.main(["agent", "codex", "--effort", "high", "--dir", str(folder)]), 0)
+                self.assertEqual(ka.main(["agent", "claude", "--model", "opus", "--global"]), 0)
+            settings = ka.load_settings()
+            self.assertEqual(ka.agent_choice(settings, folder, "codex"), {"effort": "high"})
+            self.assertEqual(ka.agent_choice(settings, folder, "claude"), {"model": "opus"})
+            self.assertEqual(ka.agent_choice(settings, None, "codex"), {})
+            os.environ.pop("KAGGLE_AGENT_HOME")
 
     def test_outside_competition_folder_is_friendly(self):
         code, out = self.ka(["status", "--dir", str(self.root)])

@@ -8,6 +8,7 @@
     ka submit [run-id]       send the best run now   (ka submit --auto on|off, --limit N)
     ka stop                  ask a running `ka go` to stop safely
     ka usage                 agent sessions per day
+    ka agent [claude|codex]  show or set model and effort (--model X --effort high, --global)
     ka history               code version of every scored run (git)
     ka diff [run-id]         what changed versus the champion
     ka restore <run-id>      copy a past run's code into restored/<run-id>/
@@ -44,6 +45,27 @@ def load_settings():
 def save_settings(value):
     home().mkdir(parents=True, exist_ok=True)
     (home() / "settings.json").write_text(json.dumps(value, indent=2), encoding="utf-8")
+
+
+def agent_file(directory):
+    return Path(directory) / ".kaggle-agent" / "agent.json"
+
+
+def agent_choice(settings, directory, name):
+    """Model and effort for one agent: this competition's agent.json beats the global
+    setup value. Empty means the tool's own default."""
+    merged = {}
+    sources = [(settings.get("agents") or {}).get(name) or {}]
+    path = agent_file(directory) if directory else None
+    if path and path.is_file():
+        sources.append((json.loads(path.read_text(encoding="utf-8")) or {}).get(name) or {})
+    for source in sources:
+        merged.update({k: v for k, v in source.items() if k in {"model", "effort"} and v})
+    return merged
+
+
+def describe_choice(choice):
+    return f"model {choice.get('model') or 'default'}, effort {choice.get('effort') or 'default'}"
 
 
 def ask_console(question, default=None):
@@ -94,6 +116,12 @@ def cmd_setup(args, ask):
     agent = ask("Which agent should write the code (claude/codex)?", settings["agent"] if settings["agent"] in ready or not ready else ready[0])
     if agent not in {"claude", "codex"}:
         raise GateError("Choose claude or codex")
+    agents = settings.get("agents") or {}
+    current = agents.get(agent) or {}
+    model = ask(f"{agent} model (empty = {agent}'s own default)", current.get("model", ""))
+    effort = ask(f"{agent} effort: low, medium, high, xhigh (empty = default)", current.get("effort", ""))
+    CLIAdapter(agent, model=model, effort=effort)   # validates the effort word
+    agents[agent] = {k: v for k, v in dict(model=model.strip(), effort=effort.strip().lower()).items() if v}
     threads = int(ask(f"CPU threads per run (this machine has {machine_threads()})", str(max(1, machine_threads() // 2))))
     memory = int(ask(f"Memory per run in MB (machine {machine_memory_mb()}, max {memory_ceiling_mb()})", str(min(8192, memory_ceiling_mb()))))
     hours = float(ask("Max hours per run", "1"))
@@ -110,7 +138,7 @@ def cmd_setup(args, ask):
                       telegram_chat=ask("Telegram chat id", alerts.get("telegram_chat", "")))
     else:
         alerts = {}
-    settings.update(agent=agent, campaigns=campaigns, trials=trials, alerts=alerts)
+    settings.update(agent=agent, agents=agents, campaigns=campaigns, trials=trials, alerts=alerts)
     save_settings(settings)
     from kaggle_agent.supervisor.budget import Budget
     budget = Budget(store())
@@ -353,7 +381,8 @@ def cmd_go(args, ask):
     competition = competition_id(directory)
     exists = st.rows("SELECT state,stop_requested FROM competitions WHERE id=?", (competition,))
     command = "resume" if exists and (exists[0]["stop_requested"] or exists[0]["state"] in {"STOPPED", "BLOCKED", "WAITING_LIMIT", "FAILED"}) else "start"
-    agent = getattr(args, "mock_agent", None) or CLIAdapter(agent_name)
+    choice = agent_choice(settings, directory, agent_name)
+    agent = getattr(args, "mock_agent", None) or CLIAdapter(agent_name, **choice)
     run_args = argparse.Namespace(competition=str(directory), agent="mock" if getattr(args, "mock_agent", None) else agent_name, mode="code",
                                   execute=True, subscription_confirmed=True, campaigns=args.campaigns or settings["campaigns"],
                                   trials=args.trials or settings["trials"], seconds=None, memory_mb=None, config=None,
@@ -362,7 +391,7 @@ def cmd_go(args, ask):
         from kaggle_agent.supervisor.budget import Budget
         if not Budget(st).summary()["config"]["confirmed"]:
             raise GateError("Run `ka setup` once first (it confirms you use your existing Claude/Codex plan, no paid API).")
-    print(f"{'Resuming' if command == 'resume' else 'Starting'} {directory.name} with {agent_name} · "
+    print(f"{'Resuming' if command == 'resume' else 'Starting'} {directory.name} with {agent_name} ({describe_choice(choice)}) · "
           f"{run_args.campaigns} campaign(s) × {run_args.trials} trial(s). Stop any time with Ctrl+C or `ka stop`.")
     print(f"Progress page: {directory / '.kaggle-agent' / 'views' / 'dashboard.html'}")
     refresh_limit(directory)
@@ -374,6 +403,44 @@ def cmd_go(args, ask):
         raise
     print(f"\nDone: {result.get('state')} · {len(result.get('completed', []))} new run(s). See `ka status` or `ka dash`.")
     notify.send(settings, "Campaigns finished", f"{directory.name}: {result.get('state')}")
+    return 0
+
+
+def cmd_agent(args, ask):
+    """Show or set model and effort. Per competition by default; --global for all."""
+    settings = load_settings()
+    names = [args.name] if args.name else ["claude", "codex"]
+    changes = {k: v for k, v in dict(model=args.model, effort=args.effort).items() if v is not None}
+    if changes:
+        if not args.name:
+            raise GateError("Say which agent: ka agent claude --effort high  (or codex)")
+        from kaggle_agent.agents.base import CLIAdapter
+        CLIAdapter(args.name, **changes)   # validates the effort word
+        changes = {k: v.strip().lower() if k == "effort" else v.strip() for k, v in changes.items()}
+        if args.use_global:
+            agents = settings.get("agents") or {}
+            agents.setdefault(args.name, {}).update(changes)
+            agents[args.name] = {k: v for k, v in agents[args.name].items() if v}
+            settings["agents"] = agents
+            save_settings(settings)
+            scope = "all competitions"
+            directory = None
+        else:
+            directory = find_competition(args.dir)
+            path = agent_file(directory)
+            data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+            data.setdefault(args.name, {}).update(changes)
+            data[args.name] = {k: v for k, v in data[args.name].items() if v}
+            path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            scope = directory.name
+        print(f"Saved for {scope}. Empty value = the tool's own default.")
+    else:
+        try:
+            directory = find_competition(args.dir)
+        except GateError:
+            directory = None
+    for name in names:
+        print(f"{name}: {describe_choice(agent_choice(settings, directory, name))}")
     return 0
 
 
@@ -584,6 +651,11 @@ def parser():
     go.add_argument("--campaigns", type=int);go.add_argument("--trials", type=int);go.add_argument("--agent", choices=["claude", "codex"])
     for name in ("status", "dash", "stop", "usage"):
         sub.add_parser(name)
+    ag = sub.add_parser("agent", help="show or set the model and effort of an agent")
+    ag.add_argument("name", nargs="?", choices=["claude", "codex"])
+    ag.add_argument("--model", help="model name; empty string = tool default")
+    ag.add_argument("--effort", help="low, medium, high, xhigh (claude also max); empty string = tool default")
+    ag.add_argument("--global", dest="use_global", action="store_true", help="save for every competition, not just this folder")
     h = sub.add_parser("history", help="code versions of every scored run (git)")
     h.add_argument("--limit", type=int, default=30)
     d = sub.add_parser("diff", help="code changes between the champion and a run")
@@ -600,7 +672,7 @@ def parser():
     return p
 
 
-COMMANDS = dict(setup=cmd_setup, new=cmd_new, go=cmd_go, status=cmd_status, dash=cmd_dash, stop=cmd_stop, usage=cmd_usage,
+COMMANDS = dict(setup=cmd_setup, new=cmd_new, go=cmd_go, status=cmd_status, dash=cmd_dash, stop=cmd_stop, usage=cmd_usage, agent=cmd_agent,
                 submit=cmd_submit, history=cmd_history, diff=cmd_diff, restore=cmd_restore)
 
 

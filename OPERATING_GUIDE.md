@@ -21,6 +21,7 @@ competition folder (except `setup` and `new`).
 | `ka submit --limit N` | Daily submission limit for this competition (read from Kaggle when available, asked during `ka new` otherwise, refreshed at each `ka go`). `--reserve N` sets the slots auto-submit leaves for you (default 1). |
 | `ka submit --auto on/off` | Auto-submit: after each campaign with a new champion, sends the best run once if the daily limit allows, always keeping 1 slot for you. Uses CV only; public scores are shown, never used. |
 | `ka stop`, `ka usage` | Safe stop; agent sessions per day and limit hits. |
+| `ka agent [claude\|codex] [--model X] [--effort high] [--global]` | Show or set the agent's model and effort. Saved in `.kaggle-agent/agent.json` for this competition, or in your settings with `--global`. Empty means the tool's own default. |
 | `ka history`, `ka diff [run]`, `ka restore <run>` | Git history of the code. `ka new` makes the folder its own local repo (never pushed) with a code-only .gitignore. After every trial that reached a scored stage, the supervisor writes the run's exact code to `agent_code/` and commits it (`run <id> · <metric> <cv> · <outcome> · <idea>`); champions are tagged `champion-NNN`. `register-run --code` commits your files at their real paths. Agents never run git. Missing git never blocks a run. |
 
 Submission files: probabilities for roc_auc/log_loss binary columns, one column per class

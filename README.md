@@ -48,6 +48,7 @@ Run inside the competition folder (except setup/new), or add `--dir <folder>`.
 | `ka submit --limit 100` | Set this competition's daily submission limit (`--reserve N`: slots auto-submit leaves for you) |
 | `ka stop` | Stop a running `ka go` safely |
 | `ka usage` | Agent sessions per day and limit hits |
+| `ka agent claude --effort high` | Show or set model and effort for this competition (`--model X`, `--global` for all). Empty = the tool's default |
 | `ka history` | Code version (git commit) of every scored run, champions tagged |
 | `ka diff [run-id]` | Code changes between the champion and a run (`--against <run>` to compare two runs) |
 | `ka restore <run-id>` / `champion` | Copy a past run's code into `restored/<run-id>/` |

@@ -91,11 +91,19 @@ def extract_json(text):
     return text[start:end+1]
 
 
+EFFORTS = ("minimal", "low", "medium", "high", "xhigh", "max")
+
+
 class CLIAdapter:
-    def __init__(self, name):
+    def __init__(self, name, model=None, effort=None):
         if name not in {"codex","claude"}:
             raise ValueError("Choose codex or claude explicitly")
+        effort = (effort or "").strip().lower() or None
+        if effort and effort not in EFFORTS:
+            raise ValueError("Effort must be one of: " + ", ".join(EFFORTS))
         self.name = name
+        self.model = (model or "").strip() or None   # None = the tool's own default
+        self.effort = effort                         # None = the tool's own default
         self.cancelled = False
         self.last_result = None
 
@@ -132,8 +140,15 @@ class CLIAdapter:
             raise ValueError("mode must be propose or code")
         if self.name == "codex":
             sandbox = "workspace-write" if mode == "code" else "read-only"
-            return [binary,"exec","--skip-git-repo-check","--sandbox",sandbox,"--json","--output-last-message",str(result_path),"-"]
+            command = [binary,"exec","--skip-git-repo-check","--sandbox",sandbox,"--json","--output-last-message",str(result_path)]
+            if self.model:
+                command += ["--model",self.model]
+            if self.effort:
+                command += ["-c",f'model_reasoning_effort="{self.effort}"']
+            return command + ["-"]
         command = [binary,"--print","--permission-mode","acceptEdits" if mode == "code" else "plan","--output-format","json"]
+        if self.model:
+            command += ["--model",self.model]
         for folder in read_dirs:
             command += ["--add-dir",str(folder)]
         if mode == "code":
@@ -150,6 +165,8 @@ class CLIAdapter:
         # alternate endpoints, so it can only use your subscription login. Unrelated
         # keys you have set (Gemini, Firecrawl, ...) stay in your shell, untouched.
         env = agent_environment() | {k: str(v) for k, v in (env_extra or {}).items()}
+        if self.name == "claude" and self.effort:
+            env["CLAUDE_CODE_EFFORT_LEVEL"] = self.effort   # Claude Code reads effort from this variable
         if not self.binary():
             return AgentResult("blocked",termination_reason="missing_binary")
         run_id = uuid.uuid4().hex
