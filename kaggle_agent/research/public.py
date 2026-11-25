@@ -211,6 +211,7 @@ def refresh(directory, slug, *, max_age_hours=24, force=False, run=kaggle_cli.ru
             report["errors"].append(f"{name}: {str(error)[:200]}")
     root.mkdir(parents=True, exist_ok=True)
     _save(state_path, state)
+    _save(root / "last-report.json", report)   # so a problem is still visible after the terminal closes
     write_summary(root)
     return report
 

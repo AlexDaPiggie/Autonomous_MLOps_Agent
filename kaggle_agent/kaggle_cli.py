@@ -38,7 +38,9 @@ def run(args, *, timeout=600):
         text = (result.stderr or result.stdout).strip()
         if "403" in text or "Forbidden" in text or "rules" in text.lower():
             raise KaggleError("Kaggle refused access. Join the competition and accept its rules on the website first.")
-        raise KaggleError(text.splitlines()[-1][:400] if text else "Kaggle CLI failed")
+        # The "outdated kaggle version" warning is noise: report the real error lines.
+        lines = [l for l in text.splitlines() if l.strip() and not l.startswith("Warning:")]
+        raise KaggleError(" | ".join(lines[-2:])[:400] if lines else "Kaggle CLI failed")
     return result.stdout
 
 
