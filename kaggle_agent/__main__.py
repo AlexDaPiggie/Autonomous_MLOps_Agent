@@ -191,7 +191,7 @@ def run(args,store):
             cp=checkpoint(store,controller.competition,"bounded campaign",directory/".kaggle-agent"/"checkpoint.json")
             agent=MockAgent() if args.agent=="mock" else CLIAdapter(args.agent)
             agent_result=agent.resume("Review next bounded research task; report protocol JSON. No remote actions. You may propose up to four hypothesis/config objects in proposals, using only documented local model families/configs. Propose a distinct useful change, not a repeated equivalent trial.",directory,cp,
-                                      authorized=True,seconds=min(args.seconds,300),heartbeat=controller.heartbeat,should_stop=controller.should_stop)
+                                      authorized=True,seconds=min(args.seconds,300),memory_mb=args.memory_mb,heartbeat=controller.heartbeat,should_stop=controller.should_stop)
             session=rotate(store,controller.competition,args.agent,cp)
             with store.transaction() as db:
                 db.execute("UPDATE agent_sessions SET state=?,result=? WHERE id=?",(agent_result.status,json.dumps(asdict(agent_result)),session))

@@ -116,6 +116,25 @@ class Controller:
             db.execute("UPDATE remote_jobs SET job_id=?,state='RUNNING' WHERE key=?", (job_id,key))
         return key
 
+    def recover_interrupted(self, provider):
+        """After Ctrl+C, a crash or a failed finish: settle leftovers so `ka go` can resume.
+
+        Jobs that really ended are reconciled first. An experiment still marked RUNNING
+        whose job is not active any more never got scored, so it is marked FAILED
+        (the code can run again). Then a mid-run competition state becomes STOPPED,
+        from which a new campaign may start.
+        """
+        self.reconcile(provider)
+        with self.store.transaction() as db:
+            comp = self.assert_lease(db)
+            if db.execute("SELECT 1 FROM remote_jobs j JOIN experiments e ON e.id=j.experiment WHERE e.competition=? AND j.state IN ('INTENT','RUNNING','UNKNOWN')", (self.competition,)).fetchone():
+                return False   # a job is still alive: campaign() reports it
+            stale = db.execute("UPDATE experiments SET state='FAILED',failure_reason=COALESCE(failure_reason,'interrupted before scoring') WHERE competition=? AND state='RUNNING'", (self.competition,)).rowcount
+            if comp["state"] in {"IMPLEMENTING", "TESTING", "RUNNING", "EVALUATING"}:
+                transition(self.store, self.competition, "STOPPED", "interrupted run recovered", db)
+                self.store.event("interrupted_recovered", dict(experiments=stale), self.competition, db)
+            return True
+
     def reconcile(self, provider):
         jobs = self.store.rows("SELECT j.* FROM remote_jobs j JOIN experiments e ON j.experiment=e.id WHERE e.competition=? AND j.state IN ('INTENT','RUNNING','UNKNOWN')", (self.competition,))
         for job in jobs:

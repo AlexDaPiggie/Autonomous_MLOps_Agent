@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from kaggle_agent.__main__ import main, run
 from kaggle_agent.agents.base import CLIAdapter, MockCoder, extract_json
@@ -133,6 +134,39 @@ class Upgrades(unittest.TestCase):
                                   campaigns=campaigns, trials=trials, seconds=None, memory_mb=None, config=None,
                                   command="start", mock_agent=agent)
 
+    def test_code_agent_uses_configured_memory_instead_of_watchdog_default(self):
+        from inspect import signature
+        from kaggle_agent.supervisor.watchdog import run_process
+        from kaggle_agent.supervisor.limits import Limits
+        directory, profile = self.competition()
+        profile["constraints"] = dict(memory_mb=1536)
+        (directory / ".kaggle-agent/profile.json").write_text(json.dumps(profile))
+        store = Store(self.db)
+        Limits(store).configure(memory_mb=2048)
+        adapter = CLIAdapter("codex")
+        observed = []
+        def fake_process(command, cwd, log_path, **kwargs):
+            cap = kwargs.get("memory_mb", signature(run_process).parameters["memory_mb"].default)
+            observed.append(cap)
+            Path(log_path).write_text("")
+            # A CLI startup above the old hidden 1 GiB cap, below profile/config caps.
+            if cap < 1100:
+                return dict(termination_reason="memory_limit", exit_code=1)
+            Path(command[command.index("--output-last-message") + 1]).write_text(json.dumps(dict(
+                status="stopped", session_id=None, experiment_ids=[], checkpoint=None,
+                next_action="test complete", termination_reason="user_stop")))
+            return dict(termination_reason="exit", exit_code=0)
+        with patch.object(adapter, "binary", return_value="mock-cli"), patch(
+                "kaggle_agent.agents.base.run_process", side_effect=fake_process):
+            result = run(self.code_args(directory, adapter, trials=1), store)
+            limited = adapter.run("test lower cap", directory, authorized=True, memory_mb=512)
+        self.assertEqual(result["reason"], "user_stop", result)
+        self.assertEqual(observed, [1536, 512])
+        self.assertEqual(limited.termination_reason, "memory_limit")
+        outcome = json.loads((Path(limited.checkpoint) / "outcome.json").read_text())
+        self.assertEqual(outcome["memory_mb"], 512)
+        self.assertEqual(outcome["termination_reason"], "memory_limit")
+
     def test_init_real_tables_freezes_folds_and_classes(self):
         directory, profile = self.competition()
         self.assertEqual(profile["data"]["classes"], ["no", "yes"])
@@ -189,6 +223,21 @@ class Upgrades(unittest.TestCase):
         code, result = self.invoke(*args)
         self.assertEqual(code, 2)
         self.assertIn("OOF", result["reason"])
+
+    def test_resume_after_interrupted_run(self):
+        directory, _ = self.competition()
+        store = Store(self.db)
+        run(self.code_args(directory, MockCoder([("baseline logistic", BASELINE)]), trials=1), store)
+        comp = store.rows("SELECT id FROM competitions")[0]["id"]
+        # Simulate Ctrl+C in the middle of a run: competition and one experiment stuck in RUNNING.
+        with store.transaction() as db:
+            db.execute("UPDATE competitions SET state='RUNNING' WHERE id=?", (comp,))
+            db.execute("UPDATE experiments SET state='RUNNING' WHERE id=(SELECT id FROM experiments LIMIT 1)")
+        args = self.code_args(directory, MockCoder([("hist with interaction feature", IMPROVED)]), trials=1)
+        args.command = "resume"
+        result = run(args, store)
+        self.assertNotEqual(result.get("state"), "BLOCKED", result)
+        self.assertTrue(store.rows("SELECT id FROM experiments WHERE state='FAILED' AND failure_reason LIKE 'interrupted%'"))
 
     def test_code_mode_loop_end_to_end(self):
         directory, _ = self.competition()

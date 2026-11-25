@@ -290,6 +290,7 @@ def _run(args, store, directory, profile, controller, agent, emit):
     if not store.rows("SELECT id FROM research_branches WHERE competition=?", (controller.competition,)):
         for name, hypothesis in DEFAULT_BRANCHES[kind]:
             portfolio.add(name, hypothesis)
+    controller.recover_interrupted(provider)
     completed, notes = [], []
     turn = len(store.rows("SELECT id FROM experiments WHERE competition=? AND fidelity='full'", (controller.competition,)))
     for campaign_index in range(args.campaigns):
@@ -314,7 +315,7 @@ def _run(args, store, directory, profile, controller, agent, emit):
             workspace = prepare_workspace(store, controller, directory, campaign, trial)
             brief = build_brief(store, controller, directory, profile, branch, stagnating=stuck)
             atomic_write(workspace.parent.parent / "last-brief.md", brief)
-            agent_kwargs = dict(authorized=True, seconds=limits["agent_seconds"], heartbeat=controller.heartbeat,
+            agent_kwargs = dict(authorized=True, seconds=limits["agent_seconds"], memory_mb=bounds["memory_mb"], heartbeat=controller.heartbeat,
                                 should_stop=controller.should_stop, mode="code", read_dirs=data_dirs(directory, profile),
                                 env_extra=agent_test_env(directory, profile, limits, workspace))
             result = agent.run(brief, workspace, **agent_kwargs)

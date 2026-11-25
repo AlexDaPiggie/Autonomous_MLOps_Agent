@@ -158,7 +158,7 @@ class CLIAdapter:
         return command
 
     def run(self, task, directory, *, authorized=False, seconds=300, heartbeat=lambda **kw: None,
-            should_stop=lambda: False, mode="propose", read_dirs=(), env_extra=None):
+            should_stop=lambda: False, mode="propose", read_dirs=(), env_extra=None, memory_mb=None):
         if not authorized:
             return AgentResult("blocked",termination_reason="agent_execution_not_enabled")
         # Never let the CLI bill per use: it gets an environment without API keys or
@@ -182,8 +182,11 @@ class CLIAdapter:
         removed = sorted(set(os.environ) - set(env))
         if removed:  # names only, never values
             (folder/"removed_env.txt").write_text("Hidden from the agent: " + ", ".join(removed) + "\n", encoding="utf-8")
+        # The CLI itself needs more than the watchdog's 1 GiB default; use the configured cap.
+        memory_mb = int(memory_mb or 2048)
         outcome = run_process(self.command(prompt,final_path,mode=mode,read_dirs=read_dirs),directory,folder/"output.log",seconds=seconds,
-                              heartbeat=heartbeat,should_stop=lambda:self.cancelled or should_stop(),input_text=prompt,env=env)
+                              memory_mb=memory_mb,heartbeat=heartbeat,should_stop=lambda:self.cancelled or should_stop(),input_text=prompt,env=env)
+        (folder/"outcome.json").write_text(json.dumps(dict(outcome,memory_mb=memory_mb),indent=2,default=str),encoding="utf-8")
         if outcome["termination_reason"] != "exit":
             result = AgentResult("stopped" if outcome["termination_reason"] == "user_stop" else "failed",
                                  checkpoint=str(folder),termination_reason=outcome["termination_reason"])
