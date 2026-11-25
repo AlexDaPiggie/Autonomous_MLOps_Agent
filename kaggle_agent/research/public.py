@@ -135,13 +135,17 @@ def rows(path, needed):
 
 def refresh_discussions(slug, root, top=10, run=kaggle_cli.run):
     with tempfile.TemporaryDirectory() as temp:
-        forum = None
+        forum, newest = None, (-1, "?")
         for row in rows(meta_file("Competitions.csv", temp, run), ["Slug", "ForumId"]):
             if row["Slug"] == slug:
                 forum = row["ForumId"]
                 break
+            try:
+                newest = max(newest, (int(row.get("Id") or -1), row["Slug"]))
+            except ValueError:
+                pass
         if not forum:
-            raise ValueError("Competition not in Meta Kaggle yet (it updates daily)")
+            raise ValueError(f"Competition not in Meta Kaggle yet (newest one there: {newest[1]}). Try again in a day or two")
         topics = {r["Id"]: r for r in rows(meta_file("ForumTopics.csv", temp, run), ["Id", "ForumId", "Title"]) if r["ForumId"] == forum}
         ranked = sorted(topics.values(), key=lambda r: (-int(float(r.get("Score") or 0)), -int(float(r.get("TotalMessages") or 0))))[:top]
         wanted = {r["Id"] for r in ranked}

@@ -33,7 +33,11 @@ def command():
 
 
 def run(args, *, timeout=600):
-    result = subprocess.run(command() + args, capture_output=True, text=True, timeout=timeout)
+    # Windows defaults to a legacy code page (cp1252): the Kaggle CLI crashes printing names like
+    # "Ğ...", and we would misread its output. Force UTF-8 in both directions.
+    env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+    result = subprocess.run(command() + args, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                            timeout=timeout, env=env)
     if result.returncode != 0:
         text = (result.stderr or result.stdout).strip()
         if "403" in text or "Forbidden" in text or "rules" in text.lower():

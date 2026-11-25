@@ -16,7 +16,7 @@ log = pathlib.Path(os.environ["KA_FAKE_LOG"])
 with log.open("a") as f: f.write(" ".join(a) + "\n")
 if a[:2] == ["kernels", "list"]:
     print("ref,title,author,lastRunTime,totalVotes")
-    print("alice/strong-baseline,Strong baseline,alice,2026-11-20,120")
+    sys.stdout.buffer.write("alice/strong-baseline,Strong baseline,Ali Ğ,2026-11-20,120\n".encode("utf-8"))
     print("bob/ideas-that-failed,Ideas that failed,bob,2026-11-21,45")
 elif a[:2] == ["kernels", "pull"]:
     folder = pathlib.Path(a[a.index("-p") + 1])
@@ -93,6 +93,13 @@ class Research(unittest.TestCase):
         report = public.refresh(self.comp, "santa-2026")
         self.assertEqual(report["notebooks"], 2)
         self.assertTrue(any("layout changed" in e for e in report["errors"]), report)
+
+    def test_competition_missing_from_meta_kaggle_says_so(self):
+        (self.root / "meta" / "Competitions.csv").write_text("Id,Slug,ForumId\n1,old-comp,10\n7,newest-comp,11\n")
+        report = public.refresh(self.comp, "santa-2026")
+        self.assertTrue(any("not in Meta Kaggle" in e and "newest-comp" in e for e in report["errors"]), report)
+        self.assertEqual(report["notebooks"], 2)               # notebooks unaffected; non-ASCII author decoded
+        self.assertIn("Ali Ğ", (public.folder(self.comp) / "notebooks" / "alice__strong-baseline.md").read_text(encoding="utf-8"))
 
     def test_missing_kaggle_cli_never_raises(self):
         os.environ["KA_KAGGLE_CLI"] = json.dumps(["definitely-not-a-program-xyz"])
