@@ -8,6 +8,7 @@
     ka submit [run-id]       send the best run now   (ka submit --auto on|off, --limit N)
     ka stop                  ask a running `ka go` to stop safely
     ka usage                 agent sessions per day
+    ka research              read public notebooks + forum threads now (also runs inside ka go)
     ka agent [claude|codex]  show or set model and effort (--model X --effort high, --global)
     ka history               code version of every scored run (git)
     ka diff [run-id]         what changed versus the champion
@@ -309,6 +310,12 @@ def printer(settings, st, directory, profile, competition):
     def on_event(kind, **d):
         if kind == "trial_start":
             print(f"\nCampaign {d['campaign']}/{d['campaigns']} · trial {d['trial']}/{d['trials']} · branch {d['branch']} · agent writing code...", flush=True)
+        elif kind == "research_start":
+            print("Reading public notebooks and forum posts (first time can take a few minutes)...", flush=True)
+        elif kind == "research":
+            got = [f"{d['notebooks']} notebooks" if "notebooks" in d else "", f"{d['discussions']} forum threads" if "discussions" in d else ""]
+            got = ", ".join(x for x in got if x)
+            print(f"  research: {got or 'nothing new'}" + "".join(f"\n  research problem: {e}" for e in d.get("errors", [])), flush=True)
         elif kind == "agent_done":
             print(f"  idea: {d['hypothesis']}", flush=True)
         elif kind == "stage":
@@ -404,6 +411,24 @@ def cmd_go(args, ask):
     print(f"\nDone: {result.get('state')} · {len(result.get('completed', []))} new run(s). See `ka status` or `ka dash`.")
     notify.send(settings, "Campaigns finished", f"{directory.name}: {result.get('state')}")
     return 0
+
+
+def cmd_research(args, ask):
+    """Read public notebooks and forum threads now, and show where the notes are."""
+    from kaggle_agent import submit as submissions
+    from kaggle_agent.research import public
+    directory = find_competition(args.dir)
+    slug = submissions.settings(directory).get("slug")
+    if not slug:
+        raise GateError("This competition has no Kaggle slug; set it up with `ka new <url>`")
+    print("Reading public notebooks and forum posts (first time can take a few minutes)...")
+    report = public.refresh(directory, slug, force=True)
+    root = public.folder(directory)
+    print(f"Notebooks: {report.get('notebooks', 0)} saved ({report.get('new_notebooks', 0)} new) · forum threads: {report.get('discussions', 0)}")
+    for error in report["errors"]:
+        print(f"Problem: {error}")
+    print(f"Notes are plain files in: {root}\n  summary.md (what the agent sees), notebooks/, discussions/")
+    return 1 if report["errors"] and not (report.get("notebooks") or report.get("discussions")) else 0
 
 
 def cmd_agent(args, ask):
@@ -651,6 +676,7 @@ def parser():
     go.add_argument("--campaigns", type=int);go.add_argument("--trials", type=int);go.add_argument("--agent", choices=["claude", "codex"])
     for name in ("status", "dash", "stop", "usage"):
         sub.add_parser(name)
+    sub.add_parser("research", help="read public notebooks and forum threads now")
     ag = sub.add_parser("agent", help="show or set the model and effort of an agent")
     ag.add_argument("name", nargs="?", choices=["claude", "codex"])
     ag.add_argument("--model", help="model name; empty string = tool default")
@@ -672,7 +698,7 @@ def parser():
     return p
 
 
-COMMANDS = dict(setup=cmd_setup, new=cmd_new, go=cmd_go, status=cmd_status, dash=cmd_dash, stop=cmd_stop, usage=cmd_usage, agent=cmd_agent,
+COMMANDS = dict(setup=cmd_setup, new=cmd_new, go=cmd_go, status=cmd_status, dash=cmd_dash, stop=cmd_stop, usage=cmd_usage, agent=cmd_agent, research=cmd_research,
                 submit=cmd_submit, history=cmd_history, diff=cmd_diff, restore=cmd_restore)
 
 
