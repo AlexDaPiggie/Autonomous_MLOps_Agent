@@ -133,6 +133,10 @@ class KaCommand(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("Daily submission limit", out)
 
+        code, out = self.ka(["submit", "--limit", "100", "--dir", str(comp)])
+        self.assertIn("daily limit 100", out)
+        code, out = self.ka(["submit", "--dir", str(comp), "--yes"])    # limit raised: allowed again
+        self.assertEqual(code, 0, out)
         code, out = self.ka(["submit", "--auto", "off", "--dir", str(comp)])
         self.assertIn("off", out)
         self.assertFalse(json.loads((comp / ".kaggle-agent/submission.json").read_text())["auto"])

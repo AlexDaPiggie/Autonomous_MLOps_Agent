@@ -5,7 +5,7 @@
     ka go                    run (or resume) the code-writing loop, live progress
     ka status                short summary
     ka dash                  open the progress page in your browser
-    ka submit [run-id]       send the best run now   (ka submit --auto on|off)
+    ka submit [run-id]       send the best run now   (ka submit --auto on|off, --limit N)
     ka stop                  ask a running `ka go` to stop safely
     ka usage                 agent sessions per day
     ka history               code version of every scored run (git)
@@ -248,7 +248,12 @@ def finish_new(args, ask, target, slug, facts, *, sample):
     auto = False
     if sample or profile["task"] == "optimization":
         auto = yes(ask("Turn on auto-submit (sends each new best run, keeps 1 daily slot for you)? (y/n)", "n")) and not args.yes
-    submissions.save_settings(target, slug=slug, sample=sample, auto=auto, daily_limit=int(facts.get("daily_limit") or 5), reserve=1)
+    limit = facts.get("daily_limit")
+    if not limit:
+        limit = 5 if args.yes else int(ask("Daily submission limit (see the competition Overview or Rules page)", "5") or 5)
+    else:
+        print(f"Daily submission limit (from Kaggle): {limit}")
+    submissions.save_settings(target, slug=slug, sample=sample, auto=auto, daily_limit=int(limit), reserve=1)
     try:
         from kaggle_agent import vcs
         vcs.ensure_repo(target)
@@ -340,6 +345,7 @@ def cmd_go(args, ask):
     print(f"{'Resuming' if command == 'resume' else 'Starting'} {directory.name} with {agent_name} · "
           f"{run_args.campaigns} campaign(s) × {run_args.trials} trial(s). Stop any time with Ctrl+C or `ka stop`.")
     print(f"Progress page: {directory / '.kaggle-agent' / 'views' / 'dashboard.html'}")
+    refresh_limit(directory)
     on_event = printer(settings, st, directory, profile, competition)
     try:
         result = run_with_events(run_args, st, on_event)
@@ -349,6 +355,22 @@ def cmd_go(args, ask):
     print(f"\nDone: {result.get('state')} · {len(result.get('completed', []))} new run(s). See `ka status` or `ka dash`.")
     notify.send(settings, "Campaigns finished", f"{directory.name}: {result.get('state')}")
     return 0
+
+
+def refresh_limit(directory):
+    """Kaggle can change a competition's daily limit; follow it when the API reports one."""
+    from kaggle_agent import kaggle_cli
+    from kaggle_agent import submit as submissions
+    sub = submissions.settings(directory)
+    if not sub["slug"]:
+        return
+    try:
+        limit = kaggle_cli.info(sub["slug"]).get("daily_limit")
+    except Exception:
+        return
+    if limit and int(limit) != sub["daily_limit"]:
+        submissions.save_settings(directory, daily_limit=int(limit))
+        print(f"Daily submission limit updated from Kaggle: {sub['daily_limit']} -> {limit}")
 
 
 def run_with_events(run_args, st, on_event):
@@ -486,9 +508,19 @@ def cmd_submit(args, ask):
     from kaggle_agent.__main__ import competition_id
     directory = find_competition(args.dir)
     profile = json.loads((directory / ".kaggle-agent" / "profile.json").read_text(encoding="utf-8"))
-    if args.auto:
-        value = submissions.save_settings(directory, auto=args.auto == "on")
-        print(f"Auto-submit is {'on' if value['auto'] else 'off'} for {directory.name}.")
+    if args.auto or args.limit is not None or args.reserve is not None:
+        changes = {}
+        if args.auto:
+            changes["auto"] = args.auto == "on"
+        if args.limit is not None:
+            if args.limit < 1:
+                raise GateError("Daily limit must be at least 1")
+            changes["daily_limit"] = args.limit
+        if args.reserve is not None:
+            changes["reserve"] = max(0, args.reserve)
+        value = submissions.save_settings(directory, **changes)
+        print(f"{directory.name}: auto-submit {'on' if value['auto'] else 'off'} · daily limit {value['daily_limit']} "
+              f"· {value['reserve']} kept for you (auto may use {max(0, value['daily_limit'] - value['reserve'])}).")
         return 0
     st = store()
     competition = competition_id(directory)
@@ -540,6 +572,7 @@ def parser():
     r.add_argument("run", help="run id from `ka history`, or champion");r.add_argument("--to")
     s = sub.add_parser("submit", help="submit the best run now, or turn auto-submit on/off")
     s.add_argument("run", nargs="?");s.add_argument("--auto", choices=["on", "off"]);s.add_argument("--yes", action="store_true")
+    s.add_argument("--limit", type=int, help="this competition's daily submission limit");s.add_argument("--reserve", type=int, help="daily slots auto-submit leaves for you")
     for name, command in sub.choices.items():
         command.add_argument("--dir", help="competition folder (default: current folder)")
         if name == "dash":

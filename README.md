@@ -45,6 +45,7 @@ Run inside the competition folder (except setup/new), or add `--dir <folder>`.
 | `ka submit` | Submit the best run now (asks y/n) |
 | `ka submit <run-id>` / `--yes` | Submit a specific run / without asking |
 | `ka submit --auto on` / `off` | Automatic submission of each new best run |
+| `ka submit --limit 100` | Set this competition's daily submission limit (`--reserve N`: slots auto-submit leaves for you) |
 | `ka stop` | Stop a running `ka go` safely |
 | `ka usage` | Agent sessions per day and limit hits |
 | `ka history` | Code version (git commit) of every scored run, champions tagged |

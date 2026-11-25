@@ -79,7 +79,7 @@ def info(slug):
                 deadline = get("deadline")
                 return dict(metric=get("evaluation_metric", "evaluationMetric"),
                             deadline=deadline.isoformat() if hasattr(deadline, "isoformat") else deadline,
-                            daily_limit=get("max_daily_submissions", "maxDailySubmissions"),
+                            daily_limit=get("max_daily_submissions", "maxDailySubmissions", "max_daily_submission_count"),
                             title=get("title"), category=get("category"))
     except Exception:
         return {}
