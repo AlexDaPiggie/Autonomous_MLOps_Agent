@@ -172,7 +172,8 @@ class CLIAdapter:
                 lower = "\n".join(raw.splitlines()[-40:]).lower()
                 if any(marker in lower for marker in ("rate limit","usage limit","limit reached","hit your limit")):
                     result = AgentResult("waiting_limit",checkpoint=str(folder),termination_reason="usage_limit")
-                elif any(marker in lower for marker in ("not logged in","authentication failed","unauthorized","please run /login")):
+                elif any(marker in lower for marker in ("not logged in","authentication failed","failed to authenticate","unauthorized",
+                                                        "please run /login","auth login","codex login","setup-token","login expired")):
                     result = AgentResult("blocked",checkpoint=str(folder),termination_reason="authentication")
                 elif outcome["exit_code"]:
                     result = AgentResult("failed",checkpoint=str(folder),termination_reason="agent_exit")

@@ -313,8 +313,22 @@ def printer(settings, st, directory, profile, competition):
                 notify.send(settings, "Stuck", f"{Path(directory).name}: research review needed")
         elif kind == "stopped":
             print(f"\nStopped: {d['state']} ({d['reason']})", flush=True)
+            hint = STOP_HINTS.get(d["reason"])
+            if hint:
+                print(hint, flush=True)
             notify.send(settings, "Run stopped", f"{Path(directory).name}: {d['state']} ({d['reason']})")
     return on_event
+
+
+STOP_HINTS = {
+    "authentication": "The agent CLI is not logged in (or its login expired). Run `claude auth login` "
+                      "(or `codex login`, choosing your ChatGPT account), then `ka go` again. For long unattended "
+                      "runs, `claude setup-token` creates a long-lived subscription token.",
+    "usage_limit": "Your plan's usage limit was reached. Progress is saved: run `ka go` again after it resets.",
+    "missing_binary": "The agent CLI was not found. Install Claude Code or Codex, or switch with `ka go --agent codex`.",
+    "agent_exit": "The agent CLI exited with an error. Its log is in .kaggle-agent\\sessions\\ (newest folder, output.log).",
+    "malformed_output": "The agent answered without the expected JSON. Run `ka go` again; if it repeats, send the session log.",
+}
 
 
 def cmd_go(args, ask):

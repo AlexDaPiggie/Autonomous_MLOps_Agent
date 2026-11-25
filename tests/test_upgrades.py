@@ -370,6 +370,16 @@ kt.save(d, oof, Ridge().fit(X, y).predict(T))
             os.environ.clear()
             os.environ.update(saved)
 
+    def test_expired_login_is_reported_as_authentication(self):
+        fake = self.root / "fake_claude.py"
+        fake.write_text("import json,sys\nsys.stdin.read()\nprint(json.dumps(dict(type='result',is_error=True,result='Failed to authenticate: "
+                        "this login reached its time limit and cannot be renewed. Run `claude auth login` to sign in again')))\nsys.exit(1)\n")
+        adapter = CLIAdapter("claude")
+        adapter.binary = lambda: sys.executable
+        adapter.command = lambda prompt, result_path=None, **kw: [sys.executable, str(fake)]
+        result = adapter.run("task", self.root, authorized=True, seconds=30)
+        self.assertEqual((result.status, result.termination_reason), ("blocked", "authentication"))
+
     def test_adapter_parsing_and_flags(self):
         self.assertEqual(json.loads(extract_json('Here you go:\n```json\n{"a": 1}\n```')), {"a": 1})
         codex, claude = CLIAdapter("codex"), CLIAdapter("claude")
