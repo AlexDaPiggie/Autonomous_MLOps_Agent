@@ -10,17 +10,60 @@ manual workflow, and do not authorize spending or submissions under the controll
 
 ## Quick start: the `ka` command
 
-Install once (from this folder), then three commands per competition:
+Once per computer:
 
+    cd C:\Users\alexh\Coding\_kaggle_shared
     python -m pip install -e ".[models]" kaggle
-    ka setup                                   # agent, CPU/RAM, phone alerts (once)
+    claude            (type /login, pick your Claude account)   or: codex login
+    ka setup
+
+Also put your Kaggle API token in %USERPROFILE%\.kaggle\kaggle.json. No API key for
+Claude/Codex is needed: `ka` runs the installed CLI with your subscription login (and
+refuses to run if an API key is set, so it never bills per use).
+
+Per competition (join it and accept the rules on kaggle.com first):
+
     ka new https://www.kaggle.com/competitions/<slug>
     cd ..\<slug>
-    ka go                                      # agent writes and runs experiments; live progress
-    ka status    ka dash    ka submit    ka submit --auto on|off    ka stop    ka usage
+    ka go
 
 If `ka` is not found, Python's Scripts folder is not on PATH: use `python -m kaggle_agent.ka ...`.
-Details: "Everyday use" in OPERATING_GUIDE.md.
+
+### All `ka` commands
+Run inside the competition folder (except setup/new), or add `--dir <folder>`.
+
+| Command | What it does |
+|---|---|
+| `ka setup` | One-time settings: agent, CPU, RAM, hours per run, phone alerts |
+| `ka new <url>` | Folder, download, detect columns and metric, freeze folds |
+| `ka new <url> --optimization --scorer s.py --solution-name submission.csv` | Same for optimization competitions |
+| `ka go` | Run or resume the agent loop with live progress |
+| `ka go --campaigns 1 --trials 2` | Smaller run (saves plan usage) |
+| `ka go --agent codex` | Use Codex this time |
+| `ka status` | Best score, recent runs, submissions, deadline |
+| `ka dash` | Progress page in your browser |
+| `ka submit` | Submit the best run now (asks y/n) |
+| `ka submit <run-id>` / `--yes` | Submit a specific run / without asking |
+| `ka submit --auto on` / `off` | Automatic submission of each new best run |
+| `ka stop` | Stop a running `ka go` safely |
+| `ka usage` | Agent sessions per day and limit hits |
+
+### Advanced: `python -m kaggle_agent ...`
+`ka` uses these under the hood. `.` = the competition folder you are in.
+
+| Command | What it does |
+|---|---|
+| `init --competition . --train ... --test ... --target ... --metric ...` | Manual `ka new` |
+| `register-run --competition . --oof oof.csv --test test.csv --code train.py` | Log and score your own run (manual or Modal) |
+| `blend --competition .` | Blend the best runs |
+| `limits` / `limits --configure limits.json` | Show or change time/memory/thread/iteration limits |
+| `start` / `resume --competition . --mode code --agent claude --execute --subscription-confirmed` | Long form of `ka go` |
+| `status`, `stop`, `checkpoint`, `export --competition .` | Raw status, stop, checkpoint, regenerate views |
+| `usage`, `doctor` | Session stats; check Python and the agent CLIs |
+| `benchmark` / `benchmark --realistic` | Built-in benchmarks |
+| `budget`, `audit`, `migrate --competition .` | Budget ledger; import old competition history |
+
+The manual way still works: open Claude Code in the competition folder and say "start".
 
 Second upgrade (2026-11-24): real CSV/Parquet competitions with frozen folds, user-set
 limits, `register-run` (log and independently score any run, including manual and Modal
