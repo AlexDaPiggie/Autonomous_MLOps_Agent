@@ -69,9 +69,10 @@ def build_brief(store, controller, directory, profile, branch, *, stagnating, la
     lines = [f"# Experiment brief", "",
              f"Task: {profile['task']}. Metric: {profile['metric']} ({way}).",
              f"Branch to pursue: {branch['name']} - {branch['details']['hypothesis']}", "",
-             "You cannot run shell commands or read files outside this folder and the data folder. Everything you",
-             "need is in this brief: do not try to look elsewhere. Write the code; the supervisor runs it on a small",
-             "smoke test and sends you the error log if it fails.", ""]
+             "Everything you need is in this brief: do not try to read files outside this folder and the data folder.",
+             "You may run Python to test your script, and nothing else: `python <your_script>.py`. The environment is",
+             "already in smoke mode (KA_SMOKE=1, small sample, output to ./_out), so test runs take seconds. Fix errors",
+             "before you answer. The supervisor then runs and scores the real thing.", ""]
     task = Path(directory) / ".kaggle-agent" / "task.md"
     if task.is_file():
         lines += ["## Problem (competition rules)", task.read_text(encoding="utf-8")[:12000], ""]
@@ -155,6 +156,15 @@ def base_env(directory, profile, limits, *, seed=42):
     best = runs.best_solution(directory, profile)
     if best:
         env["KA_BEST"] = str(best)
+    return env
+
+
+def agent_test_env(directory, profile, limits, workspace):
+    """Environment for the agent's own test runs: smoke mode, output in ./_out."""
+    out = Path(workspace) / "_out"
+    out.mkdir(parents=True, exist_ok=True)
+    env = base_env(directory, profile, limits) | dict(KA_SMOKE=1, KA_OUT=str(out), KAGGLE_AGENT_THREADS=limits["threads"])
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
     return env
 
 
@@ -305,7 +315,8 @@ def _run(args, store, directory, profile, controller, agent, emit):
             brief = build_brief(store, controller, directory, profile, branch, stagnating=stuck)
             atomic_write(workspace.parent.parent / "last-brief.md", brief)
             agent_kwargs = dict(authorized=True, seconds=limits["agent_seconds"], heartbeat=controller.heartbeat,
-                                should_stop=controller.should_stop, mode="code", read_dirs=data_dirs(directory, profile))
+                                should_stop=controller.should_stop, mode="code", read_dirs=data_dirs(directory, profile),
+                                env_extra=agent_test_env(directory, profile, limits, workspace))
             result = agent.run(brief, workspace, **agent_kwargs)
             cp = checkpoint(store, controller.competition, "code trial", Path(directory) / ".kaggle-agent" / "checkpoint.json")
             session = rotate(store, controller.competition, getattr(agent, "name", "mock"), cp)

@@ -94,8 +94,8 @@ blocks obvious rule breaks (submission, Modal/Vast, credentials, supervisor file
 a tiny sample (up to two repair rounds) -> screen run on `screen_fraction` of rows -> full run
 -> independent scoring -> champion check -> lessons saved. After each campaign it tries a blend.
 The screen only blocks a full run after four screen/full pairs agree (Spearman >= 0.5); if they
-disagree, screens stop. Claude runs with edit permission only (no shell); Codex runs in its
-workspace-write sandbox. Agents run as your Windows user: the static checks are guard rails, not a
+disagree, screens stop. Claude runs with edit permission plus `python` only; Codex runs in its
+workspace-write sandbox. Update 2026-11-24: Claude may also run `python` (only) in its workspace to test its script; its environment is preset to smoke mode with output in `./_out`, which is excluded from the code fingerprint. Agents run as your Windows user: the static checks are guard rails, not a
 sandbox. `python -m kaggle_agent doctor` checks the CLI flags the adapters use.
 `python -m kaggle_agent usage` shows agent sessions per day, limit hits and reported tokens.
 

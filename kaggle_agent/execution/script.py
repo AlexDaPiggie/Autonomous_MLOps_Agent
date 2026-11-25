@@ -50,7 +50,8 @@ def check_scripts(folder, entry):
     require(not problems, "Script blocked: " + "; ".join(problems))
 
 
-IGNORED = {"__pycache__", "champion"}  # champion/ is a read-only reference copy
+# champion/ is a read-only reference copy; _out/ holds the agent's own test output; .claude/ is CLI state.
+IGNORED = {"__pycache__", "champion", "_out", ".claude"}
 
 
 def code_hash(folder):

@@ -65,6 +65,10 @@ def validate_result(value):
     return AgentResult(**{k:v for k,v in value.items() if k in AgentResult.__dataclass_fields__})
 
 
+# Python only: both rule spellings, for the Bash and PowerShell tools Claude uses on Windows.
+PYTHON_TOOLS = ["Bash(python:*)", "Bash(python3:*)", "Bash(py:*)", "Bash(python *)", "Bash(python3 *)", "Bash(py *)",
+                "PowerShell(python:*)", "PowerShell(py:*)", "PowerShell(python *)", "PowerShell(py *)"]
+
 METERED = {"ANTHROPIC_AUTH_TOKEN","ANTHROPIC_BASE_URL","OPENAI_BASE_URL","OPENAI_API_BASE","CODEX_API_KEY",
            "CLAUDE_CODE_USE_BEDROCK","CLAUDE_CODE_USE_VERTEX","AWS_BEARER_TOKEN_BEDROCK","OPENROUTER_API_KEY"}
 
@@ -117,10 +121,9 @@ class CLIAdapter:
         return dict(available=result.returncode == 0 and not missing,version=result.stdout.strip(),missing_flags=missing)
 
     def command(self, prompt, result_path=None, *, mode="propose", read_dirs=()):
-        """propose: read-only, suggests configs. code: may write files in its working folder.
-
-        Code mode never grants shell access to Claude (edits only) and limits
-        Codex writes to the workspace sandbox; the supervisor runs the code.
+        """propose: read-only, suggests configs. code: may write files in its working folder
+        and run Python to test them (Claude: edits plus python only; Codex: its
+        workspace-write sandbox). The supervisor still runs and scores the real code.
         """
         binary = self.binary()
         if not binary:
@@ -133,16 +136,20 @@ class CLIAdapter:
         command = [binary,"--print","--permission-mode","acceptEdits" if mode == "code" else "plan","--output-format","json"]
         for folder in read_dirs:
             command += ["--add-dir",str(folder)]
+        if mode == "code":
+            # Code mode: Claude may run Python (and only Python) to test its script.
+            # Its environment is preset to smoke mode, so these test runs are small.
+            command += ["--allowedTools", *PYTHON_TOOLS]
         return command
 
     def run(self, task, directory, *, authorized=False, seconds=300, heartbeat=lambda **kw: None,
-            should_stop=lambda: False, mode="propose", read_dirs=()):
+            should_stop=lambda: False, mode="propose", read_dirs=(), env_extra=None):
         if not authorized:
             return AgentResult("blocked",termination_reason="agent_execution_not_enabled")
         # Never let the CLI bill per use: it gets an environment without API keys or
         # alternate endpoints, so it can only use your subscription login. Unrelated
         # keys you have set (Gemini, Firecrawl, ...) stay in your shell, untouched.
-        env = agent_environment()
+        env = agent_environment() | {k: str(v) for k, v in (env_extra or {}).items()}
         if not self.binary():
             return AgentResult("blocked",termination_reason="missing_binary")
         run_id = uuid.uuid4().hex
@@ -256,6 +263,7 @@ class MockCoder:
 
     def run(self, task, directory, **kwargs):
         self.prompts.append(task)
+        self.last_kwargs = dict(kwargs, directory=str(directory))
         Path(directory).mkdir(parents=True, exist_ok=True)
         if task.startswith("REPAIR"):
             if self.fix is None:

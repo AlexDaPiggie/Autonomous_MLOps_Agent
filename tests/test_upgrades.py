@@ -216,6 +216,19 @@ class Upgrades(unittest.TestCase):
         self.assertIn("Branch to pursue", briefs[-1])
         # Ensemble was assessed on registered OOF files.
         self.assertTrue(any("ensemble" in n for n in result["notes"]))
+        # The agent's own test environment runs its script in smoke mode inside the workspace.
+        import subprocess
+        extra = agent.last_kwargs["env_extra"]
+        self.assertEqual(str(extra["KA_SMOKE"]), "1")
+        workspace = Path(agent.last_kwargs["directory"])
+        (workspace / "train.py").write_text(IMPROVED)
+        env = os.environ | {k: str(v) for k, v in extra.items()}
+        subprocess.run([sys.executable, "train.py"], cwd=workspace, env=env, check=True)
+        self.assertTrue((workspace / "_out/oof.csv").is_file())
+        from kaggle_agent.execution.script import code_hash
+        before = code_hash(workspace)
+        (workspace / "_out/notes.json").write_text("{}")
+        self.assertEqual(before, code_hash(workspace))        # test output never changes the code fingerprint
         # The champion's code is kept next to its outputs.
         self.assertTrue((directory / ".kaggle-agent/jobs" / champion / "code/train.py").is_file())
 
@@ -401,6 +414,10 @@ kt.save(d, oof, Ridge().fit(X, y).predict(T))
         self.assertIn("workspace-write", codex.command("p", "r", mode="code"))
         self.assertIn("read-only", codex.command("p", "r"))
         self.assertIn("acceptEdits", claude.command("p", mode="code", read_dirs=["/data"]))
+        code_cmd = claude.command("p", mode="code")
+        self.assertIn("--allowedTools", code_cmd)
+        self.assertIn("Bash(python:*)", code_cmd)
+        self.assertNotIn("--allowedTools", claude.command("p"))      # propose mode stays read-only
         self.assertIn("--add-dir", claude.command("p", mode="code", read_dirs=["/data"]))
         # A valid answer that mentions "rate limit" is not a usage limit.
         answer = dict(status="completed", session_id=None, experiment_ids=[], checkpoint=None, next_action="x",
