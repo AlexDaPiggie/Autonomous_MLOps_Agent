@@ -161,4 +161,8 @@ def assess_ensemble(store, controller, directory, profile, *, max_sources=5):
         shutil.rmtree(root, ignore_errors=True)
         raise
     promotion = promote_and_vault(store, controller.competition, key, directory, profile, ensemble=True)
+    with store.transaction() as db:  # the stagnation counter reads this flag
+        stored = json.loads(db.execute("SELECT result FROM experiments WHERE id=?", (key,)).fetchone()[0])
+        stored["ensemble_improved"] = bool(promotion.get("improved"))
+        db.execute("UPDATE experiments SET result=? WHERE id=?", (json.dumps(stored), key))
     return dict(experiment=key, combiner=result["combiner"], fold_scores=result["fold_scores"], promotion=promotion)

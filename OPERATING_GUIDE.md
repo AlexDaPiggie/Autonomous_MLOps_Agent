@@ -5,6 +5,84 @@ It does not run a cloud service. All development used mocks and synthetic data, 
 zero paid jobs/inference, submissions or remote pushes. Historical competition
 folders, backups, and manually authored handoffs are preserved.
 
+## Real competitions (second upgrade, 2026-11-24)
+
+This section supersedes older notes below that call real data conversion a manual
+step or say agents are read-only. Everything here runs locally; nothing submits to
+Kaggle or starts paid compute.
+
+### 1. Freeze the competition once
+Tables (classification/regression; forecasting = regression with time folds):
+
+    python -m kaggle_agent init --competition "C:\path\Comp" --task classification ^
+      --train data\train.csv --test data\test.csv --id id --target y --metric roc_auc --folds 5
+    (add --group col for grouped data, --time col for time order)
+
+This writes `.kaggle-agent/folds.csv` (frozen; never overwritten) and `profile.json`.
+Metrics: log_loss, roc_auc, accuracy, balanced_accuracy, map3, rmse, mae, rmsle, r2, mape.
+Optimization (Santa-style): write a `scorer.py` with `score(solution_path, data_dir) -> float`
+that raises on infeasible solutions, then:
+
+    python -m kaggle_agent init --competition "C:\path\Santa" --task optimization ^
+      --scorer my_scorer.py --files data\cities.csv --solution-name submission.csv --direction minimize
+
+Then read the competition rules and set `"rules_reviewed": true` in profile.json
+(optional: `"deadline"` with timezone, `"target_score"` = top public LB score, shown to
+the agent for orientation only). Changing train/test/folds/scorer later is detected and
+blocks runs.
+
+### 2. Set your limits (optional)
+
+    python -m kaggle_agent limits                       # show current limits and machine ceilings
+    python -m kaggle_agent limits --configure limits.json
+
+limits.json example: `{"seconds": 7200, "memory_mb": 8192, "threads": 4, "max_iterations": 20000,
+"agent_seconds": 900, "screen_fraction": 0.25, "smoke_rows": 2000}`. Ceilings: 12 h per run,
+75% of RAM, your CPU thread count, 100k iterations.
+
+### 3a. Manual work stays the main engine: register every run
+Any script (local or Modal) that writes `oof.csv` and `test.csv` (column `id` plus `pred`, or
+`pred_0..pred_K-1` in class order) can be logged and independently scored:
+
+    python -m kaggle_agent register-run --competition "C:\path\Comp" ^
+      --oof out\oof.csv --test out\test.csv --code train.py features.py --hypothesis "lgbm + ratio features"
+    python -m kaggle_agent blend --competition "C:\path\Comp"     # stacker vs hill climbing, meta-CV
+
+The run's code and outputs are copied to `.kaggle-agent/runs/<id>/`. Duplicate code+config is
+rejected, dropped OOF rows are rejected, and only a paired fold improvement becomes champion.
+Optimization: `register-run --solution submission.csv --code solve.py`; the best solution is kept
+in `.kaggle-agent/best/` and only replaced by a strictly better scored file.
+Scripts can use `from kaggle_agent import toolkit as kt` (`kt.load()`, `kt.splits()`, `kt.save()`,
+`kt.tune()`); set the KA_* variables or let the supervisor set them.
+
+### 3b. Automatic code mode: the agent writes the scripts
+
+    python -m kaggle_agent start --competition "C:\path\Comp" --mode code --agent claude ^
+      --execute --subscription-confirmed --campaigns 3 --trials 4
+
+Each trial: the agent gets a brief (data summary, independently scored results, branch to
+pursue, stored lessons, recent failures, the champion's code in `./champion/`) and writes
+`train.py`/`solve.py` in `.kaggle-agent/workspace/<trial>/`. The supervisor then:
+blocks obvious rule breaks (submission, Modal/Vast, credentials, supervisor files) -> smoke run on
+a tiny sample (up to two repair rounds) -> screen run on `screen_fraction` of rows -> full run
+-> independent scoring -> champion check -> lessons saved. After each campaign it tries a blend.
+The screen only blocks a full run after four screen/full pairs agree (Spearman >= 0.5); if they
+disagree, screens stop. Claude runs with edit permission only (no shell); Codex runs in its
+workspace-write sandbox. Agents run as your Windows user: the static checks are guard rails, not a
+sandbox. `python -m kaggle_agent doctor` checks the CLI flags the adapters use.
+`python -m kaggle_agent usage` shows agent sessions per day, limit hits and reported tokens.
+
+### 3c. Propose mode on real tables
+`start --execute` without `--mode code` still works: the agent (or the default cycle) picks
+documented model families/hyperparameters (`lightgbm` with learning_rate, num_leaves, ... up to
+`max_iterations`), with `seeds` (multi-seed average) and `full_refit` (test from a 100% refit).
+
+### Benchmark
+`python -m kaggle_agent benchmark --realistic` compares propose and code mode end to end on a
+6,000-row synthetic CSV competition (see benchmark-results/realistic-benchmark.json). The code
+mode uses two hand-written scripts through a mock coder: it shows what each mode can express,
+not how good a real LLM is.
+
 ## Install and verify
 
 Run from the shared repository in PowerShell, with Python 3.11 or later:

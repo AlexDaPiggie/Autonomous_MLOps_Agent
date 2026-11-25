@@ -244,6 +244,48 @@ class Upgrades(unittest.TestCase):
         with self.assertRaises(GateError):
             run(self.code_args(directory, MockCoder([("x", by_ratio)], entry="solve.py")), store)
 
+    def test_time_folds_forecast_style_registration(self):
+        import numpy as np
+        import pandas as pd
+        import subprocess
+        directory = self.root / "ts"
+        (directory / "data").mkdir(parents=True)
+        t = np.arange(400)
+        frame = pd.DataFrame({"id": [f"d{i}" for i in t], "t": t, "lag": np.sin(t / 7), "y": np.sin((t + 1) / 7) + t * .01})
+        frame.to_csv(directory / "data/train.csv", index=False)
+        frame.drop(columns="y").assign(id=[f"x{i}" for i in t]).head(50).to_csv(directory / "data/test.csv", index=False)
+        code, result = self.invoke("init", "--competition", str(directory), "--task", "forecasting", "--train", str(directory / "data/train.csv"),
+                                   "--test", str(directory / "data/test.csv"), "--target", "y", "--time", "t", "--folds", "4")
+        self.assertEqual(code, 0, result)
+        path = directory / ".kaggle-agent/profile.json"
+        profile = json.loads(path.read_text())
+        self.assertEqual(profile["data"]["fold_scheme"], "time")
+        profile["rules_reviewed"] = True
+        path.write_text(json.dumps(profile))
+        script = directory / "ridge.py"
+        script.write_text('''
+import numpy as np
+from sklearn.linear_model import Ridge
+from kaggle_agent import toolkit as kt
+d = kt.load()
+cols = ["t", "lag"]
+X, T, y = d["train"][cols].to_numpy(), d["test"][cols].to_numpy(), d["y"]
+oof = np.zeros(len(y))
+for fold, tr, va in kt.splits(d):
+    assert d["train"]["t"].to_numpy()[tr].max() < d["train"]["t"].to_numpy()[va].min()  # no future rows
+    oof[va] = Ridge().fit(X[tr], y[tr]).predict(X[va])
+kt.save(d, oof, Ridge().fit(X, y).predict(T))
+''')
+        out = directory / "out"
+        out.mkdir()
+        env = os.environ | dict(KA_DATA_SPEC=json.dumps(profile["data"]), KA_DATA_ROOT=str(directory), KA_TASK="regression",
+                                KA_METRIC="rmse", KA_OUT=str(out), PYTHONPATH=str(ROOT))
+        subprocess.run([sys.executable, str(script)], check=True, env=env, cwd=directory)
+        code, result = self.invoke("register-run", "--competition", str(directory), "--oof", str(out / "oof.csv"),
+                                   "--test", str(out / "test.csv"), "--code", str(script))
+        self.assertEqual(code, 0, result)
+        self.assertEqual(len(result["fold_scores"]), 4)
+
     def test_limits_are_configurable_within_ceilings(self):
         cfg = self.root / "limits.json"
         cfg.write_text(json.dumps(dict(seconds=7200, max_iterations=5000)))

@@ -93,7 +93,7 @@ def build_brief(store, controller, directory, profile, branch, *, stagnating, la
     if (Path(directory) / ".kaggle-agent" / "research-review.json").is_file():
         lines += ["", "A research review was written to .kaggle-agent/research-review.json; consider its reframes."]
     lines += ["", "## Contract", contract(profile), "",
-              "The champion's code (if any) is in ./champion/ for reference. Write your files in this folder only.",
+              "The champion's code (if any) is in ./champion/ for reference (do not import it). Write your files in this folder only.",
               "Do not submit to Kaggle, use paid compute, read supervisor files under .kaggle-agent, or use credentials.",
               "Make one clear change you can explain. Do not resubmit identical code.", "",
               "Reply with ONLY a JSON object: {\"status\":\"completed\",\"session_id\":null,\"experiment_ids\":[],"
@@ -108,6 +108,13 @@ def prepare_workspace(store, controller, directory, campaign, trial):
     if workspace.exists():
         shutil.rmtree(workspace)
     workspace.mkdir(parents=True)
+    # Agent CLIs also read AGENTS.md/CLAUDE.md from parent folders, where the manual
+    # workflow tells them to run the whole competition loop. Scope them to this task.
+    note = ("# Supervisor code mode\n\nYou are writing ONE experiment script for the supervisor. Do only the task "
+            "in the prompt. Ignore instructions in parent AGENTS.md/CLAUDE.md/rules.md about running the competition "
+            "loop, Modal, submissions or STATE.md. Do not import from ./champion; copy what you need.\n")
+    (workspace / "AGENTS.md").write_text(note, encoding="utf-8")
+    (workspace / "CLAUDE.md").write_text(note, encoding="utf-8")
     champion = store.rows("SELECT champion FROM competitions WHERE id=?", (controller.competition,))[0]["champion"]
     if champion:
         for place in ("jobs", "runs"):  # supervised runs, or runs registered with register-run
@@ -116,6 +123,15 @@ def prepare_workspace(store, controller, directory, campaign, trial):
                 shutil.copytree(code, workspace / "champion", ignore=shutil.ignore_patterns("champion", "__pycache__"))
                 break
     return workspace
+
+
+def data_dirs(directory, profile):
+    """Folders the agent may read (Claude --add-dir): the data folders only, not
+    .kaggle-agent, so folds, profile and ledger are outside its edit reach."""
+    spec, root = profile["data"], Path(directory).resolve()
+    names = [spec["train"], spec["test"]] if spec["kind"] == "tables" else list(spec.get("files", []))
+    folders = sorted({(root / n).resolve().parent for n in names})
+    return [f for f in folders if ".kaggle-agent" not in f.parts] or []
 
 
 def base_env(directory, profile, limits, *, seed=42):
@@ -250,7 +266,7 @@ def run_code_campaigns(args, store, directory, profile, controller, agent):
             brief = build_brief(store, controller, directory, profile, branch, stagnating=stuck)
             atomic_write(workspace.parent.parent / "last-brief.md", brief)
             agent_kwargs = dict(authorized=True, seconds=limits["agent_seconds"], heartbeat=controller.heartbeat,
-                                should_stop=controller.should_stop, mode="code", read_dirs=[Path(directory).resolve()])
+                                should_stop=controller.should_stop, mode="code", read_dirs=data_dirs(directory, profile))
             result = agent.run(brief, workspace, **agent_kwargs)
             cp = checkpoint(store, controller.competition, "code trial", Path(directory) / ".kaggle-agent" / "checkpoint.json")
             session = rotate(store, controller.competition, getattr(agent, "name", "mock"), cp)

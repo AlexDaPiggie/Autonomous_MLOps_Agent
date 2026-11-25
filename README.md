@@ -8,6 +8,11 @@ remain available. Controller execution is dry-run by default; paid providers and
 network submissions are disabled. The legacy platform notes below describe the
 manual workflow, and do not authorize spending or submissions under the controller.
 
+Second upgrade (2026-11-24): real CSV/Parquet competitions with frozen folds, user-set
+limits, `register-run` (log and independently score any run, including manual and Modal
+work), an automatic code-writing mode (`start --mode code`), an optimization scorer plugin
+and hill-climbing blends. See "Real competitions" in OPERATING_GUIDE.md.
+
 - `rules.md`: the rules. Every competition's AGENTS.md points to it (CLAUDE.md imports AGENTS.md and rules.md). Edit it once and all competitions change.
 - `prompts/`: the prompts (kickoff, research, loop, stuck, skeptic, ensemble, submit, audit). Ask Claude "run the stuck protocol" and it reads the file.
 

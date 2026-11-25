@@ -10,7 +10,8 @@ requires-python = ">=3.11"
 dependencies = ["psutil>=5.9"]
 
 [project.optional-dependencies]
-models = ["numpy>=1.26", "scipy>=1.11", "scikit-learn>=1.4"]
+models = ["numpy>=1.26", "scipy>=1.11", "scikit-learn>=1.4", "pandas>=2.0"]
+parquet = ["pyarrow>=14"]
 boosting = ["catboost>=1.2", "lightgbm>=4", "xgboost>=2"]
 search = ["optuna>=3"]
 forecast = ["mlforecast>=0.13", "statsforecast>=1.7"]

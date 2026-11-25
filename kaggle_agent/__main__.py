@@ -367,7 +367,7 @@ def main(argv=None):
     budget_parser=sub.add_parser("budget")
     budget_parser.add_argument("--configure",type=Path)
     budget_parser.add_argument("--record-charge",type=Path)
-    bench=sub.add_parser("benchmark");bench.add_argument("--output",type=Path,default=Path("benchmark-results"))
+    bench=sub.add_parser("benchmark");bench.add_argument("--output",type=Path,default=Path("benchmark-results"));bench.add_argument("--realistic",action="store_true")
     initializer=sub.add_parser("init");initializer.add_argument("--competition",required=True);initializer.add_argument("--task",choices=["classification","regression","optimization","forecasting"],default="classification");initializer.add_argument("--demo",action="store_true")
     for flag in ("--train","--test","--target","--metric","--direction","--group","--time","--scorer","--files","--solution-name"):initializer.add_argument(flag)
     initializer.add_argument("--id",default="id");initializer.add_argument("--folds",type=int,default=5);initializer.add_argument("--seed",type=int,default=42)
@@ -398,8 +398,8 @@ def main(argv=None):
                         isolation="same-user processes: do not expose provider credentials to agents")
         elif args.command=="init":result=init(args.competition,args.task,args.demo,args)
         elif args.command=="benchmark":
-            from kaggle_agent.benchmarks import benchmark
-            result=benchmark(args.output)
+            from kaggle_agent.benchmarks import benchmark,realistic_benchmark
+            result=realistic_benchmark(args.output) if args.realistic else benchmark(args.output)
         else:
             store=Store(args.db)
             if args.command=="budget":

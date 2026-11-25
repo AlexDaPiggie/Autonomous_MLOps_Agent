@@ -127,3 +127,43 @@ user-owned KAGGLE_UPGRADE_SPEC.md stays untracked and unmodified.
 IMPLEMENTATION_REPORT.md maps the eleven upgrades to actual code and identifies
 remaining boundaries. No tests currently fail. Resume future development from those
 boundaries rather than recreating a plan or enabling real spending/submissions.
+
+## Second upgrade round (2026-11-24, Claude, user-approved after review)
+Review found the first round safe but unable to compete: read-only agents limited to
+config picks, hard caps (1000 iterations, 2 GB, 30 min, 1 thread), JSON-only data,
+knapsack-only optimization, a portfolio that ignored results, an unfilled knowledge
+base, unwired efficiency helpers and a benchmark that did not measure the upgrade. The
+shared rules.md header that blocked submissions/Modal in real competitions was removed
+at the user's request. The user then approved code-writing agents and all fixes.
+
+Implemented (commit d551408 + the docs/benchmark commit after it):
+- `data.py`: CSV/Parquet table specs, frozen folds.csv (kfold/group/time), ID-based
+  independent scoring, class order, prediction file format (id + pred / pred_k).
+- `supervisor/limits.py` + `limits` CLI: user-set seconds/memory/threads/iterations,
+  ceilings 12 h, 75% RAM, CPU threads, 100k iterations. Watchdog/gates/runner use them.
+- `runs.py` + `register-run`/`blend` CLI: referee for any run (manual, Modal); copies
+  code + outputs, fingerprints, rescoring, paired promotion, optimization best vault.
+- `execution/script.py`, `toolkit.py`, `loop.py`, `start --mode code`: agent writes
+  scripts (Codex workspace-write sandbox, Claude acceptEdits with data dirs only);
+  static guard -> smoke (2 repairs) -> screen -> full -> promotion -> lessons -> blend.
+  Workspace AGENTS.md/CLAUDE.md scope the agent away from the manual loop instructions.
+- `pipelines/plugin.py`: optimization scorer plugin (isolated subprocess, frozen hash).
+- Tabular: whitelisted hyperparameters per family, threads, ordinal codes for trees,
+  multi-seed averaging, full-data refit, time-scheme folds. Blending: conditional hill
+  climbing vs stacker by meta-CV, paired single-base baseline, ensemble_improved flag.
+- Portfolio: UCB on observed wins, auto-park after 4 trials without a win; screen gate
+  only after 4 screen/full pairs agree (Spearman >= .5), screens dropped if rho < .3.
+- Fixes: launch cap counts all stages; watchdog keeps real exit codes on Linux; usage
+  limit detection only on failed/unparseable output; doctor checks CLI flags; batch file
+  falls back to `py -3`; `usage` CLI; metrics map3/rmsle/balanced_accuracy.
+- `benchmark --realistic`: 6,000-row CSV competition, propose vs code mode (mock coder).
+  Result: best log loss 0.573 (propose, blend) vs 0.502 (code, blend); single best
+  0.589 vs 0.517. Mock scripts are hand-written; not evidence of LLM quality.
+
+Tests: `python -m unittest discover` in a Linux container with Python 3.13: 43 tests,
+42 passed, 1 skipped (Windows batch test). Not yet run on the user's Windows machine.
+Not verified: real Claude/Codex sessions in code mode (flags checked by `doctor`), real
+Kaggle data at full scale, Parquet path (pyarrow optional). `execution/efficiency.Cache`
+remains unused (smoke runs are deduplicated by code hash instead).
+Still disabled: paid providers, network submissions. Agents run as the user; the
+static script checks are guard rails, not isolation.

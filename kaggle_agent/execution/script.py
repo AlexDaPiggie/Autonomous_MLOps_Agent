@@ -41,6 +41,8 @@ def check_scripts(folder, entry):
     require((folder / entry).is_file(), f"Missing entry script {entry}")
     problems = []
     for path in sorted(folder.rglob("*.py")):
+        if IGNORED & set(path.relative_to(folder).parts):
+            continue
         text = path.read_text(encoding="utf-8", errors="replace")
         for pattern, label in FORBIDDEN:
             if re.search(pattern, text):
@@ -48,18 +50,21 @@ def check_scripts(folder, entry):
     require(not problems, "Script blocked: " + "; ".join(problems))
 
 
+IGNORED = {"__pycache__", "champion"}  # champion/ is a read-only reference copy
+
+
 def code_hash(folder):
-    """Fingerprint of the code files in a workspace (outputs and data ignored)."""
+    """Fingerprint of the code files in a workspace (outputs, data and champion/ ignored)."""
     folder = Path(folder)
     files = {str(p.relative_to(folder)).replace("\\", "/"): checksum(p)
              for p in sorted(folder.rglob("*")) if p.is_file() and p.suffix in CODE_SUFFIXES
-             and "__pycache__" not in p.parts}
+             and not IGNORED & set(p.relative_to(folder).parts)}
     require(bool(files), "Workspace has no code files")
     return fingerprint(files)
 
 
 def copy_code(source, target):
-    shutil.copytree(source, target, ignore=lambda d, names: [n for n in names if n == "__pycache__"
+    shutil.copytree(source, target, ignore=lambda d, names: [n for n in names if n in IGNORED
                     or (Path(d, n).is_file() and Path(n).suffix not in CODE_SUFFIXES)])
 
 
