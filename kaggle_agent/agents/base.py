@@ -106,9 +106,8 @@ EFFORTS = ("minimal", "low", "medium", "high", "xhigh", "max")
 
 # Short names people type -> the exact model id each tool needs. Checked against the vendors' published ids.
 MODEL_NAMES = {"sonnet": ("claude", "claude-sonnet-5-5"), "opus": ("claude", "claude-opus-5-5"),
-               "haiku": ("claude", "claude-haiku-5-5"), "fable": ("claude", "claude-fable-5-2"),
                "luna": ("codex", "gpt-6-luna"), "sol": ("codex", "gpt-6.1-sol")}
-FULL_MODELS = {"claude-sonnet-5-5": "claude", "claude-opus-5-5": "claude", "claude-haiku-5-5": "claude", "claude-fable-5-2": "claude",
+FULL_MODELS = {"claude-sonnet-5-5": "claude", "claude-opus-5-5": "claude",
                "gpt-6-luna": "codex", "gpt-6.1-sol": "codex", "gpt-6-sol": "codex"}
 
 
