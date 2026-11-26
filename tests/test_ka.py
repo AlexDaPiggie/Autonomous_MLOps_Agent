@@ -114,11 +114,22 @@ class KaCommand(unittest.TestCase):
 
         args = argparse.Namespace(dir=str(comp), campaigns=1, trials=2, agent=None,
                                   mock_agent=MockCoder([("baseline logistic", BASELINE), ("hist with interaction feature", IMPROVED)]))
+        mock = args.mock_agent
+        plain_run = mock.run
+
+        def with_tokens(task, directory, **kwargs):   # like a real agent: reports what it used
+            result = plain_run(task, directory, **kwargs)
+            result.usage = dict(input_tokens=1200, output_tokens=300, cache_read_input_tokens=50000)
+            return result
+        mock.run = with_tokens
         out_buffer = io.StringIO()
         with redirect_stdout(out_buffer):
             self.assertEqual(ka.cmd_go(args, scripted([])), 0)
         live = out_buffer.getvalue()
         self.assertIn("trial 1/2", live)
+        self.assertIn("Campaign 1/1 done", live)
+        self.assertIn("best score", live)
+        self.assertIn("tokens: 2k input, 600 output, 100k cached", live)
         self.assertIn("NEW CHAMPION", live)
         self.assertIn("auto-submitted", live)
         sent = self.submitted()

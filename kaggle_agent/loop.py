@@ -341,9 +341,24 @@ def _run(args, store, directory, profile, controller, agent, emit):
         emit("research_analysis", **run_analysis(store, controller, directory, profile, agent, portfolio, way, limits, bounds))
     completed, notes = [], []
     turn = len(store.rows("SELECT id FROM experiments WHERE competition=? AND fidelity='full'", (controller.competition,)))
+    spent = {}
+
+    def ask(prompt, workspace, **kwargs):
+        """agent.run, but counts the tokens the agent reports (claude and codex use different key names)."""
+        result = agent.run(prompt, workspace, **kwargs)
+        usage = getattr(result, "usage", None)
+        if isinstance(usage, dict):
+            for name, kind in (("input_tokens", "input"), ("output_tokens", "output"), ("cache_creation_input_tokens", "input"),
+                               ("cache_read_input_tokens", "cached"), ("cached_input_tokens", "cached")):
+                value = usage.get(name)
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    spent[kind] = spent.get(kind, 0) + int(value)
+        return result
+
     for campaign_index in range(args.campaigns):
         if controller.should_stop() and args.command != "resume":
             break
+        spent.clear()
         validate_profile(profile)
         campaign = controller.campaign(args.trials, resume=args.command == "resume")
         use_screen, screen_can_block, agreement = screen_reliable(store, controller.competition)
@@ -366,7 +381,7 @@ def _run(args, store, directory, profile, controller, agent, emit):
             agent_kwargs = dict(authorized=True, seconds=limits["agent_seconds"], memory_mb=bounds["memory_mb"], heartbeat=controller.heartbeat,
                                 should_stop=controller.should_stop, mode="code", read_dirs=data_dirs(directory, profile),
                                 env_extra=agent_test_env(directory, profile, limits, workspace))
-            result = agent.run(brief, workspace, **agent_kwargs)
+            result = ask(brief, workspace, **agent_kwargs)
             cp = checkpoint(store, controller.competition, "code trial", Path(directory) / ".kaggle-agent" / "checkpoint.json")
             session = rotate(store, controller.competition, getattr(agent, "name", "mock"), cp)
             with store.transaction() as db:
@@ -389,7 +404,7 @@ def _run(args, store, directory, profile, controller, agent, emit):
             for _ in range(2):
                 if passed:
                     break
-                repair = agent.run("REPAIR: your script failed its smoke test. Fix it in place; keep the same idea.\n\n" + error +
+                repair = ask("REPAIR: your script failed its smoke test. Fix it in place; keep the same idea.\n\n" + error +
                                    "\n\n" + contract(profile) + "\n\nReply with the same JSON protocol.", workspace, **agent_kwargs)
                 if repair.status != "completed":
                     break
@@ -476,7 +491,7 @@ def _run(args, store, directory, profile, controller, agent, emit):
                    for r in store.rows("SELECT state,fidelity,result FROM experiments WHERE competition=? ORDER BY created", (controller.competition,))]
         check = stagnation(history)
         checkpoint(store, controller.competition, check["next_action"], Path(directory) / ".kaggle-agent" / "checkpoint.json")
-        emit("campaign_end", campaign=campaign_index + 1, campaigns=args.campaigns, stuck=check["research_review"])
+        emit("campaign_end", campaign=campaign_index + 1, campaigns=args.campaigns, stuck=check["research_review"], tokens=dict(spent))
         if check["research_review"]:
             from kaggle_agent.research.review import review_stagnation
             review_stagnation(store, controller.competition, directory, profile)

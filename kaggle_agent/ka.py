@@ -353,6 +353,8 @@ def printer(settings, st, directory, profile, competition):
             text = d["outcome"]
             if text == "champion":
                 state["champion"] = True
+                if isinstance(d.get("mean"), (int, float)):
+                    state["best"] = d["mean"]   # champions only improve, so the last one is the best
                 gain = d.get("gain")
                 text = "NEW CHAMPION" + (f" (+{abs(gain):.4g})" if isinstance(gain, (int, float)) and gain else "")
                 notify.send(settings, "New champion", f"{Path(directory).name}: {d.get('mean', 0):.6g} · {d.get('hypothesis', '')[:120]}")
@@ -367,6 +369,15 @@ def printer(settings, st, directory, profile, competition):
             if promo.get("improved"):
                 state["champion"] = True
         elif kind == "campaign_end":
+            best = state.get("best")
+            line = f"Campaign {d.get('campaign')}/{d.get('campaigns')} done"
+            if best is not None:
+                line += f" · best score {best:.6g}"
+            tokens = d.get("tokens") or {}
+            if tokens:
+                short = lambda n: f"{n / 1e6:.1f}M" if n >= 1e6 else f"{n / 1e3:.0f}k" if n >= 1e3 else str(n)
+                line += " · tokens: " + ", ".join(f"{short(tokens[k])} {k}" for k in ("input", "output", "cached") if tokens.get(k))
+            print(line, flush=True)
             if state["champion"]:
                 state["champion"] = False
                 try:
