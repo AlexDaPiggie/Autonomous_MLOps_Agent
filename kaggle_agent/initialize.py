@@ -13,7 +13,8 @@ def initialize(parent,name,url="",*,shared=None,automation=False):
     shared=Path(shared or Path(__file__).resolve().parents[1])
     relative=os.path.relpath(shared,target).replace("\\","/")
     (target/"AGENTS.md").write_text(f"# {name} Kaggle competition\n\nAt the start of every session, read {relative}/rules.md in full and follow it. Ignore _backups/.\n\n## This competition\n- URL: {url}\n- Notes live in STATE.md and the experiment log.\n",encoding="utf-8")
-    (target/"CLAUDE.md").write_text(f"@AGENTS.md\n@{relative}/rules.md\n",encoding="utf-8")
+    # No @import of rules.md: it would auto-load the loop rules into supervised one-script sessions.
+    (target/"CLAUDE.md").write_text("@AGENTS.md\n",encoding="utf-8")
     if automation:
         from kaggle_agent.__main__ import init
         init(target,"classification")

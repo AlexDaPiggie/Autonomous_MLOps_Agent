@@ -64,7 +64,14 @@ never drop or reorder OOF rows; classification predictions are probabilities in 
 run takes seconds. Use d["threads"] for n_jobs. Seed everything from d["seed"]."""
 
 
-def build_brief(store, controller, directory, profile, branch, *, stagnating, last_error=None):
+def time_note(seconds):
+    """Tell the coding agent its hard cap: a session cut off by it loses all its work."""
+    return (f"Hard time limit: this session is killed after {seconds // 60} minutes and unfinished work is lost. "
+            f"Send your final reply within {max(1, seconds * 2 // 3 // 60)} minutes. Your own test runs count toward "
+            "this, so keep them short; the supervisor does the full run.")
+
+
+def build_brief(store, controller, directory, profile, branch, *, stagnating, last_error=None, agent_seconds=None):
     from kaggle_agent.evaluation.validation import direction
     from kaggle_agent.research.retrieval import Knowledge
     way = profile.get("direction") or direction(profile["metric"])
@@ -76,7 +83,9 @@ def build_brief(store, controller, directory, profile, branch, *, stagnating, la
              "You may run Python to test your script, and nothing else: `python <your_script>.py`. The environment is",
              "already in smoke mode (KA_SMOKE=1, small sample, output to ./_out), so test runs take seconds. Fix errors",
              "before you answer. The supervisor then runs and scores the real thing.", ""]
-    task = Path(directory) / ".kaggle-agent" / "task.md"
+    if agent_seconds:
+        lines += [time_note(agent_seconds), ""]
+    task =Path(directory) / ".kaggle-agent" / "task.md"
     if task.is_file():
         lines += ["## Problem (competition rules)", task.read_text(encoding="utf-8")[:12000], ""]
     if profile["data"]["kind"] == "optimization":
@@ -386,7 +395,7 @@ def _run(args, store, directory, profile, controller, agent, emit):
                        for r in store.rows("SELECT state,fidelity,result FROM experiments WHERE competition=? ORDER BY created", (controller.competition,))]
             stuck = stagnation(history)["completed_without_progress"] >= 3
             workspace = prepare_workspace(store, controller, directory, campaign, trial)
-            brief = build_brief(store, controller, directory, profile, branch, stagnating=stuck)
+            brief = build_brief(store, controller, directory, profile, branch, stagnating=stuck, agent_seconds=limits["agent_seconds"])
             atomic_write(workspace.parent.parent / "last-brief.md", brief)
             agent_kwargs = dict(authorized=True, seconds=limits["agent_seconds"], memory_mb=bounds["memory_mb"], heartbeat=controller.heartbeat,
                                 should_stop=controller.should_stop, mode="code", read_dirs=data_dirs(directory, profile),
@@ -415,7 +424,8 @@ def _run(args, store, directory, profile, controller, agent, emit):
                 if passed:
                     break
                 repair = ask("REPAIR: your script failed its smoke test. Fix it in place; keep the same idea.\n\n" + error +
-                                   "\n\n" + contract(profile) + "\n\nReply with the same JSON protocol.", workspace, **agent_kwargs)
+                                   "\n\n" + contract(profile) + "\n\n" + time_note(limits["agent_seconds"]) +
+                                   "\n\nReply with the same JSON protocol.", workspace, **agent_kwargs)
                 if repair.status != "completed":
                     break
                 entry = repair.entry or entry
