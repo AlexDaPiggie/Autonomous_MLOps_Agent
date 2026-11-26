@@ -105,26 +105,27 @@ EFFORTS = ("minimal", "low", "medium", "high", "xhigh", "max")
 
 
 # Short names people type -> the exact model id each tool needs. Checked against the vendors' published ids.
-MODEL_NAMES = (("sonnet", "claude", "claude-sonnet-5-5"), ("opus", "claude", "claude-opus-5-5"),
-               ("haiku", "claude", "claude-haiku-5-5"), ("fable", "claude", "claude-fable-5-2"),
-               ("luna", "codex", "gpt-6-luna"), ("sol", "codex", "gpt-6.1-sol"))
+MODEL_NAMES = {"sonnet": ("claude", "claude-sonnet-5-5"), "opus": ("claude", "claude-opus-5-5"),
+               "haiku": ("claude", "claude-haiku-5-5"), "fable": ("claude", "claude-fable-5-2"),
+               "luna": ("codex", "gpt-6-luna"), "sol": ("codex", "gpt-6.1-sol")}
+FULL_MODELS = {"claude-sonnet-5-5": "claude", "claude-opus-5-5": "claude", "claude-haiku-5-5": "claude", "claude-fable-5-2": "claude",
+               "gpt-6-luna": "codex", "gpt-6.1-sol": "codex", "gpt-6-sol": "codex"}
 
 
 def resolve_model(agent, text):
-    """'sonnet' -> claude-sonnet-5-5, 'Sol' -> gpt-6.1-sol. Full ids and unknown names pass through unchanged."""
+    """'sonnet' -> claude-sonnet-5-5, 'SOL' -> gpt-6.1-sol. Empty = the tool's default.
+    Anything else (like 'Sonnet-5.5') is refused: the tool would only fail with 'model not found'."""
     text = (text or "").strip()
     lower = text.lower()
-    if not lower or lower.startswith(("claude-", "gpt-")) or "/" in lower:
-        found = (lower, "claude" if lower.startswith("claude-") else "codex" if lower.startswith("gpt-") else agent)
+    if not lower:
+        return ""
+    if lower in MODEL_NAMES:
+        owner, model = MODEL_NAMES[lower]
+    elif lower in FULL_MODELS:
+        owner, model = FULL_MODELS[lower], lower
     else:
-        found = None
-        for word, owner, full in MODEL_NAMES:
-            if word in lower:
-                found = (full, owner)
-                break
-        if found is None:
-            return text
-    model, owner = found
+        mine = sorted(w for w, (o, _) in MODEL_NAMES.items() if o == agent)
+        raise ValueError(f"'{text}' is not a valid model name. For {agent} use: {', '.join(mine)} (capital letters are fine; no version numbers).")
     if owner != agent:
         raise ValueError(f"'{text}' is a {owner} model; the {agent} agent can't use it. Pick the {owner} agent or another model.")
     return model

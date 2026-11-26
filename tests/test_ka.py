@@ -106,16 +106,26 @@ class KaCommand(unittest.TestCase):
 
     def test_short_model_names(self):
         from kaggle_agent.agents.base import resolve_model
-        for agent, typed, full in [("claude", "Sonnet", "claude-sonnet-5-5"), ("claude", "Sonnet-5.5", "claude-sonnet-5-5"),
+        for agent, typed, full in [("claude", "Sonnet", "claude-sonnet-5-5"), ("claude", "SONNET", "claude-sonnet-5-5"),
                                    ("claude", "opus", "claude-opus-5-5"), ("codex", "Sol", "gpt-6.1-sol"),
                                    ("codex", "luna", "gpt-6-luna"), ("codex", "gpt-6-sol", "gpt-6-sol"),
-                                   ("claude", "claude-opus-5-5", "claude-opus-5-5"), ("claude", "", ""),
-                                   ("claude", "my-custom-model", "my-custom-model")]:
+                                   ("claude", "claude-opus-5-5", "claude-opus-5-5"), ("claude", "", "")]:
             self.assertEqual(resolve_model(agent, typed), full, typed)
-        with self.assertRaises(ValueError):
-            resolve_model("claude", "sol")      # a codex model on the claude agent
-        with self.assertRaises(ValueError):
-            resolve_model("codex", "opus")
+        for agent, typed in [("claude", "Sonnet-5.5"), ("claude", "Sonnet 5.5"), ("claude", "my-custom-model"),
+                             ("claude", "sol"), ("codex", "opus")]:
+            with self.assertRaises(ValueError, msg=typed):
+                resolve_model(agent, typed)
+
+    def test_setup_asks_again_until_answers_are_valid(self):
+        answers = ["claude", "Sonnet-5.5", "sonnet", "ultra", "high", "abc", "0", "1", "1024", "0.1", "1", "9", "3",
+                   "maybe", "none", "y"]
+        code, out = self.ka(["setup"], answers)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out.count("That doesn't work"), 6, out)
+        self.assertIn("'Sonnet-5.5' is not a valid model name", out)
+        settings = json.loads((self.home / ".kaggle-agent" / "settings.json").read_text()) if hasattr(self, "home") else ka.load_settings()
+        self.assertEqual(settings["agents"]["claude"]["model"], "claude-sonnet-5-5")
+        self.assertEqual(settings["trials"], 3)
 
     def test_full_everyday_flow(self):
         code, out = self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none", "y"])
@@ -248,8 +258,8 @@ class KaCommand(unittest.TestCase):
         from unittest.mock import patch
         from kaggle_agent.agents.base import CLIAdapter
         with patch.object(CLIAdapter, "binary", return_value="codex"):
-            command = CLIAdapter("codex", model="gpt-x", effort="high").command("p", "out.json", mode="code")
-        self.assertIn("--model", command)
+            command = CLIAdapter("codex", model="sol", effort="high").command("p", "out.json", mode="code")
+        self.assertEqual(command[command.index("--model") + 1], "gpt-6.1-sol")
         self.assertIn('model_reasoning_effort="high"', command)
         self.assertEqual(command[-1], "-")
         with patch.object(CLIAdapter, "binary", return_value="claude"):

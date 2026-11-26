@@ -99,7 +99,7 @@ def controller_for(directory, st):
 
 # ---------------------------------------------------------------- setup
 def cmd_setup(args, ask):
-    from kaggle_agent.agents.base import CLIAdapter
+    from kaggle_agent.agents.base import CLIAdapter, MODEL_NAMES, resolve_model
     from kaggle_agent.supervisor.limits import Limits, machine_memory_mb, machine_threads, memory_ceiling_mb
     settings = load_settings()
     print("Checking tools...")
@@ -114,26 +114,54 @@ def cmd_setup(args, ask):
     except Exception as error:
         print(f"  kaggle CLI: {error}")
     ready = [n for n, i in found.items() if i.get("available")]
+    def again(prompt, default, check):
+        """Ask until the answer is valid. check(text) returns the cleaned value or raises ValueError/GateError."""
+        for _ in range(20):    # the cap only stops an endless loop when nobody is typing
+            text = ask(prompt, default)
+            try:
+                return check(text)
+            except (ValueError, GateError) as error:
+                print(f"  That doesn't work: {error}  Try again.")
+        raise GateError("Too many invalid answers; run `ka setup` again.")
+
+    def number(kind, low=None, high=None):
+        def check(text):
+            try:
+                value = kind(text.strip())
+            except ValueError:
+                raise ValueError("type a number")
+            if low is not None and value < low or high is not None and value > high:
+                raise ValueError(f"the number must be {'at least ' + str(low) if high is None else 'between ' + str(low) + ' and ' + str(high)}")
+            return value
+        return check
+
+    def word(options):
+        def check(text):
+            if text.strip().lower() not in options:
+                raise ValueError("choose " + " or ".join(options))
+            return text.strip().lower()
+        return check
+
     def collect(settings, current_limits):
-        agent = ask("Which agent should write the code (claude/codex)?", settings["agent"] if settings["agent"] in ready or not ready else ready[0])
-        if agent not in {"claude", "codex"}:
-            raise GateError("Choose claude or codex")
+        agent = again("Which agent should write the code (claude/codex)?", settings["agent"] if settings["agent"] in ready or not ready else ready[0],
+                      word(("claude", "codex")))
         agents = settings.get("agents") or {}
         current = agents.get(agent) or {}
-        model = ask(f"{agent} model (empty = {agent}'s own default)", current.get("model", ""))
-        effort = ask(f"{agent} effort: low, medium, high, xhigh (empty = default)", current.get("effort", ""))
-        try:
-            model = CLIAdapter(agent, model=model, effort=effort).model or ""   # validates effort, turns "sonnet" into the full id
-        except ValueError as error:
-            raise GateError(str(error))
-        agents[agent] = {k: v for k, v in dict(model=model, effort=effort.strip().lower()).items() if v}
-        threads = int(ask(f"CPU threads per run (this machine has {machine_threads()})", str(current_limits.get("threads") or max(1, machine_threads() // 2))))
-        memory = int(ask(f"Memory per run in MB (machine {machine_memory_mb()}, max {memory_ceiling_mb()})", str(current_limits.get("memory_mb") or min(8192, memory_ceiling_mb()))))
-        hours = float(ask("Max hours per run", f"{(current_limits.get('seconds') or 3600) / 3600:g}"))
-        campaigns = int(ask("Campaigns per `ka go`", str(settings["campaigns"])))
-        trials = int(ask("Trials per campaign (1-4)", str(settings["trials"])))
+        model = again(f"{agent} model: {', '.join(sorted(w for w, (o, _) in MODEL_NAMES.items() if o == agent))} (empty = {agent}'s own default)",
+                      current.get("model", ""), lambda text: resolve_model(agent, text))
+        effort = again(f"{agent} effort: low, medium, high, xhigh (empty = default)", current.get("effort", ""),
+                       lambda text: CLIAdapter(agent, effort=text).effort or "")
+        agents[agent] = {k: v for k, v in dict(model=model, effort=effort).items() if v}
+        threads = again(f"CPU threads per run (this machine has {machine_threads()})",
+                        str(current_limits.get("threads") or max(1, machine_threads() // 2)), number(int, 1))
+        memory = again(f"Memory per run in MB (machine {machine_memory_mb()}, max {memory_ceiling_mb()})",
+                       str(current_limits.get("memory_mb") or min(8192, memory_ceiling_mb())), number(int, 1))
+        hours = again("Max hours per run", f"{(current_limits.get('seconds') or 3600) / 3600:g}", number(float, 0.01))
+        campaigns = again("Campaigns per `ka go`", str(settings["campaigns"]), number(int, 1))
+        trials = again("Trials per campaign (1-4)", str(settings["trials"]), number(int, 1, 4))
         alerts = settings.get("alerts") or {}
-        choice = ask("Phone alerts: ntfy, telegram or none?", "ntfy" if alerts.get("ntfy_topic") else "telegram" if alerts.get("telegram_token") else "none").lower()
+        choice = again("Phone alerts: ntfy, telegram or none?", "ntfy" if alerts.get("ntfy_topic") else "telegram" if alerts.get("telegram_token") else "none",
+                       word(("ntfy", "telegram", "none")))
         if choice == "ntfy":
             import secrets
             topic = ask("ntfy topic (keep it secret; subscribe to it in the ntfy app)", alerts.get("ntfy_topic") or "ka-" + secrets.token_hex(6))
@@ -432,7 +460,10 @@ def cmd_go(args, ask):
     exists = st.rows("SELECT state,stop_requested FROM competitions WHERE id=?", (competition,))
     command = "resume" if exists and (exists[0]["stop_requested"] or exists[0]["state"] in {"STOPPED", "BLOCKED", "WAITING_LIMIT", "FAILED"}) else "start"
     choice = agent_choice(settings, directory, agent_name)
-    agent = getattr(args, "mock_agent", None) or CLIAdapter(agent_name, **choice)
+    try:
+        agent = getattr(args, "mock_agent", None) or CLIAdapter(agent_name, **choice)
+    except ValueError as error:
+        raise GateError(f"{error}\nFix it with: ka agent {agent_name} --model <name>   (or run ka setup)")
     run_args = argparse.Namespace(competition=str(directory), agent="mock" if getattr(args, "mock_agent", None) else agent_name, mode="code",
                                   execute=True, subscription_confirmed=True, campaigns=args.campaigns or settings["campaigns"],
                                   trials=args.trials or settings["trials"], seconds=None, memory_mb=None, config=None,
