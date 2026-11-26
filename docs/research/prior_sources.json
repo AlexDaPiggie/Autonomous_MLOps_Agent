@@ -1,0 +1,448 @@
+[
+  {
+    "id": "prior-harness",
+    "title": "ML Agent Harness",
+    "authors": "juliversa",
+    "url": "https://github.com/juliversa/ml-agent-harness",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://github.com/juliversa/ml-agent-harness#what-the-code-does — watcher bullet; https://github.com/juliversa/ml-agent-harness#what-the-code-does — submit gate bullet",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "A Kaggle harness turns checkable rules into executable gates and uses a deterministic watcher. Its author reports historical competition experience and offline replays; those do not prove prospective performance of the current open version.",
+    "findings": [
+      {
+        "title": "Routine supervision need not consume another agent conversation",
+        "quote": "Every 5 minutes, 16 kinds of alert",
+        "locator": "https://github.com/juliversa/ml-agent-harness#what-the-code-does — watcher bullet",
+        "meaning": "The watcher inspects operational conditions without an LLM, separately from experiment reasoning.",
+        "application": "Our controller already records heartbeats and process bounds. Extend deterministic checks before adding another monitoring agent: detect stale leases, incomplete artifacts, or repeated code, and attach a deduplicated event to the next brief. This preserves subscription allowance for decisions rather than routine inspection.",
+        "strengths": "Close fit with controller and watchdog; checks can be replayed offline.",
+        "limitations": "Encoded checks cannot diagnose every scientific mistake. Repeated alerts must not trigger unlimited retries or spending. The source's five-minute interval is a design choice, not an evidence-based optimum for our setup.",
+        "action": "Replay timeout, partial-output, and duplicate-code fixtures. Require specific, deduplicated alerts and no automatic new work."
+      },
+      {
+        "title": "Submission controls should reject missing evidence",
+        "quote": "Refuses a submission without a CV number",
+        "locator": "https://github.com/juliversa/ml-agent-harness#what-the-code-does — submit gate bullet",
+        "meaning": "External actions are gated on recorded validation evidence. The author explicitly calls these guard rails, not a sandbox.",
+        "application": "Keep scoring and submission outside generated experiment code. Require aligned IDs, finite predictions, complete artifacts, a permitted submission mode, and the authorized action path. Preserve the rejection reason so the next brief can repair the actual failure without rerunning blindly.",
+        "strengths": "Directly matches independent evaluation rather than trusting an agent-written score.",
+        "limitations": "Regex hooks are not isolation. The source also notes that its review token binds plan text rather than independently authenticating the reviewer. Importing GPU-specific scripts would add assumptions we do not need.",
+        "action": "Test a valid submission beside missing-CV, malformed-schema, and partial-artifact fixtures; only the intended fixture may reach a mocked connector."
+      }
+    ],
+    "compute": {
+      "training": "GPU jobs occur in the documented workflow; the watcher and gates themselves need no GPU.",
+      "agent_inference": "Claude Code for coding; no LLM for the watcher.",
+      "observed_budget": "No portable monetary total verified.",
+      "caveat": "Author-reported medals and replay flags are not results under our resource caps."
+    },
+    "evidence_limits": "README text inspected; no independent competition reproduction.",
+    "related_links": [
+      "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md"
+    ]
+  },
+  {
+    "id": "prior-lessons",
+    "title": "ML Agent Harness lessons",
+    "authors": "juliversa",
+    "url": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L1; https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L5",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "A postmortem compares five finished competitions with selected top-team write-ups. It highlights premature rejection of model ideas and validation splits that miss the difficult generalization axis.",
+    "findings": [
+      {
+        "title": "A weak probe can misdiagnose an entire research direction",
+        "quote": "A lane is dead only after its elite version ran.",
+        "locator": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L1",
+        "meaning": "A cheap or incomplete version can fail without ruling out the broader idea.",
+        "application": "Distinguish execution failure, underpowered screen, and a completed scientific negative. On our budget, do not train every elite version: record exactly what the probe ruled out and mark unaffordable hypotheses as untested. Reserve a stronger bounded test only when justified by expected value.",
+        "strengths": "Prevents a smoke-test failure from condemning a whole branch.",
+        "limitations": "The universal wording is too strong for our resources. Some best versions are unaffordable or outside scope. The comparison is observational, not proof that every elite implementation is worth its cost.",
+        "action": "Add execution-failed, screen-only-negative, full-negative, and compute-blocked outcomes. Only comparable completed outcomes should affect scientific win rates."
+      },
+      {
+        "title": "The difficult generalization axis matters more than generic split hygiene",
+        "quote": "Hold out the hardest hidden axis",
+        "locator": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L5",
+        "meaning": "Even group-aware validation can miss the axis that makes hidden evaluation difficult.",
+        "application": "Before freezing folds, name the likely shift: time, entity or site, or optimization instance size. Record why the split resembles deployment. Random folds are not automatically wrong, but their suitability should follow the data-generation problem rather than a default habit.",
+        "strengths": "A sound evaluator makes each scarce experiment more informative.",
+        "limitations": "The hidden axis may be unknown; the source's audio and imaging recipes are outside our supported domains. Do not infer and tune a private distribution through repeated leaderboard probing.",
+        "action": "On a table with known time/entity structure, compare candidate rankings under random and appropriate held-out splits without selecting on public scores."
+      }
+    ],
+    "compute": {
+      "training": "Examples include GPU-heavy audio and imaging training; split reasoning itself is CPU-feasible.",
+      "agent_inference": "Reading the lessons does not require adding an agent.",
+      "observed_budget": "No portable cost-performance curve.",
+      "caveat": "A demand for a strong test is not authorization to exceed limits."
+    },
+    "evidence_limits": "The source mixes its author's records with other teams' reports. Its [n] notation marks external evidence; inspect originals for detailed performance claims.",
+    "related_links": []
+  },
+  {
+    "id": "prior-mlevolve",
+    "title": "MLEvolve",
+    "authors": "InternScience",
+    "url": "https://github.com/InternScience/MLEvolve",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://github.com/InternScience/MLEvolve#key-technical-contributions — Experience-Driven Memory; https://github.com/InternScience/MLEvolve#setup — global-memory configuration paragraph",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "MLEvolve combines graph search, memory retrieval, and alternative code-generation strategies. Component transfer is more relevant than copying the full benchmark system into a small local workflow.",
+    "findings": [
+      {
+        "title": "Store unsuccessful experiments as retrievable evidence",
+        "quote": "A global memory layer records plan, code, metrics",
+        "locator": "https://github.com/InternScience/MLEvolve#key-technical-contributions — Experience-Driven Memory",
+        "meaning": "Plans and implementation evidence are associated with outcomes for later retrieval.",
+        "application": "Keep code/data/split fingerprints, failure type, hypothesis, and measurements together. Retrieve a few relevant records rather than entire logs. Extend our existing discovery store without importing a parallel-agent framework. A code execution failure must remain distinct from a scientific negative result.",
+        "strengths": "Preserves expensive evidence across context resets.",
+        "limitations": "Similarity retrieval may reinforce early mistakes. Summaries may omit the conditions under which a method worked; raw artifacts must remain recoverable. A full graph also adds bookkeeping and model turns.",
+        "action": "Compare matched campaigns with no retrieval versus a fixed top-k packet. Count repeated failures, validated gains, runtime, and sessions under identical caps."
+      },
+      {
+        "title": "A CPU embedding option does not imply CPU-only benchmark training",
+        "quote": "Set agent.memory_embedding_device to cpu if CUDA is unavailable.",
+        "locator": "https://github.com/InternScience/MLEvolve#setup — global-memory configuration paragraph",
+        "meaning": "The CPU setting is explicitly for memory embeddings, not all candidate model training.",
+        "application": "Separate retrieval, agent inference, and training in resource accounting. Start with keyword retrieval or a small CPU embedding model only after measuring its benefit. Keep a CPU-feasible experiment pool instead of loading the full benchmark or a large agent model merely to copy the memory idea.",
+        "strengths": "Supports a narrow low-compute adaptation.",
+        "limitations": "API endpoint setup is not a drop-in replacement for our subscription CLI policy. CPU embeddings establish neither total RAM nor training affordability. The repository separately advertises a 35B agent model; that is not required for our adaptation.",
+        "action": "Measure retrieval latency and peak RSS on a fixed evidence set before adding dependencies."
+      }
+    ],
+    "compute": {
+      "training": "Task-dependent; full MLE-bench and mathematical optimization results are reported.",
+      "agent_inference": "Code and feedback API endpoints are configured; MLExpert 35B is a separate model release.",
+      "observed_budget": "README reports a 12-hour benchmark setting, not a dollar price.",
+      "caveat": "CPU embedding support is component-specific."
+    },
+    "evidence_limits": "README inspected. Reported benchmark medals do not forecast live competition outcomes.",
+    "related_links": [
+      "https://github.com/InternScience/MLEvolve/blob/main/config/config.yaml"
+    ]
+  },
+  {
+    "id": "prior-mlmaster1",
+    "title": "ML Master original version",
+    "authors": "Zexi Liu and collaborators",
+    "url": "https://github.com/sjtu-sai-agents/ML-Master",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://github.com/sjtu-sai-agents/ML-Master — original ML-Master Overview below the 2.0 material; https://github.com/sjtu-sai-agents/ML-Master#-download-mle-bench-data",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "The original system combines exploration and reasoning through adaptive memory. The current repository includes both original and 2.0 material; this section does not import 2.0 claims into the original version.",
+    "findings": [
+      {
+        "title": "Summarize relevant experience rather than unlimited context",
+        "quote": "selectively captures and summarizes relevant insights and outcomes",
+        "locator": "https://github.com/sjtu-sai-agents/ML-Master — original ML-Master Overview below the 2.0 material",
+        "meaning": "Memory selectively retains outcomes useful to subsequent reasoning.",
+        "application": "Preserve full evidence durably but bound what enters a coding brief. Select lessons by task, branch, and outcome, with pointers to exact code and measurements. This can improve our existing single-agent continuity without reproducing parallel search or switching to an API-hosted reasoning model.",
+        "strengths": "Fits the checkpoint and retrieval seams directly.",
+        "limitations": "Selective summaries can discard root-cause details. Raw artifacts and evaluator identity must remain accessible. Version confusion in a repository containing several generations can invalidate comparisons.",
+        "action": "Create similar failure records with different root causes and check that a bounded brief retrieves the relevant cause plus its evidence pointer."
+      },
+      {
+        "title": "The reproduction footprint is a separate adoption decision",
+        "quote": "The full MLE-Bench dataset is over 2TB.",
+        "locator": "https://github.com/sjtu-sai-agents/ML-Master#-download-mle-bench-data",
+        "meaning": "The documented benchmark preparation has substantial storage requirements; its Docker quick start also requests NVIDIA GPUs.",
+        "application": "Test the memory principle on a few small local tables and optimization fixtures. A multi-terabyte download is unnecessary for asking whether evidence packets prevent duplicate work. Explicitly label any selected-task evaluation so it cannot be mistaken for reproducing the published overall medal rate.",
+        "strengths": "Component ablations answer our actual engineering question affordably.",
+        "limitations": "Without an assumed GPU allocation or multi-terabyte storage budget, faithful full benchmark reproduction is not the default. A small test supports only local usefulness, not the paper's overall performance claims.",
+        "action": "Predeclare three local tasks, equal resource caps, and a retrieval-only ablation; report per-task completion and validated gain."
+      }
+    ],
+    "compute": {
+      "training": "Docker example uses --gpus all and 64 GB shared memory; full dataset is stated as over 2 TB.",
+      "agent_inference": "Reasoning inference and candidate training are separate costs; no subscription equivalence assumed.",
+      "observed_budget": "Original paper reports a 12-hour setting; monetary total not established.",
+      "caveat": "Do not mix original and 2.0 performance labels."
+    },
+    "evidence_limits": "Older Coming Soon markers coexist with newer material. Pin code and use the relevant paper when reproducing.",
+    "related_links": [
+      "https://arxiv.org/html/2506.16499v1"
+    ]
+  },
+  {
+    "id": "prior-evomaster",
+    "title": "EvoMaster",
+    "authors": "sjtu-sai-agents",
+    "url": "https://github.com/sjtu-sai-agents/EvoMaster",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://github.com/sjtu-sai-agents/EvoMaster#-news — 2026-05-18 entry; https://github.com/sjtu-sai-agents/EvoMaster#-installation — pip setup comment",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "A broader scientific-agent framework with configurable execution and model plumbing. Its current release notes describe trajectory-driven run-local evolution; it is not simply another name for ML-Master.",
+    "findings": [
+      {
+        "title": "Propose post-run improvements without silently evolving policy",
+        "quote": "Agents can analyze completed trajectories, generate run-local skills",
+        "locator": "https://github.com/sjtu-sai-agents/EvoMaster#-news — 2026-05-18 entry",
+        "meaning": "Completed trajectories can produce local skill or prompt changes.",
+        "application": "Adapt this as a post-campaign proposal for a lesson or better experiment brief. Treat the proposal as reviewable data, never permission to change scorer code, credentials, operating rules, or budget gates. Keep accepted changes local and record the instruction hash for comparison.",
+        "strengths": "Offers a route to workflow learning with evidence.",
+        "limitations": "Self-generated skills can preserve a mistaken lesson or unsafe shortcut. Another prompt-optimization loop can overfit the same few tasks. It must not weaken our operating policy.",
+        "action": "Replay proposed changes against synthetic failure traces and unrelated cases; reject improvements that work by weakening a gate."
+      },
+      {
+        "title": "A modular framework can still have incompatible inference plumbing",
+        "quote": "Configure LLM API keys in configs/",
+        "locator": "https://github.com/sjtu-sai-agents/EvoMaster#-installation — pip setup comment",
+        "meaning": "The setup explicitly configures API credentials; the README also describes local and Docker execution.",
+        "application": "Borrow clean interfaces for tools, sessions, and evidence only when they simplify existing modules. Retain the selected CLI adapter as our inference boundary. A framework migration should remove measured maintenance problems without introducing mandatory API billing or breaking recovery.",
+        "strengths": "Separation of tool, session, and execution concerns is useful independently of a new runtime.",
+        "limitations": "Flexibility is not proof of lower total cost. Scientific demos span workloads beyond our scope, and the setup does not establish affordability on our hardware. Integration could cost more than maintaining a narrow implementation.",
+        "action": "Prototype one adapter behind the existing interface and require identical stop, timeout, malformed-result, and evidence-log behavior."
+      }
+    ],
+    "compute": {
+      "training": "Scientific workload requirements vary; local/Docker support is not a GPU-free guarantee.",
+      "agent_inference": "API-key and compatible-endpoint configuration documented.",
+      "observed_budget": "No verified monetary total for our use case.",
+      "caveat": "Separate modular design from reproducing scientific demos."
+    },
+    "evidence_limits": "Author release documentation, not independent evidence that self-evolution improves our tasks.",
+    "related_links": []
+  },
+  {
+    "id": "prior-deotte-s6e5",
+    "title": "Second Place Autonomous Codex Yolo",
+    "authors": "Chris Deotte",
+    "url": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Codex Runs Experiments; https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Diverse Models",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "Deotte describes agent-operated experimentation and blending genuinely different model families. The orchestration is relevant, but the documented compute allocation differs materially from our CPU-first workflow.",
+    "findings": [
+      {
+        "title": "Autonomous orchestration and compute capacity are different claims",
+        "quote": "I let Codex to use 4x A100 GPUs",
+        "locator": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Codex Runs Experiments",
+        "meaning": "The author explicitly gave the autonomous campaign four A100 GPUs; that bounds the interpretation of its throughput.",
+        "application": "Copy the ledger, hypothesis-driven iteration, and CV comparisons, not its expected trial count. Start with CPU-capable models under our existing caps. A cloud experiment remains separately authorized, with outputs imported into the same evidence registry. Diagnose whether coding or training is the bottleneck before paying for more of either.",
+        "strengths": "The write-run-review cycle closely matches our intended operation.",
+        "limitations": "Four A100s are not available by assumption. Scripts efficient there may be impractical locally. One successful competition is not a controlled comparison of orchestration methods, model choices, or cost effectiveness.",
+        "action": "Run a small CPU campaign with a frozen baseline and time cap. Report actual usable trials and gains without extrapolating GPU throughput."
+      },
+      {
+        "title": "A weaker standalone model may contribute complementary errors",
+        "quote": "having the other models improves ensemble diversity and CV score.",
+        "locator": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Diverse Models",
+        "meaning": "The author retained model families for their joint contribution without maximizing every family's standalone CV.",
+        "application": "Keep complete aligned OOF and test predictions. Assess marginal blend contribution separately from standalone rank. A CPU linear model, alternative encoding, or different loss may be worth retaining when it adds honest held-out value at acceptable inference cost, even when it cannot beat the standalone champion.",
+        "strengths": "Direct fit with separate standalone and ensemble champions.",
+        "limitations": "Hundreds of members and a GPU logistic-regression combiner are not prerequisites for a useful local ensemble. Repeatedly testing blends can overfit the same OOF matrix; preserve meta-validation and provenance.",
+        "action": "Compare a small diverse library with an equal-size seed-only library using identical folds and held-out blend evaluation, recording inference time."
+      }
+    ],
+    "compute": {
+      "training": "Four A100 GPUs stated; several neural and tree model families trained.",
+      "agent_inference": "Codex is the coding agent; no portable price inferred from its access mode.",
+      "observed_budget": "Total money not established; GPU count is explicit.",
+      "caveat": "Author result is not a forecast for CPU-only campaigns."
+    },
+    "evidence_limits": "Direct page body extraction was empty. Exact quotations and headings verified in search-indexed text from this same primary Kaggle page; no independent experiment reproduction.",
+    "related_links": []
+  },
+  {
+    "id": "prior-deotte-s6e10",
+    "title": "First Place TFMs and LLMs with tabular data",
+    "authors": "Chris Deotte and collaborators",
+    "url": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.2 Tabular LLM number 2 target first; https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.3 Which one should you use",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "The write-up distinguishes a coding assistant from a trained GPT tabular predictor. Its target-first conditional-likelihood approach is a hypothesis about this synthetic generation mechanism, not a universal table-modeling recipe.",
+    "findings": [
+      {
+        "title": "A generative direction can be a structural modeling hypothesis",
+        "quote": "Put the target first and let the model predict",
+        "locator": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.2 Tabular LLM number 2 target first",
+        "meaning": "The method models feature likelihood under each target, then uses Bayes' rule to form a classifier.",
+        "application": "Transfer the habit of investigating data generation. First test cheap signatures and CPU baselines that encode plausible artifacts. Consider separately budgeted neural modeling only after evidence indicates a useful signal. Record a falsification test instead of treating the generator explanation as a new universal policy.",
+        "strengths": "May reveal representation-level gains that repeated parameter tuning misses.",
+        "limitations": "A trained GPT classifier costs additional training; a coding-agent subscription does not supply it for free. Generator claims and AUCs are competition-specific and author-reported. Real data need not share the assumed structure.",
+        "action": "On a tiny known-generator dataset, compare numeric and serialization-aware CPU baselines; remove the suspected artifact and check that the gain disappears."
+      },
+      {
+        "title": "Opposite representations may be complementary",
+        "quote": "They read the same row in opposite directions",
+        "locator": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.3 Which one should you use",
+        "meaning": "The author recommends testing two directional views because their errors can differ.",
+        "application": "The affordable transfer is meaningfully different CPU-feasible views: encoding, objective, or a likelihood-derived feature. Save same-fold predictions and test marginal blend value. This asks the complementarity question without committing to training both transformer variants.",
+        "strengths": "Connects representation research to the ensemble registry.",
+        "limitations": "Different representation does not guarantee useful diversity. Weak or miscalibrated members can hurt, and public OOFs may have different early-stopping or validation provenance.",
+        "action": "Predeclare two views and use held-out meta-evaluation rather than choosing blend weights on the final reported CV."
+      }
+    ],
+    "compute": {
+      "training": "GPT-2 small with 124 million parameters and fine-tuning stated; total GPU hours not established.",
+      "agent_inference": "Predictive GPT and coding agent are distinct resources.",
+      "observed_budget": "No verified monetary total in reviewed passages.",
+      "caveat": "Small model is not evidence that CPU training is economical."
+    },
+    "evidence_limits": "Direct HTML body unavailable; indexed primary text exposed the quoted sections. Numerical and generation-mechanism claims remain author reports.",
+    "related_links": []
+  },
+  {
+    "id": "prior-birdclef",
+    "title": "96th Place Solution Only Claude Code and custom harness",
+    "authors": "Kaggle write-up author; embedded report attributed to Claude Code and harness",
+    "url": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — BirdCLEF 2026 Solution and Full Campaign Review opening; https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — Section 4 What worked what did not, Silent decode bug row",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "An autonomous audio campaign documents both resources and failure modes. The engineering lessons transfer more naturally than its model recipes or compute expectations.",
+    "findings": [
+      {
+        "title": "The visible result relied on dedicated long-running compute",
+        "quote": "on an 1×L20 cluster, over ~30 days",
+        "locator": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — BirdCLEF 2026 Solution and Full Campaign Review opening",
+        "meaning": "The campaign report explicitly describes a long accelerator run with a high-quota subscription.",
+        "application": "Reuse durable experiment history and explicit failure analysis. Do not treat a reported finish as evidence that the same throughput is cheap locally. Count usable CPU trials per allowed session, then distinguish a coding bottleneck from training or evaluation before proposing more autonomy.",
+        "strengths": "Its concrete failure ledger is more actionable than a rank headline.",
+        "limitations": "Audio is outside our domains. A long accelerator campaign and Claude Max 20x setup differ from a small local allowance. The embedded postmortem is agent-written and not an independently audited telemetry record.",
+        "action": "Generate a post-campaign summary from our own ledger, requiring every number to point to an exact local measurement."
+      },
+      {
+        "title": "Hidden fallbacks can invalidate an entire experiment",
+        "quote": "trained on all-zeros for 47k files",
+        "locator": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — Section 4 What worked what did not, Silent decode bug row",
+        "meaning": "The reported decode fallback concealed corrupt input handling. The warning is a recommendation, not a controlled empirical law.",
+        "application": "Apply it to parsers, target encodings, scorer plugins, and prediction loading. A process may stay alive while substituting meaningless output. Reject unexpected shapes, missing rows, unseen class mappings, and nonfinite values; partial artifacts must remain unusable for promotion.",
+        "strengths": "The failure pattern is domain-independent and inexpensive to test.",
+        "limitations": "Permitted missing-data handling is different from a hidden exception that fabricates predictions. Avoid turning every recoverable file issue into an uncontrolled campaign restart.",
+        "action": "Inject a corrupt table and missing prediction column; verify an explicit failure and no promotion or substituted score."
+      }
+    ],
+    "compute": {
+      "training": "Source describes one L20 for about 30 days, audio backbones and fine-tuning.",
+      "agent_inference": "Opening text states Claude Max 20x and primarily Opus variants.",
+      "observed_budget": "No verified total spend; do not convert resource counts into a price.",
+      "caveat": "Training capacity and submission-time inference limits are separate."
+    },
+    "evidence_limits": "Indexed primary text readable; direct extraction empty. Embedded report is an attributed account and placement was not independently regraded.",
+    "related_links": []
+  },
+  {
+    "id": "prior-neurogolf",
+    "title": "First Place Kaggle Agent Introduction",
+    "authors": "Jiwei Liu, Max Jeblick, Eduardo Rocha de Andrade, Chris Deotte, Giba",
+    "url": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Sample Agent; https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Architectural Rewrites",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "An introductory competition note describes human–AI teamwork, shared progress tracking, and stronger reported gains from architectural rewrites than graph polishing. It is not a complete released implementation.",
+    "findings": [
+      {
+        "title": "Agent effectiveness depends on the supplied evidence",
+        "quote": "all the information it had access to",
+        "locator": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Sample Agent",
+        "meaning": "The authors connect agent success to available information and instructions.",
+        "application": "Audit our experiment brief before blaming the coding model. Include a clear contract, champion code, relevant scorer, prior failures, and source-linked research. Evaluate evidence completeness while holding the selected CLI and experiment allowance fixed; do not equate a longer prompt with a better one.",
+        "strengths": "Uses an existing brief-building seam without requiring training hardware.",
+        "limitations": "No optimal universal prompt follows from the statement. Irrelevant history and untrusted external instructions can reduce clarity or introduce failure modes.",
+        "action": "Replay fixed coding tasks with minimal versus bounded evidence-complete briefs; compare valid completion and repeated errors under equal caps."
+      },
+      {
+        "title": "Structural exploration deserves an explicit portfolio slot",
+        "quote": "architectural rewrites averaged +0.5 boost per task",
+        "locator": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Architectural Rewrites",
+        "meaning": "The authors report a larger average gain for rewrites than incremental graph optimization in their task history.",
+        "application": "Reserve a bounded reframe trial after completed no-gain attempts: alter solver representation, feature construction, or model family. Preserve the champion and ablate successful reframes afterward. This creates a route to structural change without allowing every trial to become an unlimited rewrite.",
+        "strengths": "Especially relevant to optimization, where representation changes can alter the search space.",
+        "limitations": "The score unit and average are specific to NeuroGolf and are not predicted CV or Santa gains. The introduction does not isolate causal effects or establish our hardware cost.",
+        "action": "After a predeclared stagnation trigger, compare one reframe with one incremental trial under matched resources, recording feasible quality and runtime."
+      }
+    ],
+    "compute": {
+      "training": "The introduction does not establish a portable GPU or training requirement.",
+      "agent_inference": "ChatGPT, Codex, Claude Code named; no inference ledger provided.",
+      "observed_budget": "No verified total compute or monetary budget in this introduction.",
+      "caveat": "Do not fill in implementation details from material the introduction says is forthcoming."
+    },
+    "evidence_limits": "Direct extraction empty; indexed primary-page text readable. Introductory and author-reported evidence only.",
+    "related_links": []
+  },
+  {
+    "id": "prior-tinyclaw",
+    "title": "tinyKaggleClaw",
+    "authors": "lhwcv",
+    "url": "https://github.com/lhwcv/tinyKaggleClaw",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://github.com/lhwcv/tinyKaggleClaw#why-this-exists; https://github.com/lhwcv/tinyKaggleClaw#core-features",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "A local-first runtime separates leader, researcher, and trainer roles with persistent boards and a training queue. It is a standing multi-agent alternative, not a drop-in backend of our current loop.",
+    "findings": [
+      {
+        "title": "Separate decisions from actual training execution",
+        "quote": "a clear boundary between \"LLM coordination\" and \"real training execution\"",
+        "locator": "https://github.com/lhwcv/tinyKaggleClaw#why-this-exists",
+        "meaning": "Coordination and training are explicitly different responsibilities.",
+        "application": "Keep execution behind our provider interface and durable lifecycle records. We do not need three standing agents to borrow this: a coding agent can submit one structured experiment to a deterministic queue, which owns process identity, bounds, intent, and completion independently.",
+        "strengths": "Matches our independent local execution and inspectable job state.",
+        "limitations": "A visible board is not execution safety. Standing agents add traffic and supervision, and the tmux startup assumptions are not a direct Windows fit.",
+        "action": "Interrupt and restart a synthetic queued run; require reconciliation of the existing process rather than duplicate launch."
+      },
+      {
+        "title": "Durability matters more than copying a persistence format",
+        "quote": "local file-backed state instead of a database",
+        "locator": "https://github.com/lhwcv/tinyKaggleClaw#core-features",
+        "meaning": "The runtime deliberately persists state in files.",
+        "application": "Retain SQLite as the authoritative ledger and export readable artifacts. The alternative reminds us to keep state inspectable and portable, not to replace transactionality without evidence of a real problem. Humans should still inspect experiments without a running dashboard or agent.",
+        "strengths": "Readable exports support audits and handoffs without model turns.",
+        "limitations": "Concurrent file updates need consistency rules of their own. Importing a file runtime adds migration and duplicate-job risks. Local-first does not mean CPU-only training.",
+        "action": "Regenerate summaries from the ledger after interruptions and duplicate export attempts; require deterministic, complete outputs."
+      }
+    ],
+    "compute": {
+      "training": "External train_service and queue documented; workload hardware varies.",
+      "agent_inference": "Standing leader/researcher/trainer with Codex CLI documented.",
+      "observed_budget": "No normalized cost comparison for our use case.",
+      "caveat": "Local-first is a runtime placement claim, not a no-GPU guarantee."
+    },
+    "evidence_limits": "README architecture and prerequisites inspected; no efficiency comparison reproduced.",
+    "related_links": []
+  },
+  {
+    "id": "prior-collection",
+    "title": "Kaggle Top Solutions and Strategies",
+    "authors": "TaeyanG4",
+    "url": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies",
+    "kind": "Primary author repository or competition write-up",
+    "locator": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#what-you-can-do-with-it; https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#use-it-with-an-ai-agent — suggested prompt step 4",
+    "identity_status": "Verified source identity and readable primary text",
+    "summary": "The collection structures write-ups, technique status, provenance, and compute metadata. It is useful for finding candidate evidence, not as a substitute for checking original methods or validating them locally.",
+    "findings": [
+      {
+        "title": "Retrieval should lead back to the original evidence",
+        "quote": "every solution and strategy row links to the original writeup",
+        "locator": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#what-you-can-do-with-it",
+        "meaning": "Source links are retained for solution and strategy records.",
+        "application": "Attach URL, retrieval date, task match, technique status, and compute compatibility to each research idea. Filter for our supported domains before building a brief. Open the original for a recommendation rather than promoting an extracted summary into an operating instruction.",
+        "strengths": "Structured metadata reduces reading overhead and keeps experiments attributable.",
+        "limitations": "Metadata can be stale or incomplete. An index is not permission to reuse external data or code. Its CC BY-NC-SA 4.0 license also matters if redistributing the collection.",
+        "action": "Audit ten recommendations against originals for method identity, usage status, compute, and scope before admitting hypotheses."
+      },
+      {
+        "title": "Extracted author claims are not independently verified outcomes",
+        "quote": "Summaries are author claims extracted by a model",
+        "locator": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#use-it-with-an-ai-agent — suggested prompt step 4",
+        "meaning": "The data card explicitly qualifies model-extracted summaries.",
+        "application": "Track primary text, author report, model extraction, and reproduced local evidence as different levels. Keep final-used, rejected, and failed techniques distinct. This permits reuse of ideas without claiming our own pipeline has already benefited.",
+        "strengths": "Fits source-linked discoveries and evidence-aware briefs.",
+        "limitations": "Technique frequency and rank are confounded by task, publication, resources, and selection. Counts cannot prove causation. Missing compute must remain unknown, not zero.",
+        "action": "Use a local fixture to require every generated recommendation to retain its original URL and evidence qualification."
+      }
+    ],
+    "compute": {
+      "training": "CSV queries are CPU-feasible; reproducing indexed methods has method-specific requirements.",
+      "agent_inference": "Collection summaries were model-written; local querying can be plain Python/SQL.",
+      "observed_budget": "Collection construction cost and portable method reproduction costs not established.",
+      "caveat": "An empty compute field means not stated, not zero."
+    },
+    "evidence_limits": "README and schema inspected. The collection-building pipeline is not included; underlying original write-ups remain the authority.",
+    "related_links": []
+  }
+]

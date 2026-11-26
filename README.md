@@ -1,18 +1,14 @@
 # Kaggle Agent Loop
 
+![Mock PowerShell setup: clone the project, install dependencies, sign in, configure limits, create a competition, and start two trials. All command output is simulated.](docs/assets/00-setup.gif)
+
+*Setup demo: simulated commands and condensed output. Read the prerequisites and copyable commands below; use your own competition URL and resource limits.*
+
 Let **Claude Code or Codex** write experiments, test them, and learn from the results. You choose the competition and limits; the supervisor keeps score and saves the best work.
 
 For tabular classification, regression, optimization, and occasional forecasting. Experiments run on your computer.
 
 **[Start here](#1-get-the-tools)** · [Why this architecture?](#why-this-architecture) · [Detailed guide](OPERATING_GUIDE.md)
-
-## How the loop works
-
-The agent writes code. The supervisor tests and scores it. Failed code goes back for repair; measured results feed the next experiment.
-
-![An experiment travels from the coding agent through a smoke test to an independent scorer. Broken code loops back for repair; accepted results feed the next brief.](docs/assets/02-supervisor.gif)
-
-Design reference: [ML Agent Harness](https://github.com/juliversa/ml-agent-harness). Our [controller](kaggle_agent/supervisor/controller.py) and [watchdog](kaggle_agent/supervisor/watchdog.py) enforce the checks outside the agent conversation.
 
 ## 1. Get the tools
 
@@ -84,11 +80,19 @@ Run these inside the competition folder. Use a second terminal while `ka go` is 
 
 Each animation explains a tradeoff behind the implementation. These are conceptual diagrams, not benchmark results. The linked systems are design references, not bundled dependencies.
 
+### Independent checks before scoring
+
+The agent writes code. The supervisor tests and scores it. Incomplete or invalid output goes back for repair; measured results feed the next experiment.
+
+![Four prediction rows are aligned against five expected IDs. The missing row prevents scoring; the result returns for repair and only the complete output reaches the scorer.](docs/assets/02-supervisor.gif)
+
+Design reference: [ML Agent Harness](https://github.com/juliversa/ml-agent-harness). Our [controller](kaggle_agent/supervisor/controller.py) and [watchdog](kaggle_agent/supervisor/watchdog.py) enforce the checks outside the agent conversation.
+
 ### One selected agent; Python does the repetition
 
 A permanent swarm would use more conversation context and coordination. We use **one user-selected Claude Code or Codex session at a time** for the next idea, then Python for folds, scoring, and blending. You choose the agent, model, effort, and resource limits. Usage limits stop the run; they do not trigger a paid API fallback.
 
-![Claude or Codex is selected as the coding agent; a potential swarm fades while folds, seeds, scoring, and blending move into deterministic Python.](docs/assets/01-budget.gif)
+![A hypothetical per-fold delegation collapses into one selected coding task. Python distributes the resulting experiment across folds within a resource bound.](docs/assets/01-budget.gif)
 
 Reference: [autoresearch](https://github.com/karpathy/autoresearch)'s measurable experiment loop. The single-agent and spending constraints are this project's choices; see [shared rules](rules.md) and [agent adapters](kaggle_agent/agents/base.py).
 
@@ -96,7 +100,7 @@ Reference: [autoresearch](https://github.com/karpathy/autoresearch)'s measurable
 
 Always following the latest winner can miss a better direction. Expanding every idea spends too much computation. We keep **at most five active directions**, rank them from observed results and heuristic priorities, and reserve exploration turns for less-tried branches.
 
-![A search tree expands, then its speculative continuations fade. Attention moves between a bounded set of branches rather than committing to only one path.](docs/assets/03-search.gif)
+![A search frontier expands into many continuations. A boundary retains five active directions, and the selection marker moves to a less-tried direction.](docs/assets/03-search.gif)
 
 References: [MLEvolve](https://github.com/InternScience/MLEvolve) and [AIDE](https://github.com/WecoAI/aideml). Our [branch portfolio](kaggle_agent/research/branches.py) is a smaller heuristic implementation, not a reproduction of either search system.
 
@@ -104,15 +108,15 @@ References: [MLEvolve](https://github.com/InternScience/MLEvolve) and [AIDE](htt
 
 Replaying every old log wastes context. Forgetting everything repeats failures. Store the full experiment evidence outside the conversation, then retrieve a **compact brief** for the next session. Stopping or reaching a plan limit does not erase completed work.
 
-![Experiment records condense into a compact brief. A session disappears, a fresh session receives saved context, and new evidence travels back to the ledger.](docs/assets/04-memory.gif)
+![Selected experiment records become a compact brief. Session one disappears while the records stay fixed; session two receives a rebuilt brief from those same records.](docs/assets/04-memory.gif)
 
-References: [ML-Master](https://github.com/sjtu-sai-agents/ML-Master) and [EvoMaster](https://github.com/sjtu-sai-agents/EvoMaster). Their memory ideas informed our simpler [retrieval](kaggle_agent/research/retrieval.py) and [checkpoint](kaggle_agent/agents/session_manager.py) design.
+References: [ML-Master](https://githVub.com/sjtu-sai-agents/ML-Master) and [EvoMaster](https://github.com/sjtu-sai-agents/EvoMaster). Their memory ideas informed our simpler [retrieval](kaggle_agent/research/retrieval.py) and [checkpoint](kaggle_agent/agents/session_manager.py) design.
 
 ### Change the model, keep the exam
 
 A better score can come from an easier validation split. Freeze row identities, folds, and scoring so a model change has a meaningful comparison. The public leaderboard is feedback to inspect, not the score used to steer the experiment loop.
 
-![Gold held-out folds stay fixed while candidates change. A shifted validation fold produces an ambiguous comparison; restoring the fixed split makes the experiment comparable again.](docs/assets/05-validation.gif)
+![Hatched held-out row IDs remain fixed as model candidates change. An attempted shift of the held-out rows is reversed to restore a comparable evaluation.](docs/assets/05-validation.gif)
 
 Reference: [MLE-bench](https://github.com/openai/mle-bench) as an evaluation reference. The concrete [validation contract](kaggle_agent/evaluation/validation.py) is local to this project; passing our checks is not evidence of a live competition medal.
 
@@ -120,8 +124,7 @@ Reference: [MLE-bench](https://github.com/openai/mle-bench) as an evaluation ref
 
 The strongest single model is not always the most useful addition to a blend. Save aligned predictions and test whether a different model's errors **complement** the current ensemble. Keep the blend only if held-out checks support it.
 
-![Two illustrative error curves point in different directions. Their average becomes a smaller gold residual curve, then separates back into its components.](docs/assets/06-ensemble.gif)
+![Filled and open points show paired residuals on the same rows. Each pair converges to its midpoint, often closer to zero in this illustrative example, then separates back into its original errors.](docs/assets/06-ensemble.gif)
 
 Reference: [Chris Deotte's S6E5 write-up](https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo), covered in our [source review](CHRIS_DEOTTE_2026_REVIEW.md). See the local [ensemble implementation](kaggle_agent/evaluation/ensemble.py).
 
-[More design references](docs/design-sources.md) · [Animation source and rebuild instructions](docs/tools/README.md)

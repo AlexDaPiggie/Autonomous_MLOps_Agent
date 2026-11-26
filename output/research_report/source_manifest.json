@@ -1,0 +1,1651 @@
+{
+  "date": "2026-11-26",
+  "revision": "329d68975a048bd6bbc66718948f95cb1c22cae3",
+  "sources": [
+    {
+      "id": "mle-bench",
+      "title": "MLE bench",
+      "authors": "OpenAI and Jun Shern Chan et al.",
+      "url": "https://github.com/openai/mle-bench",
+      "kind": "Official benchmark repository",
+      "locator": "README Benchmarking and Lite Evaluation",
+      "identity_status": "Confirmed",
+      "summary": "Its resource and repeatability protocol is more transferable than a headline medal percentage. The recommended benchmark environment is materially larger than our CPU-first setup.",
+      "findings": [
+        {
+          "title": "Use repeated matched trials",
+          "quote": "Repeat each evaluation with at least 3 seeds",
+          "locator": "README Benchmarking first bullet https://github.com/openai/mle-bench#benchmarking",
+          "meaning": "The repository recommends repeated evaluation and uncertainty reporting because agent outcomes vary. One successful trajectory is not a stable scaffold-quality estimate.",
+          "application": "Our application judgment: use a small frozen suite of in-scope tasks. Compare the current supervisor against one candidate change with identical tasks, coding agent, time, and resource caps. Preserve failures as well as successful scores. Report paired task results and cost distributions instead of selecting the best seed. This can evaluate briefs or branch selection without renting GPUs.",
+          "strengths": "Fit judgment: profiles, fingerprints, structured results, and benchmark helpers already support matched local comparisons.",
+          "limitations": "Three seeds is not a guarantee of statistical power. A CPU-only subset answers a narrower question than the multimodal benchmark.",
+          "action": "Proposed test: three small tasks, three seeds per scaffold, identical caps. Accept a reproducible gain without higher failure rate or unapproved spending."
+        },
+        {
+          "title": "Disclose resource departures",
+          "quote": "not a strict requirement of the benchmark",
+          "locator": "README Benchmarking Agent resources bullet https://github.com/openai/mle-bench#benchmarking",
+          "meaning": "Canonical resources are recommendations, with disclosure expected when changed. Smaller hardware cannot silently inherit published scores.",
+          "application": "Our application judgment: attach a resource card to every evaluation: threads, RAM cap, wall-clock cap, model and effort, data subset, versions, and seeds. Keep our local suite separate from MLE-bench Lite claims. Record manual cloud-training resources separately from the local supervisor and subscription coding agent. A missing manifest should make a comparison explicitly incomplete.",
+          "strengths": "Limits and run_bounds centralize constraints; the ledger can retain provenance.",
+          "limitations": "Lite still contains out-of-scope vision, audio, and text. Benchmark defaults are not a reasonable laptop default.",
+          "action": "Audit five saved runs for complete manifests. Do not publish comparisons with silent resource or task differences."
+        }
+      ],
+      "compute": {
+        "training": "Canonical recommendation: 36 vCPUs, 440 GB RAM, one A10 GPU with 24 GB memory, and 24 hours; README Benchmarking.",
+        "agent_inference": "Agent-model inference is separate from training hardware.",
+        "observed_budget": "No dollar estimate adopted; Lite has 22 low-complexity tasks.",
+        "caveat": "Recommendations are not minimum requirements; changed resources must be disclosed."
+      },
+      "evidence_limits": "Historical thresholds do not award new live Kaggle medals. Repository inspected November 26 2026.",
+      "related_links": [
+        "https://arxiv.org/abs/2410.07095"
+      ],
+      "code": "S01",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "aide",
+      "title": "AIDE ML",
+      "authors": "WecoAI and AIDE research authors",
+      "url": "https://github.com/WecoAI/aideml",
+      "kind": "Official reference implementation",
+      "locator": "README Key Capabilities and Advanced CLI Options",
+      "identity_status": "Confirmed",
+      "summary": "AIDE represents alternative experiments as executable scripts in a search tree, with configurable code-generation and execution-feedback roles.",
+      "findings": [
+        {
+          "title": "The search node is executable code",
+          "quote": "Each python script becomes a node in a solution tree",
+          "locator": "README Key Capabilities Iterative agentic tree search https://github.com/WecoAI/aideml#key-capabilities",
+          "meaning": "Tree structure records scripts and descendants rather than treating the conversation as the experiment history.",
+          "application": "Our application judgment: retain the five-direction portfolio, but link each trial to a parent code/run ID and a reason for its change. A failed child can branch again from a working ancestor instead of endlessly patching a broken workspace. Store exact code, outputs, and errors with that relationship. Do not adopt an unbounded tree just to resemble AIDE.",
+          "strengths": "Experiments, fingerprints, scored artifacts, and version history already support inspectable lineage.",
+          "limitations": "Breadth consumes training time and agent quota. A tree is not inherently cost-efficient.",
+          "action": "Replay failure and repair; reconstruct the exact working ancestor and verify duplicate code does not launch again."
+        },
+        {
+          "title": "Separate coding from feedback configuration",
+          "quote": "LLM used for execution review and startup metric selection",
+          "locator": "README Advanced CLI Options agent.feedback.model row https://github.com/WecoAI/aideml#advanced-cli-options",
+          "meaning": "The implementation distinguishes coding and feedback backends. This is an option, not proof that any cheaper model is adequate.",
+          "application": "Our application judgment: keep deterministic parsing and independent scoring as the first feedback layer. Add model review only for a demonstrated gap and within an explicitly bounded invocation budget. Our subscription CLI is not interchangeable with AIDE API-key configuration. Backend availability must not be interpreted as free access or automatic permission to bill.",
+          "strengths": "Separating generated claims from accepted evidence matches the supervisor.",
+          "limitations": "The current README exposes metered-provider settings. GPU needs depend on the candidate task; no universal GPU minimum is established by this README.",
+          "action": "Compare parser-only feedback with bounded review on identical captured failures; count extra invocations and corrected diagnoses."
+        }
+      ],
+      "compute": {
+        "training": "Task-dependent; no blanket GPU minimum stated in reviewed README.",
+        "agent_inference": "Quick Start asks for an LLM API key; coding and feedback backends are configurable.",
+        "observed_budget": "No dollar or CPU medal-rate claim adopted.",
+        "caveat": "A reference build may differ from the historical evaluated fork."
+      },
+      "evidence_limits": "Use methods as design evidence, not a claim that the current repo reproduces historical results.",
+      "related_links": [
+        "https://github.com/openai/mle-bench/blob/main/agents/README.md"
+      ],
+      "code": "S02",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "mle-star",
+      "title": "MLE STAR Machine Learning Engineering Agent via Search and Targeted Refinement",
+      "authors": "Jaehyun Nam, Jinsung Yoon, Jiefeng Chen, Jinwoo Shin, Sercan O Arik, Tomas Pfister",
+      "url": "https://arxiv.org/html/2506.15692v1",
+      "kind": "Primary research paper v1",
+      "locator": "Sections 3.1 and 3.2",
+      "identity_status": "Confirmed with paper version pinned",
+      "summary": "Targeted refinement uses retrieved initial approaches and component ablations to decide which pipeline block deserves further exploration.",
+      "findings": [
+        {
+          "title": "Refine one identified component deeply",
+          "quote": "The inner loop iteratively refines only this block",
+          "locator": "Section 3 opening framework paragraph https://arxiv.org/html/2506.15692v1#S3",
+          "meaning": "The nested loop chooses a component, explores changes within it, then chooses another component.",
+          "application": "Our application judgment: have each brief name one target component and a bounded hypothesis, such as an encoding or solver neighborhood. Keep folds, scorer, and unrelated preprocessing fixed. A winning change can receive one small ablation to test attribution. Use current smoke, screen, and full stages instead of adding permanent specialist agents.",
+          "strengths": "The one-clear-change contract provides a seam for component-local work.",
+          "limitations": "Ablations require extra training; a full nested search across expensive model families is not free insight.",
+          "action": "Compare unrestricted and component-targeted briefs on two small tabular tasks; track valid-run rate, paired gain, and evaluation count."
+        },
+        {
+          "title": "Retrieved starting points must still be evaluated",
+          "quote": "using web search as a tool",
+          "locator": "Section 3.1 heading https://arxiv.org/html/2506.15692v1#S3.SS1",
+          "meaning": "Retrieved context supplies candidate models and example code; candidates are evaluated before consolidation.",
+          "application": "Our application judgment: turn our source-linked digest into one local hypothesis, then reimplement it under the toolkit contract. Never execute downloaded notebooks or accept public scores as local validation. Gate each branch on modality and resource feasibility: an unavailable GPU dependency should make the idea deferred, not the next launch.",
+          "strengths": "Attributed notes and branch hypotheses can connect an external idea to its independently measured local outcome.",
+          "limitations": "The paper spans modalities outside our scope and uses multiple functional agents. Its headline results do not establish affordable CPU performance.",
+          "action": "Require source, target component, resource estimate, and cheap validation plan before scheduling an externally inspired branch."
+        }
+      ],
+      "compute": {
+        "training": "Reviewed paper covers tabular, image, text, audio; no specific GPU count verified from v1 HTML.",
+        "agent_inference": "Multiple functional LLM modules; backend and benchmark settings are version-dependent.",
+        "observed_budget": "No dollar figure adopted.",
+        "caveat": "Google blog, publication abstract, and arXiv versions have different headline rates; do not mix versions or denominators."
+      },
+      "evidence_limits": "Pin method evidence instead of substituting an unqualified current state-of-the-art or live-medal promise.",
+      "related_links": [
+        "https://research.google/blog/mle-star-a-state-of-the-art-machine-learning-engineering-agents/",
+        "https://github.com/google/adk-samples/tree/main/python/agents/machine-learning-engineering"
+      ],
+      "code": "S03",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "aira-dojo",
+      "title": "AI Research Agents for Machine Learning Search Exploration and Generalization in MLE bench",
+      "authors": "Edan Toledo, Karen Hambardzumyan, Martin Josifoski and coauthors",
+      "url": "https://arxiv.org/html/2507.02554v1",
+      "kind": "Primary research paper v1",
+      "locator": "Sections 2, 3.2, 3.4, 5.3 and Appendix A",
+      "identity_status": "Confirmed",
+      "summary": "AIRA separates operator design, search policy, and execution environment. It studies the gap between proxy validation and held-out performance.",
+      "findings": [
+        {
+          "title": "Evaluate search policy and mutation quality together",
+          "quote": "jointly considering search strategy, operator design, and computational resource availability",
+          "locator": "Appendix A conclusion https://arxiv.org/html/2507.02554v1#A1",
+          "meaning": "A stronger scheduler cannot be evaluated separately from candidate-generating operators and execution resources.",
+          "application": "Our application judgment: instrument draft, repair, component-change, and model-family-change outcomes separately. Compare branch ranking only after controlling operator prompts and resource caps. The portfolio can remain small while logs distinguish implementation failure, an unpromising hypothesis, and a poor selection policy. Otherwise a ranker might look better merely because its candidates received more debugging time.",
+          "strengths": "Branch updates already distinguish execution failures from completed trials, an important separation for such analysis.",
+          "limitations": "Published experiments use an H200 per sandbox. Infrastructure improvements can confound comparisons attributed only to agent intelligence.",
+          "action": "Hold agent, prompts, tasks, and caps fixed while changing one ranker. Report invalid-run rate separately from valid non-improvements."
+        },
+        {
+          "title": "Proxy selection can miss the best final candidate",
+          "quote": "the validation score is not perfectly predictive",
+          "locator": "Section 5.3 first paragraph https://arxiv.org/html/2507.02554v1#S5.SS3",
+          "meaning": "The paper diagnoses a mismatch between search feedback and held-out evaluation. Oracle test selection is diagnostic, not a permissible search tool.",
+          "application": "Our application judgment: retain a small credible shortlist with prediction provenance instead of deleting every non-champion. Predeclare final selection before seeing its reserved evaluation. On small datasets, balance a selection split against sample loss and preserve group or time boundaries. Never expose private Kaggle labels or optimize against a test oracle.",
+          "strengths": "Saved prediction libraries and separate ensemble checks support evaluating alternatives without retraining every candidate.",
+          "limitations": "AIRA2 later refines this paper's overfitting interpretation using evaluation-noise analysis. Retaining more candidates also increases selection bias and storage.",
+          "action": "On a synthetic task, compare the CV winner with a predeclared shortlist policy using a reserved partition; do not feed final scores into search."
+        }
+      ],
+      "compute": {
+        "training": "Section 3.4: one H200 GPU, 24 logical CPU cores, 100 GB RAM, and 1 TB scratch storage per sandbox; a 24-hour window and a 4-hour execution cap.",
+        "agent_inference": "Full DeepSeek R1 self-hosted for throughput; o3 evaluated; GPT-4o parses outputs.",
+        "observed_budget": "Official framework describes up to 1000 parallel agents and 120h; this is scale evidence, not our proposed budget.",
+        "caveat": "Training quotas and inference hosting are separate expenses. CPU transfer of medal rates is unestablished."
+      },
+      "evidence_limits": "Paper v1 pinned. Official repo code is CC BY-NC 4.0, requiring reuse-license review.",
+      "related_links": [
+        "https://github.com/facebookresearch/aira-dojo",
+        "https://arxiv.org/abs/2507.02554"
+      ],
+      "code": "S04",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "aira-review",
+      "title": "Moonlight review of AI Research Agents for Machine Learning",
+      "authors": "Moonlight AI generated review",
+      "url": "https://www.themoonlight.io/en/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench",
+      "kind": "Secondary AI written review with primary paper traced",
+      "locator": "English article body recovered on same article's Spanish locale at paragraphs beginning The core methodology and Scoped memory",
+      "identity_status": "Exact user URL confirmed; English body read through alternate locale",
+      "summary": "The English URL exposed boilerplate through the extractor. The same article's Spanish locale exposed the substantive English review and explicitly labels it AI written. Technical claims should be checked against AIRA's primary paper.",
+      "findings": [
+        {
+          "title": "Separate the scheduler from the operator",
+          "quote": "Nodes in the search graph represent candidate solutions",
+          "locator": "Body paragraph The core methodology at https://www.themoonlight.io/es/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench",
+          "meaning": "The review distinguishes candidate artifacts, selection, operators, and termination. It is a useful map, not independent confirmation of performance.",
+          "application": "Our application judgment: use the review to identify questions, then link an implementation decision to the primary section and exact local component. In our repo, Portfolio.rank chooses a branch while code generation and repair create candidates. Changing both simultaneously would make attribution difficult. Keep this vocabulary in experiment notes rather than copying an entire framework.",
+          "strengths": "The graph vocabulary helps describe existing branches and parent experiments consistently.",
+          "limitations": "The page says the review was AI written. Its concise account omits qualifications and should not substitute for primary methods or resource evidence.",
+          "action": "Require every architecture recommendation extracted from a review to carry a verified primary section and a local code seam."
+        },
+        {
+          "title": "Retrieve context appropriate to the operation",
+          "quote": "ancestral memory for Debug to review prior fix attempts",
+          "locator": "Scoped memory bullet at https://www.themoonlight.io/es/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench; primary cross-check AIRA Section 4.1",
+          "meaning": "The review reports operation-specific context: relevant sibling experience for alternatives and prior repair history for debugging.",
+          "application": "Our application judgment: a repair brief should carry the failing entrypoint, traceback, and previous unsuccessful repairs; a new branch should carry sibling outcomes and novelty constraints. This reduces irrelevant logs and prevents repeating a known failed patch. It is implementable as deterministic brief selection before considering embedding infrastructure or another reasoning agent.",
+          "strengths": "The existing smoke-test repair path and build_brief routine already have different information needs.",
+          "limitations": "A compressed review can misstate thresholds: its complexity-cue ranges leave a boundary case unclear. Consult primary definitions and code before implementing numerical rules.",
+          "action": "Replay two repeated failure traces with operation-scoped context; count repeated patches and compare brief length at equal invocation limits."
+        }
+      ],
+      "compute": {
+        "training": "The review is not an execution system; use the primary paper for hardware requirements.",
+        "agent_inference": "No independent inference-budget measurement established by this review.",
+        "observed_budget": "No cost claim adopted.",
+        "caveat": "Its oracle test-selection discussion is analysis, not permission to search private test labels."
+      },
+      "evidence_limits": "Quotes are from English text on /es/ because /en/ exposed only boilerplate. This locale difference is explicit; no translation is presented as an exact English quotation.",
+      "related_links": [
+        "https://www.themoonlight.io/es/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench",
+        "https://arxiv.org/html/2507.02554v1"
+      ],
+      "code": "S05",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "ml-master-2",
+      "title": "Toward Ultra Long Horizon Agentic Science Cognitive Accumulation for Machine Learning Engineering",
+      "authors": "Xinyu Zhu, Yuzhu Cai, Zexi Liu and coauthors",
+      "url": "https://arxiv.org/html/2601.10402v5",
+      "kind": "Primary research paper v5",
+      "locator": "Sections 3.2 to 3.4 and 4.1",
+      "identity_status": "Confirmed ML Master 2.0",
+      "summary": "Hierarchical Cognitive Caching distinguishes execution experience, stabilized knowledge, and transferable prior wisdom, with policies for movement between tiers.",
+      "findings": [
+        {
+          "title": "Organize memory by stability and reuse",
+          "quote": "temporal stability and reuse value",
+          "locator": "Section 3.2 Agent Overview https://arxiv.org/html/2601.10402v5#S3.SS2",
+          "meaning": "Short-lived traces, phase summaries, and cross-task knowledge receive different treatment.",
+          "application": "Our application judgment: keep full logs as artifacts, the active brief short, and evidence-backed lessons in a separate store. Knowledge metadata already includes provenance, domain, evidence, and validation requirements. Add lifecycle states such as tentative, reproduced, contradicted, and expired. A plausible plan must not enter the same tier as a repeated measured result.",
+          "strengths": "SQLite records, raw artifacts, checkpoints, and retrieved discoveries already form useful boundaries; improving organization does not intrinsically require GPUs.",
+          "limitations": "Hierarchical names do not make summaries true. Compression can erase failure conditions or universalize a dataset-specific result.",
+          "action": "Rebuild fresh briefs from three old campaigns; verify known failed changes are avoided and their exact evidence remains retrievable."
+        },
+        {
+          "title": "Govern promotion and eviction explicitly",
+          "quote": "promoted, consolidated, or discarded across these tiers",
+          "locator": "Section 3.2 Agent Overview https://arxiv.org/html/2601.10402v5#S3.SS2",
+          "meaning": "Context management includes rules for abstraction and retention, not only a larger store or semantic search.",
+          "application": "Our application judgment: consolidate after bounded campaigns, not every log line. Link strategic notes to experiment IDs, preserve contradictory evidence, and extract numeric outcomes deterministically. Reuse our own outcomes before building a costly external corpus. A later failure should narrow or demote a lesson rather than overwrite history. An authorized summary can explain rationale, but cannot replace the original score evidence.",
+          "strengths": "Campaign checkpoints and outcome-linked discoveries supply natural consolidation boundaries.",
+          "limitations": "The full experiment includes substantial prior experience and accelerator hardware; a lightweight memory refactor cannot inherit its benchmark result.",
+          "action": "Under a fixed brief token budget, compare current retrieval with lifecycle-aware retrieval on repeated invalid attempts and evidence traceability."
+        }
+      ],
+      "compute": {
+        "training": "Section 4.1: 36 AMD EPYC vCPUs and two RTX 4090 GPUs per agent; every four tasks share 1008 GB memory and 1 TB SSD storage; 24 hours per task.",
+        "agent_inference": "DeepSeek V3.2 Speciale for coding/research; V3.2 thinking sparingly for promotion.",
+        "observed_budget": "407 non-MLE-bench competitions used as warmup; no dollar figure adopted.",
+        "caveat": "Transfer the memory mechanism, not its full warmup corpus, concurrency, or reported medal rate."
+      },
+      "evidence_limits": "Paper v5 pinned; distinct from ML-Master1.0. Some body text refers to ML-ACE, so retain version provenance.",
+      "related_links": [
+        "https://arxiv.org/abs/2601.10402v5",
+        "https://sjtu-sai-agents.github.io/ML-Master/"
+      ],
+      "code": "S06",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "rd-agent",
+      "title": "R and D Agent Automating Data Driven AI Solution Building Through LLM Powered Automated Research Development and Evolution",
+      "authors": "Xu Yang, Xiao Yang, Shikai Fang and coauthors",
+      "url": "https://arxiv.org/html/2505.14738v1",
+      "kind": "Primary technical report v1",
+      "locator": "Sections 2.1, 2.2, 3.1 and 3.2",
+      "identity_status": "Confirmed with report version pinned",
+      "summary": "The method separates performance-driven research decisions from error-driven implementation and exchanges evidence across exploration traces.",
+      "findings": [
+        {
+          "title": "Use different feedback for research and debugging",
+          "quote": "Assigning dedicated R&D roles helps tackle complex problems",
+          "locator": "Section 2.1 Dedicated R&D Role https://arxiv.org/html/2505.14738v1#S2.SS1",
+          "meaning": "A failed implementation and a valid weak hypothesis require different reasoning. Research uses performance feedback; development uses execution errors.",
+          "application": "Our application judgment: keep one selected subscription agent but distinguish prompt modes. Repair receives traceback, entry script, and contract; research review receives comparable scores, hypotheses, resource use, and stagnation. Do not redesign the scientific approach merely because an import failed. The smoke-repair loop and branch portfolio can express this distinction without permanent concurrent agents.",
+          "strengths": "The supervisor records smoke failures separately from scored outcomes, matching these feedback channels.",
+          "limitations": "Heterogeneous models and parallel traces consume additional quota or API spending. Role separation does not require copying that deployment.",
+          "action": "Classify captured failures as implementation or hypothesis failures; compare specialized prompts with generic retry under equal invocation budgets."
+        },
+        {
+          "title": "Share failures before another direction starts",
+          "quote": "avoid repeating ineffective strategies and instead focus on novel directions",
+          "locator": "Section 3.2 multi-trace experiment paragraph https://arxiv.org/html/2505.14738v1#S3.SS2",
+          "meaning": "The second trace receives prior histories and failure cases so diversity is informed by evidence rather than ignorance.",
+          "application": "Our application judgment: implement this serially. The next brief can summarize tested equivalents and precise failure conditions. Recombine only components with compatible row ordering, folds, target encoding, and interfaces. Use independently scored predictions for blends; agent-written fusion must pass the same gates as any candidate. Preserve the source of each borrowed component so a failed combination remains diagnosable.",
+          "strengths": "Stored lessons already reach subsequent briefs, providing a seam for failure-conditioned novelty.",
+          "limitations": "The report calls its results preliminary and leaves some ablations under development. Parallel-fusion results are not a guarantee for our small campaigns.",
+          "action": "Schedule two serial branches with or without prior-failure summaries; count equivalent attempts and accept fusion only after unchanged independent gates."
+        }
+      ],
+      "compute": {
+        "training": "Paper v1, Section 3.1: 12 vCPUs, 220 GB RAM, one V100 GPU, and a 24-hour environment.",
+        "agent_inference": "Azure OpenAI services; examples separate o3 research and GPT-4.1 development.",
+        "observed_budget": "Example uses two up-to-11h exploration traces and final fusion; no dollar claim adopted.",
+        "caveat": "Later financial-agent examples and current repository results are different scenarios and versions."
+      },
+      "evidence_limits": "v1 report explicitly calls results preliminary. Do not substitute current finance-focused README claims for this experiment.",
+      "related_links": [
+        "https://github.com/microsoft/RD-Agent",
+        "https://arxiv.org/abs/2505.14738"
+      ],
+      "code": "S07",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "agent-k",
+      "title": "Kolb Based Experiential Learning for Generalist Agents with Human Level Kaggle Data Science Performance",
+      "authors": "Antoine Grosnit, Alexandre Maraval and seventeen coauthors",
+      "url": "https://arxiv.org/html/2411.03562v3",
+      "kind": "Primary research paper v3 traced from named Agent K research",
+      "locator": "Introduction, Abstract to Act Not Just ReAct, Computational Resources and Table4",
+      "identity_status": "User supplied AITopics record; record inaccessible to extractor, corresponding Agent K research traced by title and arXiv",
+      "summary": "Agent K uses reflection and abstraction to progress from scaffolded execution toward open-ended tasks. The revised paper is retitled and substantially changed from v1.",
+      "findings": [
+        {
+          "title": "Adapt state without retraining the coding model",
+          "quote": "autonomous adaptation through internal state transformations",
+          "locator": "Introduction paragraph Unlike traditional gradient-based approaches https://arxiv.org/html/2411.03562v3",
+          "meaning": "Experience changes internal representations rather than requiring a parameter-training cycle for every lesson.",
+          "application": "Our application judgment: improve briefs and outcome-linked memory rather than fine-tuning the coding agent. Record why a feature helped, which split exposed leakage, or which solver move violated feasibility. Each lesson should reference evidence and applicability conditions. Distinguish training a predictive model from changing the coding agent itself: the former is an experiment cost, while the latter is unnecessary for this context-based adaptation.",
+          "strengths": "External records and a subscription CLI naturally support changing context while retaining the underlying model.",
+          "limitations": "A reflective summary may be wrong. Human-level or medal-equivalent claims use the authors' benchmark, not our repo or hardware.",
+          "action": "Compare fresh-context trials with and without a short evidence-backed prior lesson, controlling agent and caps; measure repeat failures and independent improvement."
+        },
+        {
+          "title": "Make abstraction change the next action",
+          "quote": "Abstract to Act, Not Just ReAct",
+          "locator": "Named ablation-study subsection https://arxiv.org/html/2411.03562v3",
+          "meaning": "A scaffold-to-abstraction stage precedes open-ended search. Reflection is meant to provide reusable guidance, not merely narrate activity.",
+          "application": "Our application judgment: after a campaign, require one falsifiable next-step rule tied to a logged result, then check whether the next experiment follows or challenges it. A useful lesson specifies the group/time boundary under which an encoding was safe; feature engineering worked is too vague. Keep compact decisions, not polished generic prose, in retrieval.",
+          "strengths": "Briefs, hypotheses, and lessons make abstraction operational without another always-on agent.",
+          "limitations": "The published experiment is not CPU-only: each job receives a V10032GB. Its multi-day scaffold and exploration windows differ sharply from our bounded campaigns.",
+          "action": "Audit ten lessons for evidence IDs, conditions, and testable consequences. Feed only qualifying notes to the next brief and inspect the resulting plan."
+        }
+      ],
+      "compute": {
+        "training": "Computational Resources: an isolated Ubuntu 22.04.3 job, one V100 GPU with 32 GB memory, and 9 Xeon CPU cores. Table 4: 1 day plus 1 day for tabular phases; 2 days plus 2 days for CV/NLP phases.",
+        "agent_inference": "Main Agent K uses Qwen2.5-72B; inference-hosting expense not established here.",
+        "observed_budget": "Multi-day resource windows; no total dollar estimate adopted.",
+        "caveat": "Authors' adjective modest is relative to research baselines, not evidence it fits a no-GPU laptop."
+      },
+      "evidence_limits": "Original user AITopics record could not be opened. Preserve that URL and use versioned primary evidence. v1 title, framing, and results are not merged with v3.",
+      "related_links": [
+        "https://aitopics.org/doc/arxivorg:EE9BF2D5",
+        "https://arxiv.org/abs/2411.03562v3"
+      ],
+      "code": "S08",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "aira2",
+      "title": "AIRA 2 Overcoming Bottlenecks in AI Research Agents",
+      "authors": "Karen Hambardzumyan, Nicolas Baldwin, Edan Toledo and coauthors",
+      "url": "https://arxiv.org/html/2603.26499v2",
+      "kind": "Primary followup paper v2",
+      "locator": "Sections 3.2, 3.3 and 4.3.2",
+      "identity_status": "Additional primary long-horizon followup, distinct from screenshot AIRA-dojo",
+      "summary": "The 2026 followup adds hidden consistent evaluation and asynchronous workers. Evaluation reliability is transferable; its accelerator pool is not a fit for our current hardware.",
+      "findings": [
+        {
+          "title": "Externalize the search evaluation",
+          "quote": "Agents never self-report metrics",
+          "locator": "Section3.3 Externalized evaluation https://arxiv.org/html/2603.26499v2#S3.SS3",
+          "meaning": "The orchestrator evaluates candidates independently, separating fixed search feedback from final selection.",
+          "application": "Our application judgment: preserve independent scoring, then audit remaining exposure. If candidate code running as the same Windows user can read labels or modify an evaluator, logical separation is not strong isolation. A final-selection partition may reduce feedback reuse, but group/time restrictions and sample loss require task-specific decisions. Do not blindly copy a random 80/10/10 split into forecasting.",
+          "strengths": "Evaluator fingerprints, independent scores, and frozen profiles already implement important parts of the intended boundary.",
+          "limitations": "Hidden labels require actual access controls, not only prompts. Reserving data can hurt small tasks; their protocol is not identical to our cross-validation.",
+          "action": "Use adversarial synthetic candidate scripts that claim perfect scores, reorder IDs, or try evaluator modification; accepted results must come from protected evidence."
+        },
+        {
+          "title": "Fix evaluation noise before buying more throughput",
+          "quote": "data splits are standardized once and reused across all candidates",
+          "locator": "Introduction HCE paragraph https://arxiv.org/html/2603.26499v2",
+          "meaning": "The authors' ablations attribute prior degradation to inconsistent evaluation rather than proving universal data memorization.",
+          "application": "Our application judgment: check metrics, row identity, fold determinism, and score extraction before adding workers. Every candidate must retain its evaluator version so improvement cannot come from changing the exam. Consider parallel compute only after measuring a bottleneck and obtaining explicit authorization. A laptop should not inherit an eight-H200 architecture because its authors report better scaling.",
+          "strengths": "This reinforces the existing separation between code generation and independently scored artifacts.",
+          "limitations": "The finding concerns studied evaluation regimes. Genuine overfitting remains possible; multi-GPU throughput results exceed our available compute.",
+          "action": "Replay identical predictions twice under a frozen evaluator, then change only reporting text. Scores must remain identical; unexplained drift blocks promotion."
+        }
+      ],
+      "compute": {
+        "training": "Paper v2, Section 4.1: 8 H200 GPUs, one per worker. Section 3.2 allocates 12 CPU cores and 120 GB RAM per worker; the evaluation framework also uses dedicated GPU resources.",
+        "agent_inference": "Gemini 3.0 Pro Preview for the base version; Gemini 3.1 for the dagger variant.",
+        "observed_budget": "24-hour and 72-hour comparisons; no dollar estimate adopted.",
+        "caveat": "Reliable evaluation is the low-cost transfer; the GPU pool and throughput scaling are not."
+      },
+      "evidence_limits": "Keep AIRA2 separate from AIRA-dojo2025. The later paper narrows interpretations of earlier overfitting claims, without promising live medals.",
+      "related_links": [
+        "https://ai.meta.com/research/publications/aira-overcoming-bottlenecks-in-ai-research-agents/"
+      ],
+      "code": "S09",
+      "group": "Machine learning systems"
+    },
+    {
+      "id": "ehmo-autoresearch",
+      "title": "autoresearch by ehmo",
+      "authors": "ehmo",
+      "url": "https://github.com/ehmo/autoresearch-skill",
+      "kind": "Primary software README",
+      "locator": "README version 2.0.0; Where this came from; How a cycle works; Requirements; Limitations",
+      "identity_status": "Primary source identity resolved from screenshot label",
+      "summary": "A software-improvement protocol separates finding problems, fixing them, and simplifying the result. It is not Karpathy’s GPU language-model training repository.",
+      "findings": [
+        {
+          "title": "Independent context can reduce shared assumptions",
+          "quote": "Each team starts from a clean context",
+          "locator": "README, Where this came from, paragraph 2; https://github.com/ehmo/autoresearch-skill#where-this-came-from",
+          "meaning": "The coordinator selectively transfers information among stages instead of sharing the full reasoning history with every participant.",
+          "application": "Use this selectively for difficult failures in the Kaggle supervisor: a short diagnostic brief can describe the failing row IDs and logs without passing the original agent’s preferred explanation. A reviewer can then inspect the frozen scorer and output contract independently. Keep the ordinary trial loop single-agent. The local checkpoint in kaggle_agent/agents/session_manager.py already provides a compact state snapshot, so a fresh reviewer should receive that snapshot plus the specific evidence rather than another large shared transcript.",
+          "strengths": "Fits our need for an occasional independent challenge to an apparently successful run. It does not require training a new model.",
+          "limitations": "Three teams for every trial would multiply plan usage and coordination. Context separation cannot stop a process running as the same OS user from reading files.",
+          "action": "Propose one bounded reviewer task only after a repeated unexplained validation failure; compare whether it identifies a reproducible defect before adopting another always-on stage."
+        },
+        {
+          "title": "Verification must be executable rather than a convincing review",
+          "quote": "running tests after each commit",
+          "locator": "README, How a cycle works, stage 2; https://github.com/ehmo/autoresearch-skill#how-a-cycle-works",
+          "meaning": "The fixing stage is coupled to a test result, and the coordinator verifies outcomes before continuing.",
+          "application": "Apply the principle to our maintenance workflow, not blindly to every generated experiment. Changes to data alignment, promotion, lease recovery, or spend reservation should have a regression check at their real boundary. Generated training scripts should still pass their smoke and independent-scoring gates. Code cleanup should preserve the exact scored code snapshot in kaggle_agent/execution/script.py; otherwise a refactor could make a retained champion impossible to reproduce even when the test suite passes.",
+          "strengths": "Matches the existing distinction between code generation and independent acceptance. A CPU-only synthetic regression fixture can validate control-plane behavior.",
+          "limitations": "The protocol depends on meaningful tests. Passing shallow tests does not establish model quality, leakage freedom, or benefit on a competition. Automatic commits also need code-only scoping.",
+          "action": "For a future harness fix, require a red-capable synthetic reproduction, then the fix, then the same reproduction passing; record the exact artifact revision separately from later cleanup."
+        }
+      ],
+      "compute": {
+        "training": "No ML-training GPU is specified for the coordination protocol.",
+        "agent_inference": "Up to three agent teams with separate contexts; additional coding-agent sessions consume quota or inference budget.",
+        "observed_budget": "No transferable dollar budget verified.",
+        "caveat": "Native Windows outside WSL is explicitly untested; clean context is not a cryptographic boundary."
+      },
+      "evidence_limits": "The reported Go-project outcomes are an author case study, not a controlled study or evidence of Kaggle gains. README may change; fetched 2026-11-26. The old ehmo/autoresearch name resolves in search results to ehmo/autoresearch-skill.",
+      "related_links": [
+        "https://raw.githubusercontent.com/ehmo/autoresearch-skill/main/README.md"
+      ],
+      "code": "E01",
+      "group": "Evaluation risks and operating boundaries"
+    },
+    {
+      "id": "zzsi-benchmark",
+      "title": "Coding Agents and a Spooky Kaggle Challenge Benchmarking Lightweight ML Automation",
+      "authors": "Zhangzhang ZZ Si",
+      "url": "https://zzsi.github.io/blog/posts/20251030-coding-agents-spooky/index.html",
+      "kind": "Primary author blog and linked experiment artifacts",
+      "locator": "Published 2025-10-30; How the agents actually performed; What the agents leave behind",
+      "identity_status": "Primary source identity resolved from screenshot label",
+      "summary": "A small shell-and-prompt outer loop was tested on one historical authorship-classification task. Its strongest lesson for us is orchestration and evidence hygiene, not a general agent ranking.",
+      "findings": [
+        {
+          "title": "Small case studies cannot choose our default agent",
+          "quote": "With one task and one run per agent",
+          "locator": "How the agents actually performed, paragraph after score table; https://zzsi.github.io/blog/posts/20251030-coding-agents-spooky/index.html#how-the-agents-actually-performed",
+          "meaning": "The author explicitly declines to declare an overall winner from the observed score differences.",
+          "application": "Keep Claude and Codex user-selected. To compare them for this project, hold the competition, frozen folds, wall time, allowed libraries, and number of trials constant, and repeat with more than one task and seed. Report completion rate, validated gain, and quota consumption separately. The existing branch portfolio can supply the same initial hypothesis to both arms. Do not change the default agent merely because one run of a historical text task had a lower final loss.",
+          "strengths": "This matches our affordable CLI-based approach and prevents a hardware-intensive benchmark from becoming the only comparison standard.",
+          "limitations": "Historical author-attribution results do not automatically transfer to tabular forecasting or optimization. Different model versions, quota tiers, and tool wrappers confound a simple ranking.",
+          "action": "Propose a small matched-budget comparison on one tabular fixture and one optimization fixture; report all attempts, including invalid outputs and plan-limit stops."
+        },
+        {
+          "title": "Telemetry is useful but code and experiment identity need normalization",
+          "quote": "The messy bits are the code paths, not the telemetry",
+          "locator": "What the agents leave behind, paragraph before cleanup list; https://zzsi.github.io/blog/posts/20251030-coding-agents-spooky/index.html#what-the-agents-leave-behind",
+          "meaning": "The author finds useful diagnostic evidence in logs while warning that duplicated pipelines and inconsistent artifacts need cleanup.",
+          "application": "Use our SQLite ledger and exact code snapshots as the canonical experiment identity instead of asking an agent to reconcile loosely named CSV files. Preserve raw logs for diagnosis, but expose a compact schema with hypothesis, source, fold scores, runtime, code fingerprint, and promotion reason. In kaggle_agent/research/branches.py distinguish execution failures from completed non-improvements. This makes a valuable failed idea retrievable without allowing partial artifacts to enter ensemble selection.",
+          "strengths": "Directly matches the repo’s controller, artifact fingerprints, and short next-trial briefs. It is implementable on local CPU without importing a large framework.",
+          "limitations": "Automatic cleanup can delete evidence or alter scored code. A neat journal also cannot substitute for independent checks on data usage and hold-out provenance.",
+          "action": "Audit a sample of completed and failed local trials for one-to-one agreement among experiment ID, saved code hash, log path, prediction IDs, and recorded promotion outcome."
+        }
+      ],
+      "compute": {
+        "training": "Author reports experiments on a Mac mini; exact accelerator allocation was not independently verified.",
+        "agent_inference": "Four coding agents tested separately; one Gemini run used a lower model tier because its preferred quota was exhausted.",
+        "observed_budget": "Clock intervals include idle gaps; no comparable monetary total verified.",
+        "caveat": "One task and one run per agent cannot support a general agent-quality ranking."
+      },
+      "evidence_limits": "Some CV peaks and final grader scores differ; do not present the best intermediate CV as the final independent score. The blog’s own caution is essential.",
+      "related_links": [
+        "https://github.com/zzsi/spooky-author-identification-codex"
+      ],
+      "code": "E02",
+      "group": "Evaluation risks and operating boundaries"
+    },
+    {
+      "id": "nvidia-playground",
+      "title": "1st Place Distributed Intelligence NVIDIA Inference Hub",
+      "authors": "Chris Deotte",
+      "url": "https://www.kaggle.com/competitions/playground-series-s6e8/writeups/1st-place-distributed-intelligence-nvidia-infe",
+      "kind": "Primary competition solution write-up",
+      "locator": "Solution Writeup dated 2026-08-31; Phase 1 through Phase 4",
+      "identity_status": "Primary source identity resolved from screenshot label",
+      "summary": "The author describes a progression from one agent to shared research and later multiple external models, with both single-model and ensemble improvements.",
+      "findings": [
+        {
+          "title": "Shared discoveries can be useful before a permanent swarm is justified",
+          "quote": "added 2 more agents and a shared knowledge database",
+          "locator": "Opening paragraph, before Phase 1; primary write-up URL above",
+          "meaning": "The reported workflow expanded from one autonomous agent to collaborating agents with shared findings.",
+          "application": "Borrow the evidence exchange, not the full scale. Our Knowledge store can retain an attributed feature idea, the conditions under which it helped, and the run proving it. Another branch can retrieve that finding without starting several simultaneous agents. If one branch stagnates, an occasional bounded second opinion can inspect a compact packet. This is compatible with the repo’s five-direction portfolio and concurrency controls, while preserving the human’s explicit choice of coding subscription.",
+          "strengths": "Supports cross-branch reuse and preserving different model families rather than repeating near-identical parameter tweaks.",
+          "limitations": "A successful multi-phase competition narrative does not isolate which collaboration mechanism caused the gain. A large model ensemble and many assistants can exceed our local compute and subscription budget.",
+          "action": "Record source-to-branch-to-run links for a small campaign and check whether retrieved discoveries yield a new independently validated result rather than repeated implementation of the same idea."
+        },
+        {
+          "title": "Human-mediated research packets are a portable collaboration boundary",
+          "quote": "we (humans) can (manually) upload to ChatGPT Pro",
+          "locator": "Phase 3 ChatGPT Pro Swarm Intelligence, first paragraph; primary write-up URL above",
+          "meaning": "The author describes packaging context for a separate assistant and bringing back its discoveries.",
+          "application": "Define a sanitized research packet containing the metric contract, a small schema/sample permitted by competition rules, the leading code revision, error analysis, and a precise question. Exclude Kaggle credentials, private held-out labels, and unrelated competition files. Keep the returned text as untrusted research evidence until a local trial tests it. This fits our checkpoint-based handoff and avoids making the automatic loop dependent on a paid inference hub or a permanently running team.",
+          "strengths": "Provides a concrete alternative to enormous shared transcripts and makes an independent review reproducible and inspectable.",
+          "limitations": "The write-up’s manual transfers and multiple services have human-effort and quota costs that the reported leaderboard result does not quantify. It is not evidence that our restricted budget can reproduce the same scale.",
+          "action": "Prototype a packet manifest with hashes and an explicit question; require a source-linked hypothesis and one bounded experiment before accepting an external assistant’s suggestion into the portfolio."
+        }
+      ],
+      "compute": {
+        "training": "The write-up discusses NN, RealMLP, XGB, and a large ensemble; it does not provide a complete hardware-hours ledger.",
+        "agent_inference": "Multiple subscription/hosted assistants and later NVIDIA Inference Hub models; human-mediated ChatGPT Pro packets.",
+        "observed_budget": "No complete dollar, token, or GPU budget verified in the retrieved primary write-up.",
+        "caveat": "The reported first place is the write-up’s competition result, not an outcome we reproduced or a cost-normalized comparison."
+      },
+      "evidence_limits": "Kaggle direct page open exposed no readable body, while search returned the primary write-up text and headings. The linked cleaned-code repository warns it was not re-run after cleanup.",
+      "related_links": [
+        "https://github.com/cdeotte/kaggle-playground-solutions"
+      ],
+      "code": "E03",
+      "group": "Evaluation risks and operating boundaries"
+    },
+    {
+      "id": "benchjack",
+      "title": "BenchJack AI agent benchmark hackability scanner",
+      "authors": "Hao Wang and contributors",
+      "url": "https://github.com/benchjack/benchjack/blob/main/README.md",
+      "kind": "Primary software README with related research paper",
+      "locator": "Vulnerability Classes; Preview Limitations / Known Issues",
+      "identity_status": "Primary source identity resolved from screenshot label",
+      "summary": "The scanner separates static checks, architectural inspection, and exploit construction. Its own caveats make it a useful audit reference rather than an automatic certification tool.",
+      "findings": [
+        {
+          "title": "An evaluator must be outside the agent trust boundary",
+          "quote": "No Isolation Between Agent and Evaluator",
+          "locator": "README, Vulnerability Classes, V1 row; https://github.com/benchjack/benchjack#vulnerability-classes",
+          "meaning": "The taxonomy explicitly treats shared agent/evaluator access as an evaluation vulnerability.",
+          "application": "Our static patterns in kaggle_agent/execution/script.py catch common forbidden actions but explicitly are not a sandbox. The same-user limitation means an independent scorer alone is insufficient if agent-written code can edit scorer files, folds, or the ledger. First inventory which paths and processes are writable from a trial. Then design CPU-only adversarial fixtures that attempt benign sentinel modifications. The acceptance condition is that protected state stays unchanged and the trial cannot promote a fabricated result.",
+          "strengths": "Targets a genuine architecture boundary in this repo without requiring GPU training or importing another full autonomous system.",
+          "limitations": "Adopting a scanner does not create process isolation. OS-level containment and credential handling remain deployment-specific, especially on native Windows.",
+          "action": "Add a read-only evaluator/fold boundary to a dedicated test environment; verify attempted sentinel writes fail and output scoring still runs through the genuine evaluator."
+        },
+        {
+          "title": "A generated security proof needs its own verification oracle",
+          "quote": "No automated tests for PoC verification",
+          "locator": "README, Preview Limitations / Known Issues, third bullet; https://github.com/benchjack/benchjack#preview-limitations--known-issues",
+          "meaning": "The maintainers warn that generated proof-of-concept code is not automatically tested against the target.",
+          "application": "Use an explicit exploit-success assertion in a disposable synthetic benchmark whenever we audit the local supervisor. A plausible code snippet, a security warning, or a confident agent explanation is not a demonstrated vulnerability or demonstrated fix. Retain the original failing fixture, the expected protected invariant, and the outcome after remediation. Begin with static inspection and safe fixture tests; a large AI scan should be optional and bounded, not a mandatory cost before each experiment.",
+          "strengths": "This aligns with the project’s smoke checks and independent artifact validation. An executable invariant gives sharper evidence than a prose audit alone.",
+          "limitations": "The README labels Codex support experimental and documents sandbox credential edge cases. Those limitations may affect tool compatibility independently of the quality of the security reasoning.",
+          "action": "For one suspected trust-boundary weakness, require a harmless reproducible fixture that fails before remediation and passes after it, with no access to real competition secrets."
+        }
+      ],
+      "compute": {
+        "training": "Static analysis and repository auditing do not specify ML-training GPU requirements.",
+        "agent_inference": "Claude Code or Codex for AI analysis; large scans may consume substantial quota and hit limits.",
+        "observed_budget": "No reliable per-repository monetary estimate verified.",
+        "caveat": "Docker and AI-backend integration are described as work in progress; generated PoCs are not automatically verified."
+      },
+      "evidence_limits": "Do not treat the repository’s exploit-success claims as independently reproduced. Primary README retrieved 2026-11-26; different cached versions have small text differences.",
+      "related_links": [
+        "https://sky.cs.berkeley.edu/project/benchjack/",
+        "https://arxiv.org/abs/2605.12673"
+      ],
+      "code": "E04",
+      "group": "Evaluation risks and operating boundaries"
+    },
+    {
+      "id": "leaderboard-illusion",
+      "title": "The Leaderboard Illusion",
+      "authors": "Shivalika Singh and coauthors",
+      "url": "https://arxiv.org/html/2504.20879v2",
+      "kind": "Primary research paper",
+      "locator": "arXiv 2504.20879v2, 2025-05-12; sections 3, 5.2, and 6",
+      "identity_status": "Primary source identity resolved from screenshot label",
+      "summary": "The paper studies distortions in Chatbot Arena from selective reporting and changing comparison conditions. Its lessons transfer as evaluation-design cautions, not as direct measurements of Kaggle.",
+      "findings": [
+        {
+          "title": "Do not show only the winning trial",
+          "quote": "Prohibit score retraction after submission",
+          "locator": "Section 6 Recommendations and Guidelines for Improving Leaderboards, first recommendation; https://arxiv.org/html/2504.20879v2#S6",
+          "meaning": "The recommendation addresses selective disclosure after testing multiple variants.",
+          "application": "Keep all attempted local experiments visible, including invalid outputs, completed non-improvements, and runs stopped by resource limits. Report a campaign’s number of trials alongside its champion rather than presenting the best CV score without the search effort that produced it. For comparisons between coding agents, disclose different trial counts and model versions. The experiments ledger is already the right place to retain the denominator; a user-facing summary should not quietly hide failed attempts.",
+          "strengths": "Preserves the existing database history and makes modest CPU-budget comparisons more interpretable. It is a reporting change rather than an expensive model-training requirement.",
+          "limitations": "The paper’s recommendation concerns Arena providers. Applying it here is our evaluation-policy adaptation, not a claim that Kaggle uses Arena’s exact scoring or selection mechanism.",
+          "action": "Add a campaign summary with attempted, completed, failed, stopped, and promoted counts plus the best-score interval; verify these counts reconcile to the ledger."
+        },
+        {
+          "title": "Comparisons need shared reference conditions",
+          "quote": "preserving connectivity means ensuring that comparisons remain sufficiently distributed",
+          "locator": "Section 5.2 Sparse Battle History Risks, final paragraph before section 6; https://arxiv.org/html/2504.20879v2#S5.SS2",
+          "meaning": "The paper explains why sparse or disconnected comparison histories can undermine pairwise-ranking reliability.",
+          "application": "Our direct analogue is a common frozen evaluation contract rather than a Bradley–Terry ranking graph. Compare model changes on the same rows, folds, metric, and resource policy, and retain a common baseline when adding a new model family. Separate screen-stage results from full-stage results. A candidate evaluated on a different fold scheme should enter a different comparison group instead of replacing the existing champion through an apparently better but incomparable score.",
+          "strengths": "Strengthens the repo’s data/split fingerprints and independent promotion gates without adding a new search algorithm.",
+          "limitations": "Graph connectivity is not itself the acceptance criterion for our CV metrics. Copying Arena’s ranking mathematics would add complexity without establishing a benefit for this workflow.",
+          "action": "Test that altered data/split fingerprints cannot promote against the original champion; present incompatible validation groups separately in a report."
+        }
+      ],
+      "compute": {
+        "training": "Reading and applying reporting safeguards needs no GPU. Reproducing all empirical analyses is a separate project.",
+        "agent_inference": "No agent service is needed to log all local trials and preserve a fixed evaluation contract.",
+        "observed_budget": "No cost forecast for this repo follows from the paper.",
+        "caveat": "Arena’s pairwise preference setting differs from scored Kaggle predictions and fixed-fold validation."
+      },
+      "evidence_limits": "This is a study of a specific leaderboard and time period. The paper’s provider-level numerical findings must not be generalized to all leaderboards or to our agents without new evidence.",
+      "related_links": [
+        "https://arxiv.org/abs/2504.20879",
+        "https://papers.neurips.cc/paper_files/paper/2025/file/70a93f260a51123b3c0e33ecd1b4de97-Paper-Datasets_and_Benchmarks_Track.pdf"
+      ],
+      "code": "E05",
+      "group": "Evaluation risks and operating boundaries"
+    },
+    {
+      "id": "kaggle-aup",
+      "title": "Kaggle Acceptable Use Policy",
+      "authors": "Kaggle",
+      "url": "https://www.kaggle.com/aup",
+      "kind": "Official platform policy",
+      "locator": "Active version effective 2025-06-22; prohibited-use list and resource-abuse sublist",
+      "identity_status": "Primary source identity resolved from screenshot label",
+      "summary": "The policy constrains resource use and access behavior. It is a boundary for our automation design, not a source of additional free-compute entitlement.",
+      "findings": [
+        {
+          "title": "Research collection needs an access and volume boundary",
+          "quote": "excessive crawling of the content on the Services",
+          "locator": "Kaggle AUP, resource-abuse sublist, final bullet; https://www.kaggle.com/aup",
+          "meaning": "The AUP expressly includes excessive crawling among abusive resource uses.",
+          "application": "Keep kaggle_agent/research/public.py on the documented Kaggle CLI and public Meta Kaggle dataset path, with caching, bounded retrieval, and a recorded refresh interval. Do not add browser scraping as an automatic fallback merely because a notebook or discussion is difficult to access. The separate Terms contain broader access restrictions, so the AUP’s word excessive must not be misread as granting permission for any smaller scrape. A failed retrieval should be recorded and left unresolved rather than triggering repeated access attempts.",
+          "strengths": "Matches the current read-only research design and avoids spending local or hosted resources on uncontrolled collection.",
+          "limitations": "The policy does not define a universal safe request rate, and the existence of a public webpage is not itself permission to automate its extraction.",
+          "action": "Audit the documented CLI commands and dataset endpoints, enforce a retrieval cap and cache, and require a policy review for any new collection route."
+        },
+        {
+          "title": "A quota or access barrier is a stop condition",
+          "quote": "to disable, interfere with or circumvent any aspect",
+          "locator": "Kaggle AUP, prohibited-use list, sixth bullet; https://www.kaggle.com/aup",
+          "meaning": "The quoted clause prohibits interference with or circumvention of the Services; the complete bullet continues with the Services.",
+          "application": "Keep access denial, exhausted platform quotas, and ambiguous authorization as blocking states in the controller. Do not rotate accounts, move work among identities, or retry through alternate interfaces to get around a restriction. Our local CPU-first mode is therefore a useful default: GPU-hosted experimentation can remain a separately authorized manual workflow, with returned artifacts registered locally. The controller should preserve evidence and next steps when it stops rather than treating every interruption as a reason to seek another execution path.",
+          "strengths": "Aligns budget enforcement, lifecycle states, and the absence of automatic paid-provider fallback in this repo.",
+          "limitations": "A technical backoff mechanism does not decide whether an action is permitted. Competition-specific AI and external-data rules can be stricter than the general platform policy.",
+          "action": "Add a policy-aware failure classification for authorization and quota errors; verify a synthetic access-denied result checkpoints state without switching account or endpoint."
+        }
+      ],
+      "compute": {
+        "training": "Kaggle-hosted computation remains subject to platform and competition rules; no quota or GPU entitlement is established by this page.",
+        "agent_inference": "The policy is not an authorization to host arbitrary agent services or bypass access restrictions.",
+        "observed_budget": "No resource price or fixed quota is stated in the quoted provisions.",
+        "caveat": "Platform AUP, Terms, competition rules, and tool documentation must be checked together."
+      },
+      "evidence_limits": "Direct open had no readable body; the search extractor returned the official page’s full policy text and active version. Policy interpretation is not legal advice; verify the current platform text before enabling a new access pattern.",
+      "related_links": [
+        "https://www.kaggle.com/terms"
+      ],
+      "code": "E06",
+      "group": "Evaluation risks and operating boundaries"
+    },
+    {
+      "id": "karpathy-autoresearch",
+      "title": "autoresearch by Andrej Karpathy",
+      "authors": "Andrej Karpathy",
+      "url": "https://github.com/karpathy/autoresearch",
+      "kind": "Primary software README",
+      "locator": "How it works; Quick start; Design choices; Platform support",
+      "identity_status": "Primary source identity resolved from screenshot label",
+      "summary": "A tightly scoped modify/train/evaluate/keep-or-discard loop for single-GPU language-model training. Borrow its experiment discipline while replacing its training workload for our CPU-first use case.",
+      "findings": [
+        {
+          "title": "Bound what can change so experiment differences remain inspectable",
+          "quote": "Single file to modify",
+          "locator": "README, Design choices, first bullet; https://github.com/karpathy/autoresearch#design-choices",
+          "meaning": "The implementation restricts agent edits to a small training surface while keeping preparation and evaluation utilities separate.",
+          "application": "Use the same separation for our trial workspace: let the agent change the experiment implementation while freezing data identity, folds, scorer, and promotion rules. This should be an enforceable path/process boundary where possible, not only a prompt. The repo already copies the exact script code beside its outputs, enabling a small diff to explain why a trial changed. For optimization, the mutable surface is the solver; for tabular tasks it is the trainer/features, not the objective or held-out labels.",
+          "strengths": "The discipline fits both CPU-based tabular models and combinatorial solvers; its usefulness does not depend on training language models.",
+          "limitations": "A one-file restriction can force awkward code organization. The project should preserve reviewable scope and immutable evaluation rather than mechanically copying an exact file-count rule.",
+          "action": "Define allowed editable experiment paths and immutable evaluation inputs, then reject a synthetic trial that changes an evaluator fingerprint while accepting a legitimate trainer-only change."
+        },
+        {
+          "title": "A fixed training window does not erase hardware dependence",
+          "quote": "your runs (and results) become not comparable",
+          "locator": "README, Design choices, Fixed time budget downside; https://github.com/karpathy/autoresearch#design-choices",
+          "meaning": "The author explicitly notes that equal wall time on different compute platforms does not make results directly comparable.",
+          "application": "Retain local CPU resource limits and log machine/runtime metadata before interpreting experiments as more efficient. A GPU-heavy nanochat workload is unsuitable for our current automatic path even if its outer loop is elegant. Compare candidate models within the same local resource envelope, and treat optional manually trained cloud outputs as a separate cost/provenance class when registered. Report startup, feature preparation, fitting, evaluation, and memory separately if the aim is validated gain per unit of work.",
+          "strengths": "Turns a simple loop into a fairer local evaluation policy and avoids assuming that a successful H100 setup can run unchanged on our computer.",
+          "limitations": "Five minutes of GPT training is a workload-specific setting. It neither proves the best runtime for our models nor covers cloud billing, startup, or coding-agent quota.",
+          "action": "Measure a small CPU baseline end to end, set a campaign runtime cap from that observation, and compare alternatives only within the same hardware and complete-cost accounting."
+        }
+      ],
+      "compute": {
+        "training": "The primary README explicitly requires one NVIDIA GPU, tested on H100, for its current code.",
+        "agent_inference": "An external coding agent supplies edits; training compute is separate from the coding-agent subscription.",
+        "observed_budget": "A five-minute training window is specified; that is not a five-minute end-to-end or dollar-cost guarantee.",
+        "caveat": "Wall-clock comparisons are hardware-dependent and exclude startup/compilation in the stated training budget."
+      },
+      "evidence_limits": "Requirements refer to this particular implementation, not every possible autoresearch-style loop. The README links other-platform forks, which were not evaluated here.",
+      "related_links": [
+        "https://github.com/karpathy/autoresearch/blob/master/program.md"
+      ],
+      "code": "E07",
+      "group": "Evaluation risks and operating boundaries"
+    },
+    {
+      "id": "prior-harness",
+      "title": "ML Agent Harness",
+      "authors": "juliversa",
+      "url": "https://github.com/juliversa/ml-agent-harness",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://github.com/juliversa/ml-agent-harness#what-the-code-does — watcher bullet; https://github.com/juliversa/ml-agent-harness#what-the-code-does — submit gate bullet",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "A Kaggle harness turns checkable rules into executable gates and uses a deterministic watcher. Its author reports historical competition experience and offline replays; those do not prove prospective performance of the current open version.",
+      "findings": [
+        {
+          "title": "Routine supervision need not consume another agent conversation",
+          "quote": "Every 5 minutes, 16 kinds of alert",
+          "locator": "https://github.com/juliversa/ml-agent-harness#what-the-code-does — watcher bullet",
+          "meaning": "The watcher inspects operational conditions without an LLM, separately from experiment reasoning.",
+          "application": "Our controller already records heartbeats and process bounds. Extend deterministic checks before adding another monitoring agent: detect stale leases, incomplete artifacts, or repeated code, and attach a deduplicated event to the next brief. This preserves subscription allowance for decisions rather than routine inspection.",
+          "strengths": "Close fit with controller and watchdog; checks can be replayed offline.",
+          "limitations": "Encoded checks cannot diagnose every scientific mistake. Repeated alerts must not trigger unlimited retries or spending. The source's five-minute interval is a design choice, not an evidence-based optimum for our setup.",
+          "action": "Replay timeout, partial-output, and duplicate-code fixtures. Require specific, deduplicated alerts and no automatic new work."
+        },
+        {
+          "title": "Submission controls should reject missing evidence",
+          "quote": "Refuses a submission without a CV number",
+          "locator": "https://github.com/juliversa/ml-agent-harness#what-the-code-does — submit gate bullet",
+          "meaning": "External actions are gated on recorded validation evidence. The author explicitly calls these guard rails, not a sandbox.",
+          "application": "Keep scoring and submission outside generated experiment code. Require aligned IDs, finite predictions, complete artifacts, a permitted submission mode, and the authorized action path. Preserve the rejection reason so the next brief can repair the actual failure without rerunning blindly.",
+          "strengths": "Directly matches independent evaluation rather than trusting an agent-written score.",
+          "limitations": "Regex hooks are not isolation. The source also notes that its review token binds plan text rather than independently authenticating the reviewer. Importing GPU-specific scripts would add assumptions we do not need.",
+          "action": "Test a valid submission beside missing-CV, malformed-schema, and partial-artifact fixtures; only the intended fixture may reach a mocked connector."
+        }
+      ],
+      "compute": {
+        "training": "GPU jobs occur in the documented workflow; the watcher and gates themselves need no GPU.",
+        "agent_inference": "Claude Code for coding; no LLM for the watcher.",
+        "observed_budget": "No portable monetary total verified.",
+        "caveat": "Author-reported medals and replay flags are not results under our resource caps."
+      },
+      "evidence_limits": "README text inspected; no independent competition reproduction.",
+      "related_links": [
+        "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md"
+      ],
+      "code": "P01",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-lessons",
+      "title": "ML Agent Harness lessons",
+      "authors": "juliversa",
+      "url": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L1; https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L5",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "A postmortem compares five finished competitions with selected top-team write-ups. It highlights premature rejection of model ideas and validation splits that miss the difficult generalization axis.",
+      "findings": [
+        {
+          "title": "A weak probe can misdiagnose an entire research direction",
+          "quote": "A lane is dead only after its elite version ran.",
+          "locator": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L1",
+          "meaning": "A cheap or incomplete version can fail without ruling out the broader idea.",
+          "application": "Distinguish execution failure, underpowered screen, and a completed scientific negative. On our budget, do not train every elite version: record exactly what the probe ruled out and mark unaffordable hypotheses as untested. Reserve a stronger bounded test only when justified by expected value.",
+          "strengths": "Prevents a smoke-test failure from condemning a whole branch.",
+          "limitations": "The universal wording is too strong for our resources. Some best versions are unaffordable or outside scope. The comparison is observational, not proof that every elite implementation is worth its cost.",
+          "action": "Add execution-failed, screen-only-negative, full-negative, and compute-blocked outcomes. Only comparable completed outcomes should affect scientific win rates."
+        },
+        {
+          "title": "The difficult generalization axis matters more than generic split hygiene",
+          "quote": "Hold out the hardest hidden axis",
+          "locator": "https://github.com/juliversa/ml-agent-harness/blob/main/LESSONS.md#lessons — row L5",
+          "meaning": "Even group-aware validation can miss the axis that makes hidden evaluation difficult.",
+          "application": "Before freezing folds, name the likely shift: time, entity or site, or optimization instance size. Record why the split resembles deployment. Random folds are not automatically wrong, but their suitability should follow the data-generation problem rather than a default habit.",
+          "strengths": "A sound evaluator makes each scarce experiment more informative.",
+          "limitations": "The hidden axis may be unknown; the source's audio and imaging recipes are outside our supported domains. Do not infer and tune a private distribution through repeated leaderboard probing.",
+          "action": "On a table with known time/entity structure, compare candidate rankings under random and appropriate held-out splits without selecting on public scores."
+        }
+      ],
+      "compute": {
+        "training": "Examples include GPU-heavy audio and imaging training; split reasoning itself is CPU-feasible.",
+        "agent_inference": "Reading the lessons does not require adding an agent.",
+        "observed_budget": "No portable cost-performance curve.",
+        "caveat": "A demand for a strong test is not authorization to exceed limits."
+      },
+      "evidence_limits": "The source mixes its author's records with other teams' reports. Its [n] notation marks external evidence; inspect originals for detailed performance claims.",
+      "related_links": [],
+      "code": "P02",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-mlevolve",
+      "title": "MLEvolve",
+      "authors": "InternScience",
+      "url": "https://github.com/InternScience/MLEvolve",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://github.com/InternScience/MLEvolve#key-technical-contributions — Experience-Driven Memory; https://github.com/InternScience/MLEvolve#setup — global-memory configuration paragraph",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "MLEvolve combines graph search, memory retrieval, and alternative code-generation strategies. Component transfer is more relevant than copying the full benchmark system into a small local workflow.",
+      "findings": [
+        {
+          "title": "Store unsuccessful experiments as retrievable evidence",
+          "quote": "A global memory layer records plan, code, metrics",
+          "locator": "https://github.com/InternScience/MLEvolve#key-technical-contributions — Experience-Driven Memory",
+          "meaning": "Plans and implementation evidence are associated with outcomes for later retrieval.",
+          "application": "Keep code/data/split fingerprints, failure type, hypothesis, and measurements together. Retrieve a few relevant records rather than entire logs. Extend our existing discovery store without importing a parallel-agent framework. A code execution failure must remain distinct from a scientific negative result.",
+          "strengths": "Preserves expensive evidence across context resets.",
+          "limitations": "Similarity retrieval may reinforce early mistakes. Summaries may omit the conditions under which a method worked; raw artifacts must remain recoverable. A full graph also adds bookkeeping and model turns.",
+          "action": "Compare matched campaigns with no retrieval versus a fixed top-k packet. Count repeated failures, validated gains, runtime, and sessions under identical caps."
+        },
+        {
+          "title": "A CPU embedding option does not imply CPU-only benchmark training",
+          "quote": "Set agent.memory_embedding_device to cpu if CUDA is unavailable.",
+          "locator": "https://github.com/InternScience/MLEvolve#setup — global-memory configuration paragraph",
+          "meaning": "The CPU setting is explicitly for memory embeddings, not all candidate model training.",
+          "application": "Separate retrieval, agent inference, and training in resource accounting. Start with keyword retrieval or a small CPU embedding model only after measuring its benefit. Keep a CPU-feasible experiment pool instead of loading the full benchmark or a large agent model merely to copy the memory idea.",
+          "strengths": "Supports a narrow low-compute adaptation.",
+          "limitations": "API endpoint setup is not a drop-in replacement for our subscription CLI policy. CPU embeddings establish neither total RAM nor training affordability. The repository separately advertises a 35B agent model; that is not required for our adaptation.",
+          "action": "Measure retrieval latency and peak RSS on a fixed evidence set before adding dependencies."
+        }
+      ],
+      "compute": {
+        "training": "Task-dependent; full MLE-bench and mathematical optimization results are reported.",
+        "agent_inference": "Code and feedback API endpoints are configured; MLExpert 35B is a separate model release.",
+        "observed_budget": "README reports a 12-hour benchmark setting, not a dollar price.",
+        "caveat": "CPU embedding support is component-specific."
+      },
+      "evidence_limits": "README inspected. Reported benchmark medals do not forecast live competition outcomes.",
+      "related_links": [
+        "https://github.com/InternScience/MLEvolve/blob/main/config/config.yaml"
+      ],
+      "code": "P03",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-mlmaster1",
+      "title": "ML Master original version",
+      "authors": "Zexi Liu and collaborators",
+      "url": "https://github.com/sjtu-sai-agents/ML-Master",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://github.com/sjtu-sai-agents/ML-Master — original ML-Master Overview below the 2.0 material; https://github.com/sjtu-sai-agents/ML-Master#-download-mle-bench-data",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "The original system combines exploration and reasoning through adaptive memory. The current repository includes both original and 2.0 material; this section does not import 2.0 claims into the original version.",
+      "findings": [
+        {
+          "title": "Summarize relevant experience rather than unlimited context",
+          "quote": "selectively captures and summarizes relevant insights and outcomes",
+          "locator": "https://github.com/sjtu-sai-agents/ML-Master — original ML-Master Overview below the 2.0 material",
+          "meaning": "Memory selectively retains outcomes useful to subsequent reasoning.",
+          "application": "Preserve full evidence durably but bound what enters a coding brief. Select lessons by task, branch, and outcome, with pointers to exact code and measurements. This can improve our existing single-agent continuity without reproducing parallel search or switching to an API-hosted reasoning model.",
+          "strengths": "Fits the checkpoint and retrieval seams directly.",
+          "limitations": "Selective summaries can discard root-cause details. Raw artifacts and evaluator identity must remain accessible. Version confusion in a repository containing several generations can invalidate comparisons.",
+          "action": "Create similar failure records with different root causes and check that a bounded brief retrieves the relevant cause plus its evidence pointer."
+        },
+        {
+          "title": "The reproduction footprint is a separate adoption decision",
+          "quote": "The full MLE-Bench dataset is over 2TB.",
+          "locator": "https://github.com/sjtu-sai-agents/ML-Master#-download-mle-bench-data",
+          "meaning": "The documented benchmark preparation has substantial storage requirements; its Docker quick start also requests NVIDIA GPUs.",
+          "application": "Test the memory principle on a few small local tables and optimization fixtures. A multi-terabyte download is unnecessary for asking whether evidence packets prevent duplicate work. Explicitly label any selected-task evaluation so it cannot be mistaken for reproducing the published overall medal rate.",
+          "strengths": "Component ablations answer our actual engineering question affordably.",
+          "limitations": "Without an assumed GPU allocation or multi-terabyte storage budget, faithful full benchmark reproduction is not the default. A small test supports only local usefulness, not the paper's overall performance claims.",
+          "action": "Predeclare three local tasks, equal resource caps, and a retrieval-only ablation; report per-task completion and validated gain."
+        }
+      ],
+      "compute": {
+        "training": "Docker example uses --gpus all and 64 GB shared memory; full dataset is stated as over 2 TB.",
+        "agent_inference": "Reasoning inference and candidate training are separate costs; no subscription equivalence assumed.",
+        "observed_budget": "Original paper reports a 12-hour setting; monetary total not established.",
+        "caveat": "Do not mix original and 2.0 performance labels."
+      },
+      "evidence_limits": "Older Coming Soon markers coexist with newer material. Pin code and use the relevant paper when reproducing.",
+      "related_links": [
+        "https://arxiv.org/html/2506.16499v1"
+      ],
+      "code": "P04",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-evomaster",
+      "title": "EvoMaster",
+      "authors": "sjtu-sai-agents",
+      "url": "https://github.com/sjtu-sai-agents/EvoMaster",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://github.com/sjtu-sai-agents/EvoMaster#-news — 2026-05-18 entry; https://github.com/sjtu-sai-agents/EvoMaster#-installation — pip setup comment",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "A broader scientific-agent framework with configurable execution and model plumbing. Its current release notes describe trajectory-driven run-local evolution; it is not simply another name for ML-Master.",
+      "findings": [
+        {
+          "title": "Propose post-run improvements without silently evolving policy",
+          "quote": "Agents can analyze completed trajectories, generate run-local skills",
+          "locator": "https://github.com/sjtu-sai-agents/EvoMaster#-news — 2026-05-18 entry",
+          "meaning": "Completed trajectories can produce local skill or prompt changes.",
+          "application": "Adapt this as a post-campaign proposal for a lesson or better experiment brief. Treat the proposal as reviewable data, never permission to change scorer code, credentials, operating rules, or budget gates. Keep accepted changes local and record the instruction hash for comparison.",
+          "strengths": "Offers a route to workflow learning with evidence.",
+          "limitations": "Self-generated skills can preserve a mistaken lesson or unsafe shortcut. Another prompt-optimization loop can overfit the same few tasks. It must not weaken our operating policy.",
+          "action": "Replay proposed changes against synthetic failure traces and unrelated cases; reject improvements that work by weakening a gate."
+        },
+        {
+          "title": "A modular framework can still have incompatible inference plumbing",
+          "quote": "Configure LLM API keys in configs/",
+          "locator": "https://github.com/sjtu-sai-agents/EvoMaster#-installation — pip setup comment",
+          "meaning": "The setup explicitly configures API credentials; the README also describes local and Docker execution.",
+          "application": "Borrow clean interfaces for tools, sessions, and evidence only when they simplify existing modules. Retain the selected CLI adapter as our inference boundary. A framework migration should remove measured maintenance problems without introducing mandatory API billing or breaking recovery.",
+          "strengths": "Separation of tool, session, and execution concerns is useful independently of a new runtime.",
+          "limitations": "Flexibility is not proof of lower total cost. Scientific demos span workloads beyond our scope, and the setup does not establish affordability on our hardware. Integration could cost more than maintaining a narrow implementation.",
+          "action": "Prototype one adapter behind the existing interface and require identical stop, timeout, malformed-result, and evidence-log behavior."
+        }
+      ],
+      "compute": {
+        "training": "Scientific workload requirements vary; local/Docker support is not a GPU-free guarantee.",
+        "agent_inference": "API-key and compatible-endpoint configuration documented.",
+        "observed_budget": "No verified monetary total for our use case.",
+        "caveat": "Separate modular design from reproducing scientific demos."
+      },
+      "evidence_limits": "Author release documentation, not independent evidence that self-evolution improves our tasks.",
+      "related_links": [],
+      "code": "P05",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-deotte-s6e5",
+      "title": "Second Place Autonomous Codex Yolo",
+      "authors": "Chris Deotte",
+      "url": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Codex Runs Experiments; https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Diverse Models",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "Deotte describes agent-operated experimentation and blending genuinely different model families. The orchestration is relevant, but the documented compute allocation differs materially from our CPU-first workflow.",
+      "findings": [
+        {
+          "title": "Autonomous orchestration and compute capacity are different claims",
+          "quote": "I let Codex to use 4x A100 GPUs",
+          "locator": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Codex Runs Experiments",
+          "meaning": "The author explicitly gave the autonomous campaign four A100 GPUs; that bounds the interpretation of its throughput.",
+          "application": "Copy the ledger, hypothesis-driven iteration, and CV comparisons, not its expected trial count. Start with CPU-capable models under our existing caps. A cloud experiment remains separately authorized, with outputs imported into the same evidence registry. Diagnose whether coding or training is the bottleneck before paying for more of either.",
+          "strengths": "The write-run-review cycle closely matches our intended operation.",
+          "limitations": "Four A100s are not available by assumption. Scripts efficient there may be impractical locally. One successful competition is not a controlled comparison of orchestration methods, model choices, or cost effectiveness.",
+          "action": "Run a small CPU campaign with a frozen baseline and time cap. Report actual usable trials and gains without extrapolating GPU throughput."
+        },
+        {
+          "title": "A weaker standalone model may contribute complementary errors",
+          "quote": "having the other models improves ensemble diversity and CV score.",
+          "locator": "https://www.kaggle.com/competitions/playground-series-s6e5/writeups/2nd-place-autonomous-codex-yolo — Diverse Models",
+          "meaning": "The author retained model families for their joint contribution without maximizing every family's standalone CV.",
+          "application": "Keep complete aligned OOF and test predictions. Assess marginal blend contribution separately from standalone rank. A CPU linear model, alternative encoding, or different loss may be worth retaining when it adds honest held-out value at acceptable inference cost, even when it cannot beat the standalone champion.",
+          "strengths": "Direct fit with separate standalone and ensemble champions.",
+          "limitations": "Hundreds of members and a GPU logistic-regression combiner are not prerequisites for a useful local ensemble. Repeatedly testing blends can overfit the same OOF matrix; preserve meta-validation and provenance.",
+          "action": "Compare a small diverse library with an equal-size seed-only library using identical folds and held-out blend evaluation, recording inference time."
+        }
+      ],
+      "compute": {
+        "training": "Four A100 GPUs stated; several neural and tree model families trained.",
+        "agent_inference": "Codex is the coding agent; no portable price inferred from its access mode.",
+        "observed_budget": "Total money not established; GPU count is explicit.",
+        "caveat": "Author result is not a forecast for CPU-only campaigns."
+      },
+      "evidence_limits": "Direct page body extraction was empty. Exact quotations and headings verified in search-indexed text from this same primary Kaggle page; no independent experiment reproduction.",
+      "related_links": [],
+      "code": "P06",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-deotte-s6e10",
+      "title": "First Place TFMs and LLMs with tabular data",
+      "authors": "Chris Deotte and collaborators",
+      "url": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.2 Tabular LLM number 2 target first; https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.3 Which one should you use",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "The write-up distinguishes a coding assistant from a trained GPT tabular predictor. Its target-first conditional-likelihood approach is a hypothesis about this synthetic generation mechanism, not a universal table-modeling recipe.",
+      "findings": [
+        {
+          "title": "A generative direction can be a structural modeling hypothesis",
+          "quote": "Put the target first and let the model predict",
+          "locator": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.2 Tabular LLM number 2 target first",
+          "meaning": "The method models feature likelihood under each target, then uses Bayes' rule to form a classifier.",
+          "application": "Transfer the habit of investigating data generation. First test cheap signatures and CPU baselines that encode plausible artifacts. Consider separately budgeted neural modeling only after evidence indicates a useful signal. Record a falsification test instead of treating the generator explanation as a new universal policy.",
+          "strengths": "May reveal representation-level gains that repeated parameter tuning misses.",
+          "limitations": "A trained GPT classifier costs additional training; a coding-agent subscription does not supply it for free. Generator claims and AUCs are competition-specific and author-reported. Real data need not share the assumed structure.",
+          "action": "On a tiny known-generator dataset, compare numeric and serialization-aware CPU baselines; remove the suspected artifact and check that the gain disappears."
+        },
+        {
+          "title": "Opposite representations may be complementary",
+          "quote": "They read the same row in opposite directions",
+          "locator": "https://www.kaggle.com/competitions/playground-series-s6e10/writeups/1st-place-tfms-and-llms-with-tabular-data — Section 2.3 Which one should you use",
+          "meaning": "The author recommends testing two directional views because their errors can differ.",
+          "application": "The affordable transfer is meaningfully different CPU-feasible views: encoding, objective, or a likelihood-derived feature. Save same-fold predictions and test marginal blend value. This asks the complementarity question without committing to training both transformer variants.",
+          "strengths": "Connects representation research to the ensemble registry.",
+          "limitations": "Different representation does not guarantee useful diversity. Weak or miscalibrated members can hurt, and public OOFs may have different early-stopping or validation provenance.",
+          "action": "Predeclare two views and use held-out meta-evaluation rather than choosing blend weights on the final reported CV."
+        }
+      ],
+      "compute": {
+        "training": "GPT-2 small with 124 million parameters and fine-tuning stated; total GPU hours not established.",
+        "agent_inference": "Predictive GPT and coding agent are distinct resources.",
+        "observed_budget": "No verified monetary total in reviewed passages.",
+        "caveat": "Small model is not evidence that CPU training is economical."
+      },
+      "evidence_limits": "Direct HTML body unavailable; indexed primary text exposed the quoted sections. Numerical and generation-mechanism claims remain author reports.",
+      "related_links": [],
+      "code": "P07",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-birdclef",
+      "title": "96th Place Solution Only Claude Code and custom harness",
+      "authors": "Kaggle write-up author; embedded report attributed to Claude Code and harness",
+      "url": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — BirdCLEF 2026 Solution and Full Campaign Review opening; https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — Section 4 What worked what did not, Silent decode bug row",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "An autonomous audio campaign documents both resources and failure modes. The engineering lessons transfer more naturally than its model recipes or compute expectations.",
+      "findings": [
+        {
+          "title": "The visible result relied on dedicated long-running compute",
+          "quote": "on an 1×L20 cluster, over ~30 days",
+          "locator": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — BirdCLEF 2026 Solution and Full Campaign Review opening",
+          "meaning": "The campaign report explicitly describes a long accelerator run with a high-quota subscription.",
+          "application": "Reuse durable experiment history and explicit failure analysis. Do not treat a reported finish as evidence that the same throughput is cheap locally. Count usable CPU trials per allowed session, then distinguish a coding bottleneck from training or evaluation before proposing more autonomy.",
+          "strengths": "Its concrete failure ledger is more actionable than a rank headline.",
+          "limitations": "Audio is outside our domains. A long accelerator campaign and Claude Max 20x setup differ from a small local allowance. The embedded postmortem is agent-written and not an independently audited telemetry record.",
+          "action": "Generate a post-campaign summary from our own ledger, requiring every number to point to an exact local measurement."
+        },
+        {
+          "title": "Hidden fallbacks can invalidate an entire experiment",
+          "quote": "trained on all-zeros for 47k files",
+          "locator": "https://www.kaggle.com/competitions/birdclef-2026/writeups/96th-place-solution-only-claude-code-custom-har — Section 4 What worked what did not, Silent decode bug row",
+          "meaning": "The reported decode fallback concealed corrupt input handling. The warning is a recommendation, not a controlled empirical law.",
+          "application": "Apply it to parsers, target encodings, scorer plugins, and prediction loading. A process may stay alive while substituting meaningless output. Reject unexpected shapes, missing rows, unseen class mappings, and nonfinite values; partial artifacts must remain unusable for promotion.",
+          "strengths": "The failure pattern is domain-independent and inexpensive to test.",
+          "limitations": "Permitted missing-data handling is different from a hidden exception that fabricates predictions. Avoid turning every recoverable file issue into an uncontrolled campaign restart.",
+          "action": "Inject a corrupt table and missing prediction column; verify an explicit failure and no promotion or substituted score."
+        }
+      ],
+      "compute": {
+        "training": "Source describes one L20 for about 30 days, audio backbones and fine-tuning.",
+        "agent_inference": "Opening text states Claude Max 20x and primarily Opus variants.",
+        "observed_budget": "No verified total spend; do not convert resource counts into a price.",
+        "caveat": "Training capacity and submission-time inference limits are separate."
+      },
+      "evidence_limits": "Indexed primary text readable; direct extraction empty. Embedded report is an attributed account and placement was not independently regraded.",
+      "related_links": [],
+      "code": "P08",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-neurogolf",
+      "title": "First Place Kaggle Agent Introduction",
+      "authors": "Jiwei Liu, Max Jeblick, Eduardo Rocha de Andrade, Chris Deotte, Giba",
+      "url": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Sample Agent; https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Architectural Rewrites",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "An introductory competition note describes human–AI teamwork, shared progress tracking, and stronger reported gains from architectural rewrites than graph polishing. It is not a complete released implementation.",
+      "findings": [
+        {
+          "title": "Agent effectiveness depends on the supplied evidence",
+          "quote": "all the information it had access to",
+          "locator": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Sample Agent",
+          "meaning": "The authors connect agent success to available information and instructions.",
+          "application": "Audit our experiment brief before blaming the coding model. Include a clear contract, champion code, relevant scorer, prior failures, and source-linked research. Evaluate evidence completeness while holding the selected CLI and experiment allowance fixed; do not equate a longer prompt with a better one.",
+          "strengths": "Uses an existing brief-building seam without requiring training hardware.",
+          "limitations": "No optimal universal prompt follows from the statement. Irrelevant history and untrusted external instructions can reduce clarity or introduce failure modes.",
+          "action": "Replay fixed coding tasks with minimal versus bounded evidence-complete briefs; compare valid completion and repeated errors under equal caps."
+        },
+        {
+          "title": "Structural exploration deserves an explicit portfolio slot",
+          "quote": "architectural rewrites averaged +0.5 boost per task",
+          "locator": "https://www.kaggle.com/competitions/neurogolf-2026/writeups/1st-place-kaggle-agent — Architectural Rewrites",
+          "meaning": "The authors report a larger average gain for rewrites than incremental graph optimization in their task history.",
+          "application": "Reserve a bounded reframe trial after completed no-gain attempts: alter solver representation, feature construction, or model family. Preserve the champion and ablate successful reframes afterward. This creates a route to structural change without allowing every trial to become an unlimited rewrite.",
+          "strengths": "Especially relevant to optimization, where representation changes can alter the search space.",
+          "limitations": "The score unit and average are specific to NeuroGolf and are not predicted CV or Santa gains. The introduction does not isolate causal effects or establish our hardware cost.",
+          "action": "After a predeclared stagnation trigger, compare one reframe with one incremental trial under matched resources, recording feasible quality and runtime."
+        }
+      ],
+      "compute": {
+        "training": "The introduction does not establish a portable GPU or training requirement.",
+        "agent_inference": "ChatGPT, Codex, Claude Code named; no inference ledger provided.",
+        "observed_budget": "No verified total compute or monetary budget in this introduction.",
+        "caveat": "Do not fill in implementation details from material the introduction says is forthcoming."
+      },
+      "evidence_limits": "Direct extraction empty; indexed primary-page text readable. Introductory and author-reported evidence only.",
+      "related_links": [],
+      "code": "P09",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-tinyclaw",
+      "title": "tinyKaggleClaw",
+      "authors": "lhwcv",
+      "url": "https://github.com/lhwcv/tinyKaggleClaw",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://github.com/lhwcv/tinyKaggleClaw#why-this-exists; https://github.com/lhwcv/tinyKaggleClaw#core-features",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "A local-first runtime separates leader, researcher, and trainer roles with persistent boards and a training queue. It is a standing multi-agent alternative, not a drop-in backend of our current loop.",
+      "findings": [
+        {
+          "title": "Separate decisions from actual training execution",
+          "quote": "a clear boundary between \"LLM coordination\" and \"real training execution\"",
+          "locator": "https://github.com/lhwcv/tinyKaggleClaw#why-this-exists",
+          "meaning": "Coordination and training are explicitly different responsibilities.",
+          "application": "Keep execution behind our provider interface and durable lifecycle records. We do not need three standing agents to borrow this: a coding agent can submit one structured experiment to a deterministic queue, which owns process identity, bounds, intent, and completion independently.",
+          "strengths": "Matches our independent local execution and inspectable job state.",
+          "limitations": "A visible board is not execution safety. Standing agents add traffic and supervision, and the tmux startup assumptions are not a direct Windows fit.",
+          "action": "Interrupt and restart a synthetic queued run; require reconciliation of the existing process rather than duplicate launch."
+        },
+        {
+          "title": "Durability matters more than copying a persistence format",
+          "quote": "local file-backed state instead of a database",
+          "locator": "https://github.com/lhwcv/tinyKaggleClaw#core-features",
+          "meaning": "The runtime deliberately persists state in files.",
+          "application": "Retain SQLite as the authoritative ledger and export readable artifacts. The alternative reminds us to keep state inspectable and portable, not to replace transactionality without evidence of a real problem. Humans should still inspect experiments without a running dashboard or agent.",
+          "strengths": "Readable exports support audits and handoffs without model turns.",
+          "limitations": "Concurrent file updates need consistency rules of their own. Importing a file runtime adds migration and duplicate-job risks. Local-first does not mean CPU-only training.",
+          "action": "Regenerate summaries from the ledger after interruptions and duplicate export attempts; require deterministic, complete outputs."
+        }
+      ],
+      "compute": {
+        "training": "External train_service and queue documented; workload hardware varies.",
+        "agent_inference": "Standing leader/researcher/trainer with Codex CLI documented.",
+        "observed_budget": "No normalized cost comparison for our use case.",
+        "caveat": "Local-first is a runtime placement claim, not a no-GPU guarantee."
+      },
+      "evidence_limits": "README architecture and prerequisites inspected; no efficiency comparison reproduced.",
+      "related_links": [],
+      "code": "P10",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "prior-collection",
+      "title": "Kaggle Top Solutions and Strategies",
+      "authors": "TaeyanG4",
+      "url": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies",
+      "kind": "Primary author repository or competition write-up",
+      "locator": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#what-you-can-do-with-it; https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#use-it-with-an-ai-agent — suggested prompt step 4",
+      "identity_status": "Verified source identity and readable primary text",
+      "summary": "The collection structures write-ups, technique status, provenance, and compute metadata. It is useful for finding candidate evidence, not as a substitute for checking original methods or validating them locally.",
+      "findings": [
+        {
+          "title": "Retrieval should lead back to the original evidence",
+          "quote": "every solution and strategy row links to the original writeup",
+          "locator": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#what-you-can-do-with-it",
+          "meaning": "Source links are retained for solution and strategy records.",
+          "application": "Attach URL, retrieval date, task match, technique status, and compute compatibility to each research idea. Filter for our supported domains before building a brief. Open the original for a recommendation rather than promoting an extracted summary into an operating instruction.",
+          "strengths": "Structured metadata reduces reading overhead and keeps experiments attributable.",
+          "limitations": "Metadata can be stale or incomplete. An index is not permission to reuse external data or code. Its CC BY-NC-SA 4.0 license also matters if redistributing the collection.",
+          "action": "Audit ten recommendations against originals for method identity, usage status, compute, and scope before admitting hypotheses."
+        },
+        {
+          "title": "Extracted author claims are not independently verified outcomes",
+          "quote": "Summaries are author claims extracted by a model",
+          "locator": "https://github.com/TaeyanG4/kaggle-top-solutions-and-strategies#use-it-with-an-ai-agent — suggested prompt step 4",
+          "meaning": "The data card explicitly qualifies model-extracted summaries.",
+          "application": "Track primary text, author report, model extraction, and reproduced local evidence as different levels. Keep final-used, rejected, and failed techniques distinct. This permits reuse of ideas without claiming our own pipeline has already benefited.",
+          "strengths": "Fits source-linked discoveries and evidence-aware briefs.",
+          "limitations": "Technique frequency and rank are confounded by task, publication, resources, and selection. Counts cannot prove causation. Missing compute must remain unknown, not zero.",
+          "action": "Use a local fixture to require every generated recommendation to retain its original URL and evidence qualification."
+        }
+      ],
+      "compute": {
+        "training": "CSV queries are CPU-feasible; reproducing indexed methods has method-specific requirements.",
+        "agent_inference": "Collection summaries were model-written; local querying can be plain Python/SQL.",
+        "observed_budget": "Collection construction cost and portable method reproduction costs not established.",
+        "caveat": "An empty compute field means not stated, not zero."
+      },
+      "evidence_limits": "README and schema inspected. The collection-building pipeline is not included; underlying original write-ups remain the authority.",
+      "related_links": [],
+      "code": "P11",
+      "group": "Earlier architecture references and competition accounts"
+    },
+    {
+      "id": "visual-faq",
+      "title": "Sanderson creator advice",
+      "authors": "Grant Sanderson",
+      "url": "https://www.3blue1brown.com/about/",
+      "kind": "First party creator FAQ",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "The useful transfer is a visual explanation method rather than a recognizable palette. The FAQ recommends concrete examples and purposeful movement.",
+      "findings": [
+        {
+          "title": "Start with a concrete discrepancy",
+          "quote": "Concrete before abstract.",
+          "locator": "FAQs → I would like to start making math videos online → second bullet",
+          "meaning": "Sanderson recommends examples before general frameworks. This is creator guidance, not a controlled study of developer documentation.",
+          "application": "Open the supervisor GIF on four prediction rows facing five expected IDs. Let the empty slot become visible before naming validation. Open search on a growing frontier before showing its cap. The viewer then has a reason for a controller or portfolio instead of memorizing component names. These examples should follow real output and branch contracts in loop.py and research/branches.py.",
+          "strengths": "A small CPU example can demonstrate a real project invariant without training a new model.",
+          "limitations": "Simplification can hide repair limits or imply every failure is recoverable. A convincing diagram does not establish comprehension or prove the underlying pipeline is correct.",
+          "action": "Ask a newcomer to explain why the candidate cannot reach scoring without reading a caption that supplies the answer."
+        },
+        {
+          "title": "Animate the relationship rather than the prose",
+          "quote": "Every movement on the screen should be deliberate",
+          "locator": "FAQs → creator advice → Avoid pointless animations bullet",
+          "meaning": "The advice rejects movement with no identifiable explanatory purpose. It does not ask for constant motion or prescribe a universal animation frequency.",
+          "application": "Give every self.play call in readme_scenes.py a state transition to communicate. A result moving back represents repair; aligned residuals converging represents averaging. Keep unchanged evidence stationary while the selected object changes. Remove pulsing labels or moving equations that merely decorate the screen. Retain a short hold after a difficult inference.",
+          "strengths": "This produces a review criterion that works locally and can reduce scene complexity.",
+          "limitations": "Purpose depends on audience knowledge. Silent GIFs lack spoken pacing cues, and fast movement may conceal the very comparison the viewer needs to inspect.",
+          "action": "Maintain a beat list with visible change and intended inference. Revise beats whose only contribution is a sentence appearing."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "The linked creator videos were located, but original video frames were not reviewed. No official Sanderson palette or universal comprehension recipe is claimed.",
+      "related_links": [
+        "https://www.youtube.com/watch?v=ojjzXyQCzso",
+        "https://www.3blue1brown.com/lessons/some1/"
+      ],
+      "code": "V01",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-grace",
+      "title": "Iterating the script against the animation",
+      "authors": "Grant Sanderson interviewed by Grace Gong",
+      "url": "https://gracegong.beehiiv.com/p/makes-content-stick-ft-3blue1brown-channels-creator-grant-sanderson-493-million-subscribers-yt",
+      "kind": "Firsthand interview edited for reading",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "The host says the text is adapted from an interview. The useful finding is that writing, visual construction, and revision inform one another.",
+      "findings": [
+        {
+          "title": "A weak visual can expose a weak explanation",
+          "quote": "If the animation is not visually compelling",
+          "locator": "Question Your teaching style is unique and captivating → GS answer",
+          "meaning": "The surrounding answer connects a visual problem to restructuring the explanation. The quoted phrase alone should not be treated as a complete production rule.",
+          "application": "Replace generic sinusoid curves with residual samples aligned to the same held-out row, then show their midpoint. That changes what the diagram explains, not just its appearance. When a scene feels generic, revise its example and object relationships before adding transitions. The same discipline helps architecture work: an incoherent data-flow picture is a reason to inspect the design.",
+          "strengths": "The idea directs work toward semantic content and fits deterministic, code-generated diagrams.",
+          "limitations": "Visual appeal is not correctness. An attractive midpoint can hide unequal weights, mismatched prediction scales, missing IDs, or leakage.",
+          "action": "Check one numerical residual pair before rendering the whole scene; preserve originals alongside the derived mean."
+        },
+        {
+          "title": "Rendered evidence should change the script",
+          "quote": "make adjustments after seeing the animation",
+          "locator": "Question Do you write a script for the animation and narration → GS answer",
+          "meaning": "The published answer describes the narration script as a revisable guide. It does not supply fixed scene durations or a palette.",
+          "application": "Keep the storyboard beside the scene code and review before, transition, and after frames. If a label collides with a moving object, change the path or script instead of shrinking everything. Render a representative hard scene before rebuilding all assets. For agent briefs, likewise inspect whether the evidence is actually communicated, while leaving frozen scoring contracts unchanged.",
+          "strengths": "Small, reviewable iterations can avoid rebuilding unrelated scenes.",
+          "limitations": "Rendering and inspection still consume CPU time and human attention. The interview does not establish the best budget allocation for our documentation.",
+          "action": "Record why a scene changed and rebuild only the affected scene until its central transition is clear."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "The publisher explicitly says parts were adjusted for reading; quotations are from that edited text, not a certified verbatim recording.",
+      "related_links": [],
+      "code": "V02",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-roganov",
+      "title": "Object transformations and production planning",
+      "authors": "Grant Sanderson interviewed by Ivan Roganov",
+      "url": "https://roganov.me/blog/3blue1brown-interview/",
+      "kind": "Firsthand written interview",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "The interviewer identifies a Q and A originally published for Habr readers. It discusses object transformations and variable script development time.",
+      "findings": [
+        {
+          "title": "Preserve object identity through a transition",
+          "quote": "creating animations of object transformations",
+          "locator": "Question How and why did you create your YouTube channel → answer",
+          "meaning": "Sanderson describes the original purpose of Manim. This supports continuity as a production technique, not a requirement to transform everything.",
+          "application": "Keep an output row identifiable as it enters a contract check and returns for repair. Keep stored records visible while a selection becomes a brief. Keep residual pairs attached to the same row as their mean is computed. These are pictures of this project’s actual concerns: record identity, evidence persistence, and aligned predictions.",
+          "strengths": "The existing renderer can express these relationships without a paid inference or training experiment.",
+          "limitations": "A transformation can falsely imply equivalence. A summary is not its complete evidence, and a residual average is not a newly trained independent model.",
+          "action": "Label derived objects and originals separately; identify the data or arithmetic contract behind each transformation."
+        },
+        {
+          "title": "Separate planning from rendering effort",
+          "quote": "Sometimes it takes 3 months.",
+          "locator": "Question How long does it take to write a script → first answer paragraph",
+          "meaning": "This is a dated personal account of variation in script writing, not a schedule for our short GIFs.",
+          "application": "Separate deciding what the scene must explain from rendering it. Write one acceptance question, then iterate the question against a draft before polishing every asset. Apply the same discipline to research: representation work may be valuable, but it still needs a bounded experiment and stop condition. Creative uncertainty does not authorize endless agent activity.",
+          "strengths": "It prevents a fast render from being mistaken for a completed explanation.",
+          "limitations": "The anecdote cannot justify weeks of documentation work while reliability or scoring defects remain unresolved.",
+          "action": "Timebox a draft and review cycle; prioritize defects that prevent understanding rather than indefinite stylistic refinements."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "Published December 9 2021. This is an interview account, not a production-time benchmark.",
+      "related_links": [],
+      "code": "V03",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-workflow",
+      "title": "Sanderson implementation workflow and version compatibility",
+      "authors": "Grant Sanderson and contributors",
+      "url": "https://github.com/3b1b/videos",
+      "kind": "First party source repository README",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "The official repository distinguishes the creator’s engine from Manim Community and describes restoring interactive scene state. The README, not unseen demonstration footage, is the quoted evidence.",
+      "findings": [
+        {
+          "title": "Similar engine names do not ensure identical behavior",
+          "quote": "some functionality may differ between the two.",
+          "locator": "README → Workflow → opening paragraph",
+          "meaning": "A technique demonstrated in the creator’s environment may not run unchanged in Manim Community.",
+          "application": "Our scene code imports Manim Community. Record the verified version, fonts, ffmpeg settings, dimensions, and frame rate. Borrow the production principle rather than copying creator-specific commands. Test output decoding after dependency changes, much as the experiment system retains code and evaluator identity alongside scored artifacts.",
+          "strengths": "Compatibility checks are cheap and reinforce reproducibility.",
+          "limitations": "Fonts and rendering dependencies can change despite a Python version pin. The engine and finished scenes also have different licensing contexts; copying a scene needs a separate license check.",
+          "action": "Rerender one representative scene after a dependency change and compare its key frames and decoded output."
+        },
+        {
+          "title": "Focused state restoration supports iteration",
+          "quote": "will first revert to that state of the scene",
+          "locator": "README → Workflow → checkpoint_paste bullet",
+          "meaning": "The creator’s interactive workflow restores a saved scene state before replaying a changed fragment.",
+          "application": "Keep a known before state for difficult transitions and revise that fragment instead of rebuilding unrelated scenes. Borrow the general principle for development, but distinguish it from crash-safe experiment persistence. The Kaggle controller still requires durable job identity, checksums, and reconciliation; a visual scene checkpoint provides none of those guarantees.",
+          "strengths": "Focused iteration reduces unrelated rebuild work and narrows a visual failure.",
+          "limitations": "checkpoint_paste is not implemented by our helper. Similar ideas at different abstraction levels must not be presented as equivalent mechanisms.",
+          "action": "Use the per-scene renderer selector and retain a small transition example when diagnosing layout problems."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "The README was read. The linked official YouTube demonstration was found; no timing or color claims rely on unobserved video frames.",
+      "related_links": [
+        "https://www.youtube.com/watch?v=rbu7Zu5X1zI"
+      ],
+      "code": "V04",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-forum",
+      "title": "A creator workflow for storyboards and timing",
+      "authors": "u/purplemindcs",
+      "url": "https://www.reddit.com/r/manim/comments/1g3lsc0/episode_3_of_brainstorm_collaborative_mathematics/",
+      "kind": "Firsthand practitioner forum comment",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "The creator describes a production sequence in response to another user. This is useful practice evidence, not Sanderson’s statement or a controlled study.",
+      "findings": [
+        {
+          "title": "Storyboarding reveals missing explanatory steps",
+          "quote": "Make a storyboard.",
+          "locator": "Reply to u/faizalHoonBC → numbered process → item 3",
+          "meaning": "The creator describes sketching defining scene elements before animation.",
+          "application": "Write a visible problem, objects, transition, and inference for each beat. In setup, separate browser account prerequisites from terminal commands; simulated terminal output must not pretend to complete real sign-in. For architecture, storyboard the missing row before writing movement paths. This keeps the GIF from becoming another list of component names.",
+          "strengths": "A small Markdown storyboard fits the repository and is easy to review.",
+          "limitations": "A storyboard can lock in a bad explanation if treated as final. The comment also supports experimentation and timing adjustments.",
+          "action": "Review each beat against the actual code contract before rendering; remove any inference the objects cannot show."
+        },
+        {
+          "title": "Timing needs a later inspection pass",
+          "quote": "add some freeze frames or cut out wait time",
+          "locator": "Same creator reply → process item 4",
+          "meaning": "The commenter adjusts timing after animating. No universal hold duration follows from that account.",
+          "application": "Review the actual silent GIF at normal playback speed. Leave time to notice a mismatch and read a local label, then let the geometry do the next step. In setup, long commands and condensed prompts need recognition time. Keep all essential instructions in static, copyable text below the recording.",
+          "strengths": "Timing can improve clarity without more effects or colors.",
+          "limitations": "Readers have different familiarity and GIF players do not provide consistent pause or seek controls.",
+          "action": "Inspect the busiest frame and ensure no critical setup instruction exists only in moving text."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "The commenter is the creator of the posted work, not Grant Sanderson. A personal workflow does not establish comparative effectiveness.",
+      "related_links": [],
+      "code": "V05",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-color",
+      "title": "A neutral palette with intentional emphasis",
+      "authors": "IBM Design Language",
+      "url": "https://www.ibm.com/design/language/color/",
+      "kind": "First party design guidance",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "IBM supports neutral organization and purposeful additional color. Its own brand has a core blue; our palette is an adaptation to this user’s feedback, not an official IBM or Sanderson palette.",
+      "findings": [
+        {
+          "title": "Neutral context can organize the scene",
+          "quote": "The neutral gray family is dominant in our UI",
+          "locator": "Color in UI → Specifications → opening paragraph",
+          "meaning": "This rule concerns IBM interfaces; transferring it to technical GIFs is a design judgment.",
+          "application": "Use graphite for the canvas, warm white for main marks, and gray for retained context. Shape and position can explain the relationship without a colored card. A single muted accent marks the current operation. In the residual example, filled and open points distinguish models without saturated category colors.",
+          "strengths": "A restrained vector palette supports continuity across all seven GIFs.",
+          "limitations": "Neutral lines can become too faint at GitHub display width. Thin connectors and small row IDs may be illegible despite looking attractive at render resolution.",
+          "action": "Check the least contrasted useful element at normal README width before accepting an export."
+        },
+        {
+          "title": "Additional hue should have a defined role",
+          "quote": "Additional colors are used sparingly and purposefully.",
+          "locator": "Color in UI → Specifications → final sentence",
+          "meaning": "The guidance favors intentional use rather than a different hue for every object.",
+          "application": "Reserve the accent for the selected branch, missing row, or derived mean. Keep unchanged evidence neutral. Where identity matters, first use alignment, marker fill, labels, or line style. A gray-scale check should still reveal the relationship; the accent then guides attention instead of carrying the entire meaning.",
+          "strengths": "A small role vocabulary is easier to maintain and less template-like.",
+          "limitations": "One accent can confuse failure and success if local labels and geometry do not explain the current operation.",
+          "action": "Document the accent’s role in each storyboard beat and reject scenes that require naming a hue to explain them."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "Direct page fetches timed out; exact official page text was obtained through the search index. Later revisions may alter wording.",
+      "related_links": [],
+      "code": "V06",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-diagrams",
+      "title": "Identity cues in technical diagrams",
+      "authors": "IBM Design Language",
+      "url": "https://www.ibm.com/design/language/infographics/technical-diagrams/design/",
+      "kind": "First party technical diagram specification",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "The specification covers accessibility and coherent node treatment. It informs our encoding; avoiding generic bordered cards is a project-specific choice.",
+      "findings": [
+        {
+          "title": "Color cannot be the only identity cue",
+          "quote": "Never rely on color alone to convey meaning.",
+          "locator": "Color → Color usage → accessibility paragraph",
+          "meaning": "The source requires redundant cues such as labels, line styles, or icons.",
+          "application": "Use hatching and row numbers for held-out data, filled and open markers for residual pairs, and a frontier boundary for search. Each distinction survives grayscale. This also helps when GIF quantization changes subtle color values. Keep only the cues needed for the current inference so redundant encoding does not turn into clutter.",
+          "strengths": "The scene remains interpretable across different displays and color perception.",
+          "limitations": "Adding an icon, label, and pattern to every mark can overwhelm a compact scene. Redundancy should protect meaningful distinctions, not maximize decoration.",
+          "action": "Inspect a grayscale key frame and identify held-out rows, residual partners, and the selected branch without using color names."
+        },
+        {
+          "title": "Coherent nodes do not require multicolor cards",
+          "quote": "Nodes should be monochromatic.",
+          "locator": "Color usage → example caption Don’t mix colors when drawing a node",
+          "meaning": "The statement governs node construction. It neither requires boxes everywhere nor prohibits a meaningful overall palette.",
+          "application": "Use rows, points, or line segments when they carry the data relationship directly. Use one ring where a session boundary matters. Keep ownership labels for the agent and scorer even when removing decorative borders. Minimalism is useful only if trust boundaries and data identity remain understandable.",
+          "strengths": "The approach addresses the user’s explicit objection to colored borders.",
+          "limitations": "Removing every boundary can erase the separation between writing and scoring. A simpler picture must retain important architecture distinctions.",
+          "action": "Remove a node boundary only when the scene still clearly identifies which component writes code and which accepts evidence."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "Official body text and the indexed Color section were inspected. This is a design specification, not proof of improved audience comprehension.",
+      "related_links": [],
+      "code": "V07",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-motion",
+      "title": "Purposeful motion and easing",
+      "authors": "Carbon Design System",
+      "url": "https://www.carbondesignsystem.com/building-blocks/foundations/motion/overview",
+      "kind": "First party motion guidance",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "Carbon distinguishes productive and expressive interface motion. Its UI timings are not an established educational-video pacing standard.",
+      "findings": [
+        {
+          "title": "Reserve prominent motion for important changes",
+          "quote": "Reserve expressive motion for occasional, important moments",
+          "locator": "Style → paragraph after productive and expressive motion",
+          "meaning": "Ordinary operation and important moments should not all compete at the same visual intensity.",
+          "application": "Let the missing row, restored validation split, and residual midpoint be focal events. Keep headings and unchanged records still during those transitions. A stable scene structure can support recognition, but the main geometry should be specific to each idea rather than a repeated card sequence.",
+          "strengths": "The viewer has fewer competing motions to track.",
+          "limitations": "Importance depends on audience knowledge. A skilled ML reader and a new project user may need different explanations of aligned predictions.",
+          "action": "Ask a reviewer what changed in each beat. If they name an unrelated moving label, simplify the motion."
+        },
+        {
+          "title": "Smooth stopping can preserve object continuity",
+          "quote": "speed up quickly and slow down smoothly",
+          "locator": "Easing → opening paragraph",
+          "meaning": "The guidance describes acceleration and deceleration for screen objects, while discouraging purely decorative movement.",
+          "application": "Use gentle starts and stops for records moving into checks or briefs entering a session. Use linear movement only when the mark represents a rate or ongoing progression. Residuals must stop at their actual arithmetic midpoint rather than bounce for visual excitement. The endpoint matters more than the flourish.",
+          "strengths": "Manim expresses this directly without new model training.",
+          "limitations": "Easing can misrepresent measured progress or rates. Work-allocation diagrams must remain explicitly illustrative unless they use actual timing data.",
+          "action": "Check the endpoint against the intended value, then review the path for misleading overshoot or timing claims."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "The page shows an August 2026 update. No exact GIF frame rate or educational-effectiveness claim is attributed to Carbon.",
+      "related_links": [],
+      "code": "V08",
+      "group": "Visual explanation and documentation"
+    },
+    {
+      "id": "visual-datawrapper",
+      "title": "Choose the visual encoding from the information",
+      "authors": "Lisa Charlotte Muth at Datawrapper",
+      "url": "https://www.datawrapper.de/blog/which-color-scale-to-use-in-data-vis",
+      "kind": "First party visualization article",
+      "locator": "Specific locations below",
+      "identity_status": "Verified primary text",
+      "summary": "Position, marker style, and labels can already identify data. The article helps decide when additional color communicates something rather than merely repeating it.",
+      "findings": [
+        {
+          "title": "Avoid redundant hue when position already identifies data",
+          "quote": "already encodes the states by position",
+          "locator": "What to color by → choropleth map paragraph",
+          "meaning": "The source’s example is a map. Applying the principle to residual pairs is our design interpretation.",
+          "application": "Place each pair of errors at the same horizontal row coordinate. Distinguish predictors with filled and open marks and place the mean at the midpoint. The picture then explains averaging without red, blue, and yellow curves. For search, a boundary and selection position can identify the relevant frontier without a unique hue for each hypothesis.",
+          "strengths": "Geometry corresponds directly to a data relationship or computation.",
+          "limitations": "Position is insufficient if objects cross or overlap ambiguously. A transition may need a local identity label at its hardest moment.",
+          "action": "Trace one residual pair through the full transition and check that its members cannot be mistaken for the neighboring row."
+        },
+        {
+          "title": "Lightness remains important after export",
+          "quote": "Give your hues different lightnesses",
+          "locator": "Categorical color scales → first practical bullet",
+          "meaning": "The article recommends distinguishable lightness, including for gray-scale interpretation.",
+          "application": "Check main text, secondary labels, and useful connectors against the graphite background. Review the final GIF because palette reduction may change subtle values. Preserve static, copyable commands below the setup demo so a reader does not have to extract a critical instruction from a moving frame.",
+          "strengths": "Export inspection catches failures that source code review cannot reveal.",
+          "limitations": "A gray-scale test does not cover all accessibility needs. Adequate contrast alone cannot make tiny text readable, and GIF playback controls vary by viewer.",
+          "action": "Inspect the busiest exported frame at normal display width and keep a text alternative for essential instructions."
+        }
+      ],
+      "compute": {
+        "training": "Local rendering and inspection; no model training is needed.",
+        "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+        "observed_budget": "No transferable monetary benchmark verified.",
+        "caveat": "Design advice is not evidence of improved competition performance."
+      },
+      "evidence_limits": "This is a visualization article, not a study of the repository or an endorsement of its revised assets.",
+      "related_links": [],
+      "code": "V09",
+      "group": "Visual explanation and documentation"
+    }
+  ],
+  "local_files": [
+    {
+      "path": "kaggle_agent/loop.py",
+      "sha256": "99ebdea6a838e8b8a644c3bde42d230cf61ba49295c996f3eb57bada20842c55",
+      "reason": "Brief construction, bounded repairs, eligible smoke and full stages, screen agreement and outcome handling."
+    },
+    {
+      "path": "kaggle_agent/supervisor/controller.py",
+      "sha256": "2275ae2c74c3a7882d2fe6824245df835a9d8c1257d7b3bf0922114604b5c72b",
+      "reason": "Durable launch intent, controller ownership and lifecycle integration."
+    },
+    {
+      "path": "kaggle_agent/supervisor/watchdog.py",
+      "sha256": "c918fcc2814534c1c1d6f1abc0f1021e38c728a535c3199cf4252f5a9b3b3958",
+      "reason": "Process-tree resource checks and stop behavior."
+    },
+    {
+      "path": "kaggle_agent/supervisor/limits.py",
+      "sha256": "237fdd40df31dc3cdd3c3f5f42c67095154c4168f27b872b2b5daf9ed1fd3acb",
+      "reason": "Configured resource limits, defaults and stricter profile bounds."
+    },
+    {
+      "path": "kaggle_agent/supervisor/budget.py",
+      "sha256": "b4906d7f9c2d902d5783f4d0d1e6dceb4b470c195987a39a6579ce776b01367f",
+      "reason": "Authorization and pricing preconditions for reservations and ledger accounting."
+    },
+    {
+      "path": "kaggle_agent/agents/base.py",
+      "sha256": "59755e21936bcf951a5b9630d770173bb3e5017a8743e981cc8588e112b90a93",
+      "reason": "Selected CLI adapter, environment filtering, result normalization and stop classification."
+    },
+    {
+      "path": "kaggle_agent/research/branches.py",
+      "sha256": "c17834bc89d1b4fc5ecd1c821e2a9783ce63c2156bd383db2caba43a5be80d9b",
+      "reason": "Five active directions, heuristic priorities and exploration turns."
+    },
+    {
+      "path": "kaggle_agent/research/retrieval.py",
+      "sha256": "3a3424ec7709a8cc9dbd5e5cd8e0f13c601ca0a72466aefb18a4f76bb7c063ee",
+      "reason": "Discovery records and retrieval into briefs."
+    },
+    {
+      "path": "kaggle_agent/agents/session_manager.py",
+      "sha256": "f32685041ece63145d5e8efae9fb649327e52b3d872851a9888440306e53bc1a",
+      "reason": "Checkpoint and session rotation."
+    },
+    {
+      "path": "kaggle_agent/execution/script.py",
+      "sha256": "5f4763861b2e3131970146fb676d37a8865d896f63015c8bb1f0092b21a8072f",
+      "reason": "Copied code snapshot and explicit statement that checks are not a sandbox."
+    },
+    {
+      "path": "kaggle_agent/execution/gates.py",
+      "sha256": "159391db3d9163101352a9f2bd0a4501d916b7a3b721050e921a4ced16d79858",
+      "reason": "Allowed local provider set and disabled paid execution gate."
+    },
+    {
+      "path": "kaggle_agent/evaluation/validation.py",
+      "sha256": "6bb1fc90e9b5f9618c2d026ba06091be73f9ed18a69c620d2e1eaa01332dfa6d",
+      "reason": "Row alignment, independent score evaluation and comparison."
+    },
+    {
+      "path": "kaggle_agent/evaluation/ensemble.py",
+      "sha256": "142f10402cb215125231b863951a35128ff78cc2f92dc7f04824b52348258645",
+      "reason": "Conditional meta-validation and prediction provenance requirements."
+    },
+    {
+      "path": "kaggle_agent/research/public.py",
+      "sha256": "e0abd26708403e34a9f825c07a158f087567784d0753cac0360de0ca371b10d6",
+      "reason": "Read-only public material collection through documented routes."
+    },
+    {
+      "path": "docs/tools/readme_scenes.py",
+      "sha256": "eb6945b75d6858e443ae3d9921283c085b600e04f88c545a0774c755405a9fcd",
+      "reason": "Original README diagram geometry and explanatory transitions."
+    },
+    {
+      "path": "docs/tools/render_setup.py",
+      "sha256": "79a905ef048cd357ce94c957706dbffb4771621defc3b8a6b9f5e1b03257559d",
+      "reason": "Explicitly simulated terminal setup without executing displayed commands."
+    }
+  ]
+}

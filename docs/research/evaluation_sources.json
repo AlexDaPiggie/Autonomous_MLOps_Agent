@@ -1,0 +1,298 @@
+[
+  {
+    "id": "ehmo-autoresearch",
+    "title": "autoresearch by ehmo",
+    "authors": "ehmo",
+    "url": "https://github.com/ehmo/autoresearch-skill",
+    "kind": "Primary software README",
+    "locator": "README version 2.0.0; Where this came from; How a cycle works; Requirements; Limitations",
+    "identity_status": "Primary source identity resolved from screenshot label",
+    "summary": "A software-improvement protocol separates finding problems, fixing them, and simplifying the result. It is not Karpathy’s GPU language-model training repository.",
+    "findings": [
+      {
+        "title": "Independent context can reduce shared assumptions",
+        "quote": "Each team starts from a clean context",
+        "locator": "README, Where this came from, paragraph 2; https://github.com/ehmo/autoresearch-skill#where-this-came-from",
+        "meaning": "The coordinator selectively transfers information among stages instead of sharing the full reasoning history with every participant.",
+        "application": "Use this selectively for difficult failures in the Kaggle supervisor: a short diagnostic brief can describe the failing row IDs and logs without passing the original agent’s preferred explanation. A reviewer can then inspect the frozen scorer and output contract independently. Keep the ordinary trial loop single-agent. The local checkpoint in kaggle_agent/agents/session_manager.py already provides a compact state snapshot, so a fresh reviewer should receive that snapshot plus the specific evidence rather than another large shared transcript.",
+        "strengths": "Fits our need for an occasional independent challenge to an apparently successful run. It does not require training a new model.",
+        "limitations": "Three teams for every trial would multiply plan usage and coordination. Context separation cannot stop a process running as the same OS user from reading files.",
+        "action": "Propose one bounded reviewer task only after a repeated unexplained validation failure; compare whether it identifies a reproducible defect before adopting another always-on stage."
+      },
+      {
+        "title": "Verification must be executable rather than a convincing review",
+        "quote": "running tests after each commit",
+        "locator": "README, How a cycle works, stage 2; https://github.com/ehmo/autoresearch-skill#how-a-cycle-works",
+        "meaning": "The fixing stage is coupled to a test result, and the coordinator verifies outcomes before continuing.",
+        "application": "Apply the principle to our maintenance workflow, not blindly to every generated experiment. Changes to data alignment, promotion, lease recovery, or spend reservation should have a regression check at their real boundary. Generated training scripts should still pass their smoke and independent-scoring gates. Code cleanup should preserve the exact scored code snapshot in kaggle_agent/execution/script.py; otherwise a refactor could make a retained champion impossible to reproduce even when the test suite passes.",
+        "strengths": "Matches the existing distinction between code generation and independent acceptance. A CPU-only synthetic regression fixture can validate control-plane behavior.",
+        "limitations": "The protocol depends on meaningful tests. Passing shallow tests does not establish model quality, leakage freedom, or benefit on a competition. Automatic commits also need code-only scoping.",
+        "action": "For a future harness fix, require a red-capable synthetic reproduction, then the fix, then the same reproduction passing; record the exact artifact revision separately from later cleanup."
+      }
+    ],
+    "compute": {
+      "training": "No ML-training GPU is specified for the coordination protocol.",
+      "agent_inference": "Up to three agent teams with separate contexts; additional coding-agent sessions consume quota or inference budget.",
+      "observed_budget": "No transferable dollar budget verified.",
+      "caveat": "Native Windows outside WSL is explicitly untested; clean context is not a cryptographic boundary."
+    },
+    "evidence_limits": "The reported Go-project outcomes are an author case study, not a controlled study or evidence of Kaggle gains. README may change; fetched 2026-11-26. The old ehmo/autoresearch name resolves in search results to ehmo/autoresearch-skill.",
+    "related_links": [
+      "https://raw.githubusercontent.com/ehmo/autoresearch-skill/main/README.md"
+    ]
+  },
+  {
+    "id": "zzsi-benchmark",
+    "title": "Coding Agents and a Spooky Kaggle Challenge Benchmarking Lightweight ML Automation",
+    "authors": "Zhangzhang ZZ Si",
+    "url": "https://zzsi.github.io/blog/posts/20251030-coding-agents-spooky/index.html",
+    "kind": "Primary author blog and linked experiment artifacts",
+    "locator": "Published 2025-10-30; How the agents actually performed; What the agents leave behind",
+    "identity_status": "Primary source identity resolved from screenshot label",
+    "summary": "A small shell-and-prompt outer loop was tested on one historical authorship-classification task. Its strongest lesson for us is orchestration and evidence hygiene, not a general agent ranking.",
+    "findings": [
+      {
+        "title": "Small case studies cannot choose our default agent",
+        "quote": "With one task and one run per agent",
+        "locator": "How the agents actually performed, paragraph after score table; https://zzsi.github.io/blog/posts/20251030-coding-agents-spooky/index.html#how-the-agents-actually-performed",
+        "meaning": "The author explicitly declines to declare an overall winner from the observed score differences.",
+        "application": "Keep Claude and Codex user-selected. To compare them for this project, hold the competition, frozen folds, wall time, allowed libraries, and number of trials constant, and repeat with more than one task and seed. Report completion rate, validated gain, and quota consumption separately. The existing branch portfolio can supply the same initial hypothesis to both arms. Do not change the default agent merely because one run of a historical text task had a lower final loss.",
+        "strengths": "This matches our affordable CLI-based approach and prevents a hardware-intensive benchmark from becoming the only comparison standard.",
+        "limitations": "Historical author-attribution results do not automatically transfer to tabular forecasting or optimization. Different model versions, quota tiers, and tool wrappers confound a simple ranking.",
+        "action": "Propose a small matched-budget comparison on one tabular fixture and one optimization fixture; report all attempts, including invalid outputs and plan-limit stops."
+      },
+      {
+        "title": "Telemetry is useful but code and experiment identity need normalization",
+        "quote": "The messy bits are the code paths, not the telemetry",
+        "locator": "What the agents leave behind, paragraph before cleanup list; https://zzsi.github.io/blog/posts/20251030-coding-agents-spooky/index.html#what-the-agents-leave-behind",
+        "meaning": "The author finds useful diagnostic evidence in logs while warning that duplicated pipelines and inconsistent artifacts need cleanup.",
+        "application": "Use our SQLite ledger and exact code snapshots as the canonical experiment identity instead of asking an agent to reconcile loosely named CSV files. Preserve raw logs for diagnosis, but expose a compact schema with hypothesis, source, fold scores, runtime, code fingerprint, and promotion reason. In kaggle_agent/research/branches.py distinguish execution failures from completed non-improvements. This makes a valuable failed idea retrievable without allowing partial artifacts to enter ensemble selection.",
+        "strengths": "Directly matches the repo’s controller, artifact fingerprints, and short next-trial briefs. It is implementable on local CPU without importing a large framework.",
+        "limitations": "Automatic cleanup can delete evidence or alter scored code. A neat journal also cannot substitute for independent checks on data usage and hold-out provenance.",
+        "action": "Audit a sample of completed and failed local trials for one-to-one agreement among experiment ID, saved code hash, log path, prediction IDs, and recorded promotion outcome."
+      }
+    ],
+    "compute": {
+      "training": "Author reports experiments on a Mac mini; exact accelerator allocation was not independently verified.",
+      "agent_inference": "Four coding agents tested separately; one Gemini run used a lower model tier because its preferred quota was exhausted.",
+      "observed_budget": "Clock intervals include idle gaps; no comparable monetary total verified.",
+      "caveat": "One task and one run per agent cannot support a general agent-quality ranking."
+    },
+    "evidence_limits": "Some CV peaks and final grader scores differ; do not present the best intermediate CV as the final independent score. The blog’s own caution is essential.",
+    "related_links": [
+      "https://github.com/zzsi/spooky-author-identification-codex"
+    ]
+  },
+  {
+    "id": "nvidia-playground",
+    "title": "1st Place Distributed Intelligence NVIDIA Inference Hub",
+    "authors": "Chris Deotte",
+    "url": "https://www.kaggle.com/competitions/playground-series-s6e8/writeups/1st-place-distributed-intelligence-nvidia-infe",
+    "kind": "Primary competition solution write-up",
+    "locator": "Solution Writeup dated 2026-08-31; Phase 1 through Phase 4",
+    "identity_status": "Primary source identity resolved from screenshot label",
+    "summary": "The author describes a progression from one agent to shared research and later multiple external models, with both single-model and ensemble improvements.",
+    "findings": [
+      {
+        "title": "Shared discoveries can be useful before a permanent swarm is justified",
+        "quote": "added 2 more agents and a shared knowledge database",
+        "locator": "Opening paragraph, before Phase 1; primary write-up URL above",
+        "meaning": "The reported workflow expanded from one autonomous agent to collaborating agents with shared findings.",
+        "application": "Borrow the evidence exchange, not the full scale. Our Knowledge store can retain an attributed feature idea, the conditions under which it helped, and the run proving it. Another branch can retrieve that finding without starting several simultaneous agents. If one branch stagnates, an occasional bounded second opinion can inspect a compact packet. This is compatible with the repo’s five-direction portfolio and concurrency controls, while preserving the human’s explicit choice of coding subscription.",
+        "strengths": "Supports cross-branch reuse and preserving different model families rather than repeating near-identical parameter tweaks.",
+        "limitations": "A successful multi-phase competition narrative does not isolate which collaboration mechanism caused the gain. A large model ensemble and many assistants can exceed our local compute and subscription budget.",
+        "action": "Record source-to-branch-to-run links for a small campaign and check whether retrieved discoveries yield a new independently validated result rather than repeated implementation of the same idea."
+      },
+      {
+        "title": "Human-mediated research packets are a portable collaboration boundary",
+        "quote": "we (humans) can (manually) upload to ChatGPT Pro",
+        "locator": "Phase 3 ChatGPT Pro Swarm Intelligence, first paragraph; primary write-up URL above",
+        "meaning": "The author describes packaging context for a separate assistant and bringing back its discoveries.",
+        "application": "Define a sanitized research packet containing the metric contract, a small schema/sample permitted by competition rules, the leading code revision, error analysis, and a precise question. Exclude Kaggle credentials, private held-out labels, and unrelated competition files. Keep the returned text as untrusted research evidence until a local trial tests it. This fits our checkpoint-based handoff and avoids making the automatic loop dependent on a paid inference hub or a permanently running team.",
+        "strengths": "Provides a concrete alternative to enormous shared transcripts and makes an independent review reproducible and inspectable.",
+        "limitations": "The write-up’s manual transfers and multiple services have human-effort and quota costs that the reported leaderboard result does not quantify. It is not evidence that our restricted budget can reproduce the same scale.",
+        "action": "Prototype a packet manifest with hashes and an explicit question; require a source-linked hypothesis and one bounded experiment before accepting an external assistant’s suggestion into the portfolio."
+      }
+    ],
+    "compute": {
+      "training": "The write-up discusses NN, RealMLP, XGB, and a large ensemble; it does not provide a complete hardware-hours ledger.",
+      "agent_inference": "Multiple subscription/hosted assistants and later NVIDIA Inference Hub models; human-mediated ChatGPT Pro packets.",
+      "observed_budget": "No complete dollar, token, or GPU budget verified in the retrieved primary write-up.",
+      "caveat": "The reported first place is the write-up’s competition result, not an outcome we reproduced or a cost-normalized comparison."
+    },
+    "evidence_limits": "Kaggle direct page open exposed no readable body, while search returned the primary write-up text and headings. The linked cleaned-code repository warns it was not re-run after cleanup.",
+    "related_links": [
+      "https://github.com/cdeotte/kaggle-playground-solutions"
+    ]
+  },
+  {
+    "id": "benchjack",
+    "title": "BenchJack AI agent benchmark hackability scanner",
+    "authors": "Hao Wang and contributors",
+    "url": "https://github.com/benchjack/benchjack/blob/main/README.md",
+    "kind": "Primary software README with related research paper",
+    "locator": "Vulnerability Classes; Preview Limitations / Known Issues",
+    "identity_status": "Primary source identity resolved from screenshot label",
+    "summary": "The scanner separates static checks, architectural inspection, and exploit construction. Its own caveats make it a useful audit reference rather than an automatic certification tool.",
+    "findings": [
+      {
+        "title": "An evaluator must be outside the agent trust boundary",
+        "quote": "No Isolation Between Agent and Evaluator",
+        "locator": "README, Vulnerability Classes, V1 row; https://github.com/benchjack/benchjack#vulnerability-classes",
+        "meaning": "The taxonomy explicitly treats shared agent/evaluator access as an evaluation vulnerability.",
+        "application": "Our static patterns in kaggle_agent/execution/script.py catch common forbidden actions but explicitly are not a sandbox. The same-user limitation means an independent scorer alone is insufficient if agent-written code can edit scorer files, folds, or the ledger. First inventory which paths and processes are writable from a trial. Then design CPU-only adversarial fixtures that attempt benign sentinel modifications. The acceptance condition is that protected state stays unchanged and the trial cannot promote a fabricated result.",
+        "strengths": "Targets a genuine architecture boundary in this repo without requiring GPU training or importing another full autonomous system.",
+        "limitations": "Adopting a scanner does not create process isolation. OS-level containment and credential handling remain deployment-specific, especially on native Windows.",
+        "action": "Add a read-only evaluator/fold boundary to a dedicated test environment; verify attempted sentinel writes fail and output scoring still runs through the genuine evaluator."
+      },
+      {
+        "title": "A generated security proof needs its own verification oracle",
+        "quote": "No automated tests for PoC verification",
+        "locator": "README, Preview Limitations / Known Issues, third bullet; https://github.com/benchjack/benchjack#preview-limitations--known-issues",
+        "meaning": "The maintainers warn that generated proof-of-concept code is not automatically tested against the target.",
+        "application": "Use an explicit exploit-success assertion in a disposable synthetic benchmark whenever we audit the local supervisor. A plausible code snippet, a security warning, or a confident agent explanation is not a demonstrated vulnerability or demonstrated fix. Retain the original failing fixture, the expected protected invariant, and the outcome after remediation. Begin with static inspection and safe fixture tests; a large AI scan should be optional and bounded, not a mandatory cost before each experiment.",
+        "strengths": "This aligns with the project’s smoke checks and independent artifact validation. An executable invariant gives sharper evidence than a prose audit alone.",
+        "limitations": "The README labels Codex support experimental and documents sandbox credential edge cases. Those limitations may affect tool compatibility independently of the quality of the security reasoning.",
+        "action": "For one suspected trust-boundary weakness, require a harmless reproducible fixture that fails before remediation and passes after it, with no access to real competition secrets."
+      }
+    ],
+    "compute": {
+      "training": "Static analysis and repository auditing do not specify ML-training GPU requirements.",
+      "agent_inference": "Claude Code or Codex for AI analysis; large scans may consume substantial quota and hit limits.",
+      "observed_budget": "No reliable per-repository monetary estimate verified.",
+      "caveat": "Docker and AI-backend integration are described as work in progress; generated PoCs are not automatically verified."
+    },
+    "evidence_limits": "Do not treat the repository’s exploit-success claims as independently reproduced. Primary README retrieved 2026-11-26; different cached versions have small text differences.",
+    "related_links": [
+      "https://sky.cs.berkeley.edu/project/benchjack/",
+      "https://arxiv.org/abs/2605.12673"
+    ]
+  },
+  {
+    "id": "leaderboard-illusion",
+    "title": "The Leaderboard Illusion",
+    "authors": "Shivalika Singh and coauthors",
+    "url": "https://arxiv.org/html/2504.20879v2",
+    "kind": "Primary research paper",
+    "locator": "arXiv 2504.20879v2, 2025-05-12; sections 3, 5.2, and 6",
+    "identity_status": "Primary source identity resolved from screenshot label",
+    "summary": "The paper studies distortions in Chatbot Arena from selective reporting and changing comparison conditions. Its lessons transfer as evaluation-design cautions, not as direct measurements of Kaggle.",
+    "findings": [
+      {
+        "title": "Do not show only the winning trial",
+        "quote": "Prohibit score retraction after submission",
+        "locator": "Section 6 Recommendations and Guidelines for Improving Leaderboards, first recommendation; https://arxiv.org/html/2504.20879v2#S6",
+        "meaning": "The recommendation addresses selective disclosure after testing multiple variants.",
+        "application": "Keep all attempted local experiments visible, including invalid outputs, completed non-improvements, and runs stopped by resource limits. Report a campaign’s number of trials alongside its champion rather than presenting the best CV score without the search effort that produced it. For comparisons between coding agents, disclose different trial counts and model versions. The experiments ledger is already the right place to retain the denominator; a user-facing summary should not quietly hide failed attempts.",
+        "strengths": "Preserves the existing database history and makes modest CPU-budget comparisons more interpretable. It is a reporting change rather than an expensive model-training requirement.",
+        "limitations": "The paper’s recommendation concerns Arena providers. Applying it here is our evaluation-policy adaptation, not a claim that Kaggle uses Arena’s exact scoring or selection mechanism.",
+        "action": "Add a campaign summary with attempted, completed, failed, stopped, and promoted counts plus the best-score interval; verify these counts reconcile to the ledger."
+      },
+      {
+        "title": "Comparisons need shared reference conditions",
+        "quote": "preserving connectivity means ensuring that comparisons remain sufficiently distributed",
+        "locator": "Section 5.2 Sparse Battle History Risks, final paragraph before section 6; https://arxiv.org/html/2504.20879v2#S5.SS2",
+        "meaning": "The paper explains why sparse or disconnected comparison histories can undermine pairwise-ranking reliability.",
+        "application": "Our direct analogue is a common frozen evaluation contract rather than a Bradley–Terry ranking graph. Compare model changes on the same rows, folds, metric, and resource policy, and retain a common baseline when adding a new model family. Separate screen-stage results from full-stage results. A candidate evaluated on a different fold scheme should enter a different comparison group instead of replacing the existing champion through an apparently better but incomparable score.",
+        "strengths": "Strengthens the repo’s data/split fingerprints and independent promotion gates without adding a new search algorithm.",
+        "limitations": "Graph connectivity is not itself the acceptance criterion for our CV metrics. Copying Arena’s ranking mathematics would add complexity without establishing a benefit for this workflow.",
+        "action": "Test that altered data/split fingerprints cannot promote against the original champion; present incompatible validation groups separately in a report."
+      }
+    ],
+    "compute": {
+      "training": "Reading and applying reporting safeguards needs no GPU. Reproducing all empirical analyses is a separate project.",
+      "agent_inference": "No agent service is needed to log all local trials and preserve a fixed evaluation contract.",
+      "observed_budget": "No cost forecast for this repo follows from the paper.",
+      "caveat": "Arena’s pairwise preference setting differs from scored Kaggle predictions and fixed-fold validation."
+    },
+    "evidence_limits": "This is a study of a specific leaderboard and time period. The paper’s provider-level numerical findings must not be generalized to all leaderboards or to our agents without new evidence.",
+    "related_links": [
+      "https://arxiv.org/abs/2504.20879",
+      "https://papers.neurips.cc/paper_files/paper/2025/file/70a93f260a51123b3c0e33ecd1b4de97-Paper-Datasets_and_Benchmarks_Track.pdf"
+    ]
+  },
+  {
+    "id": "kaggle-aup",
+    "title": "Kaggle Acceptable Use Policy",
+    "authors": "Kaggle",
+    "url": "https://www.kaggle.com/aup",
+    "kind": "Official platform policy",
+    "locator": "Active version effective 2025-06-22; prohibited-use list and resource-abuse sublist",
+    "identity_status": "Primary source identity resolved from screenshot label",
+    "summary": "The policy constrains resource use and access behavior. It is a boundary for our automation design, not a source of additional free-compute entitlement.",
+    "findings": [
+      {
+        "title": "Research collection needs an access and volume boundary",
+        "quote": "excessive crawling of the content on the Services",
+        "locator": "Kaggle AUP, resource-abuse sublist, final bullet; https://www.kaggle.com/aup",
+        "meaning": "The AUP expressly includes excessive crawling among abusive resource uses.",
+        "application": "Keep kaggle_agent/research/public.py on the documented Kaggle CLI and public Meta Kaggle dataset path, with caching, bounded retrieval, and a recorded refresh interval. Do not add browser scraping as an automatic fallback merely because a notebook or discussion is difficult to access. The separate Terms contain broader access restrictions, so the AUP’s word excessive must not be misread as granting permission for any smaller scrape. A failed retrieval should be recorded and left unresolved rather than triggering repeated access attempts.",
+        "strengths": "Matches the current read-only research design and avoids spending local or hosted resources on uncontrolled collection.",
+        "limitations": "The policy does not define a universal safe request rate, and the existence of a public webpage is not itself permission to automate its extraction.",
+        "action": "Audit the documented CLI commands and dataset endpoints, enforce a retrieval cap and cache, and require a policy review for any new collection route."
+      },
+      {
+        "title": "A quota or access barrier is a stop condition",
+        "quote": "to disable, interfere with or circumvent any aspect",
+        "locator": "Kaggle AUP, prohibited-use list, sixth bullet; https://www.kaggle.com/aup",
+        "meaning": "The quoted clause prohibits interference with or circumvention of the Services; the complete bullet continues with the Services.",
+        "application": "Keep access denial, exhausted platform quotas, and ambiguous authorization as blocking states in the controller. Do not rotate accounts, move work among identities, or retry through alternate interfaces to get around a restriction. Our local CPU-first mode is therefore a useful default: GPU-hosted experimentation can remain a separately authorized manual workflow, with returned artifacts registered locally. The controller should preserve evidence and next steps when it stops rather than treating every interruption as a reason to seek another execution path.",
+        "strengths": "Aligns budget enforcement, lifecycle states, and the absence of automatic paid-provider fallback in this repo.",
+        "limitations": "A technical backoff mechanism does not decide whether an action is permitted. Competition-specific AI and external-data rules can be stricter than the general platform policy.",
+        "action": "Add a policy-aware failure classification for authorization and quota errors; verify a synthetic access-denied result checkpoints state without switching account or endpoint."
+      }
+    ],
+    "compute": {
+      "training": "Kaggle-hosted computation remains subject to platform and competition rules; no quota or GPU entitlement is established by this page.",
+      "agent_inference": "The policy is not an authorization to host arbitrary agent services or bypass access restrictions.",
+      "observed_budget": "No resource price or fixed quota is stated in the quoted provisions.",
+      "caveat": "Platform AUP, Terms, competition rules, and tool documentation must be checked together."
+    },
+    "evidence_limits": "Direct open had no readable body; the search extractor returned the official page’s full policy text and active version. Policy interpretation is not legal advice; verify the current platform text before enabling a new access pattern.",
+    "related_links": [
+      "https://www.kaggle.com/terms"
+    ]
+  },
+  {
+    "id": "karpathy-autoresearch",
+    "title": "autoresearch by Andrej Karpathy",
+    "authors": "Andrej Karpathy",
+    "url": "https://github.com/karpathy/autoresearch",
+    "kind": "Primary software README",
+    "locator": "How it works; Quick start; Design choices; Platform support",
+    "identity_status": "Primary source identity resolved from screenshot label",
+    "summary": "A tightly scoped modify/train/evaluate/keep-or-discard loop for single-GPU language-model training. Borrow its experiment discipline while replacing its training workload for our CPU-first use case.",
+    "findings": [
+      {
+        "title": "Bound what can change so experiment differences remain inspectable",
+        "quote": "Single file to modify",
+        "locator": "README, Design choices, first bullet; https://github.com/karpathy/autoresearch#design-choices",
+        "meaning": "The implementation restricts agent edits to a small training surface while keeping preparation and evaluation utilities separate.",
+        "application": "Use the same separation for our trial workspace: let the agent change the experiment implementation while freezing data identity, folds, scorer, and promotion rules. This should be an enforceable path/process boundary where possible, not only a prompt. The repo already copies the exact script code beside its outputs, enabling a small diff to explain why a trial changed. For optimization, the mutable surface is the solver; for tabular tasks it is the trainer/features, not the objective or held-out labels.",
+        "strengths": "The discipline fits both CPU-based tabular models and combinatorial solvers; its usefulness does not depend on training language models.",
+        "limitations": "A one-file restriction can force awkward code organization. The project should preserve reviewable scope and immutable evaluation rather than mechanically copying an exact file-count rule.",
+        "action": "Define allowed editable experiment paths and immutable evaluation inputs, then reject a synthetic trial that changes an evaluator fingerprint while accepting a legitimate trainer-only change."
+      },
+      {
+        "title": "A fixed training window does not erase hardware dependence",
+        "quote": "your runs (and results) become not comparable",
+        "locator": "README, Design choices, Fixed time budget downside; https://github.com/karpathy/autoresearch#design-choices",
+        "meaning": "The author explicitly notes that equal wall time on different compute platforms does not make results directly comparable.",
+        "application": "Retain local CPU resource limits and log machine/runtime metadata before interpreting experiments as more efficient. A GPU-heavy nanochat workload is unsuitable for our current automatic path even if its outer loop is elegant. Compare candidate models within the same local resource envelope, and treat optional manually trained cloud outputs as a separate cost/provenance class when registered. Report startup, feature preparation, fitting, evaluation, and memory separately if the aim is validated gain per unit of work.",
+        "strengths": "Turns a simple loop into a fairer local evaluation policy and avoids assuming that a successful H100 setup can run unchanged on our computer.",
+        "limitations": "Five minutes of GPT training is a workload-specific setting. It neither proves the best runtime for our models nor covers cloud billing, startup, or coding-agent quota.",
+        "action": "Measure a small CPU baseline end to end, set a campaign runtime cap from that observation, and compare alternatives only within the same hardware and complete-cost accounting."
+      }
+    ],
+    "compute": {
+      "training": "The primary README explicitly requires one NVIDIA GPU, tested on H100, for its current code.",
+      "agent_inference": "An external coding agent supplies edits; training compute is separate from the coding-agent subscription.",
+      "observed_budget": "A five-minute training window is specified; that is not a five-minute end-to-end or dollar-cost guarantee.",
+      "caveat": "Wall-clock comparisons are hardware-dependent and exclude startup/compilation in the stated training budget."
+    },
+    "evidence_limits": "Requirements refer to this particular implementation, not every possible autoresearch-style loop. The README links other-platform forks, which were not evaluated here.",
+    "related_links": [
+      "https://github.com/karpathy/autoresearch/blob/master/program.md"
+    ]
+  }
+]

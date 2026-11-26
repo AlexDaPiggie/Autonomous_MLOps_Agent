@@ -1,0 +1,367 @@
+[
+  {
+    "id": "visual-faq",
+    "title": "Sanderson creator advice",
+    "authors": "Grant Sanderson",
+    "url": "https://www.3blue1brown.com/about/",
+    "kind": "First party creator FAQ",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "The useful transfer is a visual explanation method rather than a recognizable palette. The FAQ recommends concrete examples and purposeful movement.",
+    "findings": [
+      {
+        "title": "Start with a concrete discrepancy",
+        "quote": "Concrete before abstract.",
+        "locator": "FAQs → I would like to start making math videos online → second bullet",
+        "meaning": "Sanderson recommends examples before general frameworks. This is creator guidance, not a controlled study of developer documentation.",
+        "application": "Open the supervisor GIF on four prediction rows facing five expected IDs. Let the empty slot become visible before naming validation. Open search on a growing frontier before showing its cap. The viewer then has a reason for a controller or portfolio instead of memorizing component names. These examples should follow real output and branch contracts in loop.py and research/branches.py.",
+        "strengths": "A small CPU example can demonstrate a real project invariant without training a new model.",
+        "limitations": "Simplification can hide repair limits or imply every failure is recoverable. A convincing diagram does not establish comprehension or prove the underlying pipeline is correct.",
+        "action": "Ask a newcomer to explain why the candidate cannot reach scoring without reading a caption that supplies the answer."
+      },
+      {
+        "title": "Animate the relationship rather than the prose",
+        "quote": "Every movement on the screen should be deliberate",
+        "locator": "FAQs → creator advice → Avoid pointless animations bullet",
+        "meaning": "The advice rejects movement with no identifiable explanatory purpose. It does not ask for constant motion or prescribe a universal animation frequency.",
+        "application": "Give every self.play call in readme_scenes.py a state transition to communicate. A result moving back represents repair; aligned residuals converging represents averaging. Keep unchanged evidence stationary while the selected object changes. Remove pulsing labels or moving equations that merely decorate the screen. Retain a short hold after a difficult inference.",
+        "strengths": "This produces a review criterion that works locally and can reduce scene complexity.",
+        "limitations": "Purpose depends on audience knowledge. Silent GIFs lack spoken pacing cues, and fast movement may conceal the very comparison the viewer needs to inspect.",
+        "action": "Maintain a beat list with visible change and intended inference. Revise beats whose only contribution is a sentence appearing."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "The linked creator videos were located, but original video frames were not reviewed. No official Sanderson palette or universal comprehension recipe is claimed.",
+    "related_links": [
+      "https://www.youtube.com/watch?v=ojjzXyQCzso",
+      "https://www.3blue1brown.com/lessons/some1/"
+    ]
+  },
+  {
+    "id": "visual-grace",
+    "title": "Iterating the script against the animation",
+    "authors": "Grant Sanderson interviewed by Grace Gong",
+    "url": "https://gracegong.beehiiv.com/p/makes-content-stick-ft-3blue1brown-channels-creator-grant-sanderson-493-million-subscribers-yt",
+    "kind": "Firsthand interview edited for reading",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "The host says the text is adapted from an interview. The useful finding is that writing, visual construction, and revision inform one another.",
+    "findings": [
+      {
+        "title": "A weak visual can expose a weak explanation",
+        "quote": "If the animation is not visually compelling",
+        "locator": "Question Your teaching style is unique and captivating → GS answer",
+        "meaning": "The surrounding answer connects a visual problem to restructuring the explanation. The quoted phrase alone should not be treated as a complete production rule.",
+        "application": "Replace generic sinusoid curves with residual samples aligned to the same held-out row, then show their midpoint. That changes what the diagram explains, not just its appearance. When a scene feels generic, revise its example and object relationships before adding transitions. The same discipline helps architecture work: an incoherent data-flow picture is a reason to inspect the design.",
+        "strengths": "The idea directs work toward semantic content and fits deterministic, code-generated diagrams.",
+        "limitations": "Visual appeal is not correctness. An attractive midpoint can hide unequal weights, mismatched prediction scales, missing IDs, or leakage.",
+        "action": "Check one numerical residual pair before rendering the whole scene; preserve originals alongside the derived mean."
+      },
+      {
+        "title": "Rendered evidence should change the script",
+        "quote": "make adjustments after seeing the animation",
+        "locator": "Question Do you write a script for the animation and narration → GS answer",
+        "meaning": "The published answer describes the narration script as a revisable guide. It does not supply fixed scene durations or a palette.",
+        "application": "Keep the storyboard beside the scene code and review before, transition, and after frames. If a label collides with a moving object, change the path or script instead of shrinking everything. Render a representative hard scene before rebuilding all assets. For agent briefs, likewise inspect whether the evidence is actually communicated, while leaving frozen scoring contracts unchanged.",
+        "strengths": "Small, reviewable iterations can avoid rebuilding unrelated scenes.",
+        "limitations": "Rendering and inspection still consume CPU time and human attention. The interview does not establish the best budget allocation for our documentation.",
+        "action": "Record why a scene changed and rebuild only the affected scene until its central transition is clear."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "The publisher explicitly says parts were adjusted for reading; quotations are from that edited text, not a certified verbatim recording.",
+    "related_links": []
+  },
+  {
+    "id": "visual-roganov",
+    "title": "Object transformations and production planning",
+    "authors": "Grant Sanderson interviewed by Ivan Roganov",
+    "url": "https://roganov.me/blog/3blue1brown-interview/",
+    "kind": "Firsthand written interview",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "The interviewer identifies a Q and A originally published for Habr readers. It discusses object transformations and variable script development time.",
+    "findings": [
+      {
+        "title": "Preserve object identity through a transition",
+        "quote": "creating animations of object transformations",
+        "locator": "Question How and why did you create your YouTube channel → answer",
+        "meaning": "Sanderson describes the original purpose of Manim. This supports continuity as a production technique, not a requirement to transform everything.",
+        "application": "Keep an output row identifiable as it enters a contract check and returns for repair. Keep stored records visible while a selection becomes a brief. Keep residual pairs attached to the same row as their mean is computed. These are pictures of this project’s actual concerns: record identity, evidence persistence, and aligned predictions.",
+        "strengths": "The existing renderer can express these relationships without a paid inference or training experiment.",
+        "limitations": "A transformation can falsely imply equivalence. A summary is not its complete evidence, and a residual average is not a newly trained independent model.",
+        "action": "Label derived objects and originals separately; identify the data or arithmetic contract behind each transformation."
+      },
+      {
+        "title": "Separate planning from rendering effort",
+        "quote": "Sometimes it takes 3 months.",
+        "locator": "Question How long does it take to write a script → first answer paragraph",
+        "meaning": "This is a dated personal account of variation in script writing, not a schedule for our short GIFs.",
+        "application": "Separate deciding what the scene must explain from rendering it. Write one acceptance question, then iterate the question against a draft before polishing every asset. Apply the same discipline to research: representation work may be valuable, but it still needs a bounded experiment and stop condition. Creative uncertainty does not authorize endless agent activity.",
+        "strengths": "It prevents a fast render from being mistaken for a completed explanation.",
+        "limitations": "The anecdote cannot justify weeks of documentation work while reliability or scoring defects remain unresolved.",
+        "action": "Timebox a draft and review cycle; prioritize defects that prevent understanding rather than indefinite stylistic refinements."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "Published December 9 2021. This is an interview account, not a production-time benchmark.",
+    "related_links": []
+  },
+  {
+    "id": "visual-workflow",
+    "title": "Sanderson implementation workflow and version compatibility",
+    "authors": "Grant Sanderson and contributors",
+    "url": "https://github.com/3b1b/videos",
+    "kind": "First party source repository README",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "The official repository distinguishes the creator’s engine from Manim Community and describes restoring interactive scene state. The README, not unseen demonstration footage, is the quoted evidence.",
+    "findings": [
+      {
+        "title": "Similar engine names do not ensure identical behavior",
+        "quote": "some functionality may differ between the two.",
+        "locator": "README → Workflow → opening paragraph",
+        "meaning": "A technique demonstrated in the creator’s environment may not run unchanged in Manim Community.",
+        "application": "Our scene code imports Manim Community. Record the verified version, fonts, ffmpeg settings, dimensions, and frame rate. Borrow the production principle rather than copying creator-specific commands. Test output decoding after dependency changes, much as the experiment system retains code and evaluator identity alongside scored artifacts.",
+        "strengths": "Compatibility checks are cheap and reinforce reproducibility.",
+        "limitations": "Fonts and rendering dependencies can change despite a Python version pin. The engine and finished scenes also have different licensing contexts; copying a scene needs a separate license check.",
+        "action": "Rerender one representative scene after a dependency change and compare its key frames and decoded output."
+      },
+      {
+        "title": "Focused state restoration supports iteration",
+        "quote": "will first revert to that state of the scene",
+        "locator": "README → Workflow → checkpoint_paste bullet",
+        "meaning": "The creator’s interactive workflow restores a saved scene state before replaying a changed fragment.",
+        "application": "Keep a known before state for difficult transitions and revise that fragment instead of rebuilding unrelated scenes. Borrow the general principle for development, but distinguish it from crash-safe experiment persistence. The Kaggle controller still requires durable job identity, checksums, and reconciliation; a visual scene checkpoint provides none of those guarantees.",
+        "strengths": "Focused iteration reduces unrelated rebuild work and narrows a visual failure.",
+        "limitations": "checkpoint_paste is not implemented by our helper. Similar ideas at different abstraction levels must not be presented as equivalent mechanisms.",
+        "action": "Use the per-scene renderer selector and retain a small transition example when diagnosing layout problems."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "The README was read. The linked official YouTube demonstration was found; no timing or color claims rely on unobserved video frames.",
+    "related_links": [
+      "https://www.youtube.com/watch?v=rbu7Zu5X1zI"
+    ]
+  },
+  {
+    "id": "visual-forum",
+    "title": "A creator workflow for storyboards and timing",
+    "authors": "u/purplemindcs",
+    "url": "https://www.reddit.com/r/manim/comments/1g3lsc0/episode_3_of_brainstorm_collaborative_mathematics/",
+    "kind": "Firsthand practitioner forum comment",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "The creator describes a production sequence in response to another user. This is useful practice evidence, not Sanderson’s statement or a controlled study.",
+    "findings": [
+      {
+        "title": "Storyboarding reveals missing explanatory steps",
+        "quote": "Make a storyboard.",
+        "locator": "Reply to u/faizalHoonBC → numbered process → item 3",
+        "meaning": "The creator describes sketching defining scene elements before animation.",
+        "application": "Write a visible problem, objects, transition, and inference for each beat. In setup, separate browser account prerequisites from terminal commands; simulated terminal output must not pretend to complete real sign-in. For architecture, storyboard the missing row before writing movement paths. This keeps the GIF from becoming another list of component names.",
+        "strengths": "A small Markdown storyboard fits the repository and is easy to review.",
+        "limitations": "A storyboard can lock in a bad explanation if treated as final. The comment also supports experimentation and timing adjustments.",
+        "action": "Review each beat against the actual code contract before rendering; remove any inference the objects cannot show."
+      },
+      {
+        "title": "Timing needs a later inspection pass",
+        "quote": "add some freeze frames or cut out wait time",
+        "locator": "Same creator reply → process item 4",
+        "meaning": "The commenter adjusts timing after animating. No universal hold duration follows from that account.",
+        "application": "Review the actual silent GIF at normal playback speed. Leave time to notice a mismatch and read a local label, then let the geometry do the next step. In setup, long commands and condensed prompts need recognition time. Keep all essential instructions in static, copyable text below the recording.",
+        "strengths": "Timing can improve clarity without more effects or colors.",
+        "limitations": "Readers have different familiarity and GIF players do not provide consistent pause or seek controls.",
+        "action": "Inspect the busiest frame and ensure no critical setup instruction exists only in moving text."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "The commenter is the creator of the posted work, not Grant Sanderson. A personal workflow does not establish comparative effectiveness.",
+    "related_links": []
+  },
+  {
+    "id": "visual-color",
+    "title": "A neutral palette with intentional emphasis",
+    "authors": "IBM Design Language",
+    "url": "https://www.ibm.com/design/language/color/",
+    "kind": "First party design guidance",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "IBM supports neutral organization and purposeful additional color. Its own brand has a core blue; our palette is an adaptation to this user’s feedback, not an official IBM or Sanderson palette.",
+    "findings": [
+      {
+        "title": "Neutral context can organize the scene",
+        "quote": "The neutral gray family is dominant in our UI",
+        "locator": "Color in UI → Specifications → opening paragraph",
+        "meaning": "This rule concerns IBM interfaces; transferring it to technical GIFs is a design judgment.",
+        "application": "Use graphite for the canvas, warm white for main marks, and gray for retained context. Shape and position can explain the relationship without a colored card. A single muted accent marks the current operation. In the residual example, filled and open points distinguish models without saturated category colors.",
+        "strengths": "A restrained vector palette supports continuity across all seven GIFs.",
+        "limitations": "Neutral lines can become too faint at GitHub display width. Thin connectors and small row IDs may be illegible despite looking attractive at render resolution.",
+        "action": "Check the least contrasted useful element at normal README width before accepting an export."
+      },
+      {
+        "title": "Additional hue should have a defined role",
+        "quote": "Additional colors are used sparingly and purposefully.",
+        "locator": "Color in UI → Specifications → final sentence",
+        "meaning": "The guidance favors intentional use rather than a different hue for every object.",
+        "application": "Reserve the accent for the selected branch, missing row, or derived mean. Keep unchanged evidence neutral. Where identity matters, first use alignment, marker fill, labels, or line style. A gray-scale check should still reveal the relationship; the accent then guides attention instead of carrying the entire meaning.",
+        "strengths": "A small role vocabulary is easier to maintain and less template-like.",
+        "limitations": "One accent can confuse failure and success if local labels and geometry do not explain the current operation.",
+        "action": "Document the accent’s role in each storyboard beat and reject scenes that require naming a hue to explain them."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "Direct page fetches timed out; exact official page text was obtained through the search index. Later revisions may alter wording.",
+    "related_links": []
+  },
+  {
+    "id": "visual-diagrams",
+    "title": "Identity cues in technical diagrams",
+    "authors": "IBM Design Language",
+    "url": "https://www.ibm.com/design/language/infographics/technical-diagrams/design/",
+    "kind": "First party technical diagram specification",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "The specification covers accessibility and coherent node treatment. It informs our encoding; avoiding generic bordered cards is a project-specific choice.",
+    "findings": [
+      {
+        "title": "Color cannot be the only identity cue",
+        "quote": "Never rely on color alone to convey meaning.",
+        "locator": "Color → Color usage → accessibility paragraph",
+        "meaning": "The source requires redundant cues such as labels, line styles, or icons.",
+        "application": "Use hatching and row numbers for held-out data, filled and open markers for residual pairs, and a frontier boundary for search. Each distinction survives grayscale. This also helps when GIF quantization changes subtle color values. Keep only the cues needed for the current inference so redundant encoding does not turn into clutter.",
+        "strengths": "The scene remains interpretable across different displays and color perception.",
+        "limitations": "Adding an icon, label, and pattern to every mark can overwhelm a compact scene. Redundancy should protect meaningful distinctions, not maximize decoration.",
+        "action": "Inspect a grayscale key frame and identify held-out rows, residual partners, and the selected branch without using color names."
+      },
+      {
+        "title": "Coherent nodes do not require multicolor cards",
+        "quote": "Nodes should be monochromatic.",
+        "locator": "Color usage → example caption Don’t mix colors when drawing a node",
+        "meaning": "The statement governs node construction. It neither requires boxes everywhere nor prohibits a meaningful overall palette.",
+        "application": "Use rows, points, or line segments when they carry the data relationship directly. Use one ring where a session boundary matters. Keep ownership labels for the agent and scorer even when removing decorative borders. Minimalism is useful only if trust boundaries and data identity remain understandable.",
+        "strengths": "The approach addresses the user’s explicit objection to colored borders.",
+        "limitations": "Removing every boundary can erase the separation between writing and scoring. A simpler picture must retain important architecture distinctions.",
+        "action": "Remove a node boundary only when the scene still clearly identifies which component writes code and which accepts evidence."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "Official body text and the indexed Color section were inspected. This is a design specification, not proof of improved audience comprehension.",
+    "related_links": []
+  },
+  {
+    "id": "visual-motion",
+    "title": "Purposeful motion and easing",
+    "authors": "Carbon Design System",
+    "url": "https://www.carbondesignsystem.com/building-blocks/foundations/motion/overview",
+    "kind": "First party motion guidance",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "Carbon distinguishes productive and expressive interface motion. Its UI timings are not an established educational-video pacing standard.",
+    "findings": [
+      {
+        "title": "Reserve prominent motion for important changes",
+        "quote": "Reserve expressive motion for occasional, important moments",
+        "locator": "Style → paragraph after productive and expressive motion",
+        "meaning": "Ordinary operation and important moments should not all compete at the same visual intensity.",
+        "application": "Let the missing row, restored validation split, and residual midpoint be focal events. Keep headings and unchanged records still during those transitions. A stable scene structure can support recognition, but the main geometry should be specific to each idea rather than a repeated card sequence.",
+        "strengths": "The viewer has fewer competing motions to track.",
+        "limitations": "Importance depends on audience knowledge. A skilled ML reader and a new project user may need different explanations of aligned predictions.",
+        "action": "Ask a reviewer what changed in each beat. If they name an unrelated moving label, simplify the motion."
+      },
+      {
+        "title": "Smooth stopping can preserve object continuity",
+        "quote": "speed up quickly and slow down smoothly",
+        "locator": "Easing → opening paragraph",
+        "meaning": "The guidance describes acceleration and deceleration for screen objects, while discouraging purely decorative movement.",
+        "application": "Use gentle starts and stops for records moving into checks or briefs entering a session. Use linear movement only when the mark represents a rate or ongoing progression. Residuals must stop at their actual arithmetic midpoint rather than bounce for visual excitement. The endpoint matters more than the flourish.",
+        "strengths": "Manim expresses this directly without new model training.",
+        "limitations": "Easing can misrepresent measured progress or rates. Work-allocation diagrams must remain explicitly illustrative unless they use actual timing data.",
+        "action": "Check the endpoint against the intended value, then review the path for misleading overshoot or timing claims."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "The page shows an August 2026 update. No exact GIF frame rate or educational-effectiveness claim is attributed to Carbon.",
+    "related_links": []
+  },
+  {
+    "id": "visual-datawrapper",
+    "title": "Choose the visual encoding from the information",
+    "authors": "Lisa Charlotte Muth at Datawrapper",
+    "url": "https://www.datawrapper.de/blog/which-color-scale-to-use-in-data-vis",
+    "kind": "First party visualization article",
+    "locator": "Specific locations below",
+    "identity_status": "Verified primary text",
+    "summary": "Position, marker style, and labels can already identify data. The article helps decide when additional color communicates something rather than merely repeating it.",
+    "findings": [
+      {
+        "title": "Avoid redundant hue when position already identifies data",
+        "quote": "already encodes the states by position",
+        "locator": "What to color by → choropleth map paragraph",
+        "meaning": "The source’s example is a map. Applying the principle to residual pairs is our design interpretation.",
+        "application": "Place each pair of errors at the same horizontal row coordinate. Distinguish predictors with filled and open marks and place the mean at the midpoint. The picture then explains averaging without red, blue, and yellow curves. For search, a boundary and selection position can identify the relevant frontier without a unique hue for each hypothesis.",
+        "strengths": "Geometry corresponds directly to a data relationship or computation.",
+        "limitations": "Position is insufficient if objects cross or overlap ambiguously. A transition may need a local identity label at its hardest moment.",
+        "action": "Trace one residual pair through the full transition and check that its members cannot be mistaken for the neighboring row."
+      },
+      {
+        "title": "Lightness remains important after export",
+        "quote": "Give your hues different lightnesses",
+        "locator": "Categorical color scales → first practical bullet",
+        "meaning": "The article recommends distinguishable lightness, including for gray-scale interpretation.",
+        "application": "Check main text, secondary labels, and useful connectors against the graphite background. Review the final GIF because palette reduction may change subtle values. Preserve static, copyable commands below the setup demo so a reader does not have to extract a critical instruction from a moving frame.",
+        "strengths": "Export inspection catches failures that source code review cannot reveal.",
+        "limitations": "A gray-scale test does not cover all accessibility needs. Adequate contrast alone cannot make tiny text readable, and GIF playback controls vary by viewer.",
+        "action": "Inspect the busiest exported frame at normal display width and keep a text alternative for essential instructions."
+      }
+    ],
+    "compute": {
+      "training": "Local rendering and inspection; no model training is needed.",
+      "agent_inference": "Authoring may use the selected coding assistant; this source does not establish a comparable inference budget.",
+      "observed_budget": "No transferable monetary benchmark verified.",
+      "caveat": "Design advice is not evidence of improved competition performance."
+    },
+    "evidence_limits": "This is a visualization article, not a study of the repository or an endorsement of its revised assets.",
+    "related_links": []
+  }
+]

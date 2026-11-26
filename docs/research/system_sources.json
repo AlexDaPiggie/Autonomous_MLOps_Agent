@@ -1,0 +1,386 @@
+[
+  {
+    "id": "mle-bench",
+    "title": "MLE bench",
+    "authors": "OpenAI and Jun Shern Chan et al.",
+    "url": "https://github.com/openai/mle-bench",
+    "kind": "Official benchmark repository",
+    "locator": "README Benchmarking and Lite Evaluation",
+    "identity_status": "Confirmed",
+    "summary": "Its resource and repeatability protocol is more transferable than a headline medal percentage. The recommended benchmark environment is materially larger than our CPU-first setup.",
+    "findings": [
+      {
+        "title": "Use repeated matched trials",
+        "quote": "Repeat each evaluation with at least 3 seeds",
+        "locator": "README Benchmarking first bullet https://github.com/openai/mle-bench#benchmarking",
+        "meaning": "The repository recommends repeated evaluation and uncertainty reporting because agent outcomes vary. One successful trajectory is not a stable scaffold-quality estimate.",
+        "application": "Our application judgment: use a small frozen suite of in-scope tasks. Compare the current supervisor against one candidate change with identical tasks, coding agent, time, and resource caps. Preserve failures as well as successful scores. Report paired task results and cost distributions instead of selecting the best seed. This can evaluate briefs or branch selection without renting GPUs.",
+        "strengths": "Fit judgment: profiles, fingerprints, structured results, and benchmark helpers already support matched local comparisons.",
+        "limitations": "Three seeds is not a guarantee of statistical power. A CPU-only subset answers a narrower question than the multimodal benchmark.",
+        "action": "Proposed test: three small tasks, three seeds per scaffold, identical caps. Accept a reproducible gain without higher failure rate or unapproved spending."
+      },
+      {
+        "title": "Disclose resource departures",
+        "quote": "not a strict requirement of the benchmark",
+        "locator": "README Benchmarking Agent resources bullet https://github.com/openai/mle-bench#benchmarking",
+        "meaning": "Canonical resources are recommendations, with disclosure expected when changed. Smaller hardware cannot silently inherit published scores.",
+        "application": "Our application judgment: attach a resource card to every evaluation: threads, RAM cap, wall-clock cap, model and effort, data subset, versions, and seeds. Keep our local suite separate from MLE-bench Lite claims. Record manual cloud-training resources separately from the local supervisor and subscription coding agent. A missing manifest should make a comparison explicitly incomplete.",
+        "strengths": "Limits and run_bounds centralize constraints; the ledger can retain provenance.",
+        "limitations": "Lite still contains out-of-scope vision, audio, and text. Benchmark defaults are not a reasonable laptop default.",
+        "action": "Audit five saved runs for complete manifests. Do not publish comparisons with silent resource or task differences."
+      }
+    ],
+    "compute": {
+      "training": "Canonical recommendation: 36 vCPUs, 440 GB RAM, one A10 GPU with 24 GB memory, and 24 hours; README Benchmarking.",
+      "agent_inference": "Agent-model inference is separate from training hardware.",
+      "observed_budget": "No dollar estimate adopted; Lite has 22 low-complexity tasks.",
+      "caveat": "Recommendations are not minimum requirements; changed resources must be disclosed."
+    },
+    "evidence_limits": "Historical thresholds do not award new live Kaggle medals. Repository inspected November 26 2026.",
+    "related_links": [
+      "https://arxiv.org/abs/2410.07095"
+    ]
+  },
+  {
+    "id": "aide",
+    "title": "AIDE ML",
+    "authors": "WecoAI and AIDE research authors",
+    "url": "https://github.com/WecoAI/aideml",
+    "kind": "Official reference implementation",
+    "locator": "README Key Capabilities and Advanced CLI Options",
+    "identity_status": "Confirmed",
+    "summary": "AIDE represents alternative experiments as executable scripts in a search tree, with configurable code-generation and execution-feedback roles.",
+    "findings": [
+      {
+        "title": "The search node is executable code",
+        "quote": "Each python script becomes a node in a solution tree",
+        "locator": "README Key Capabilities Iterative agentic tree search https://github.com/WecoAI/aideml#key-capabilities",
+        "meaning": "Tree structure records scripts and descendants rather than treating the conversation as the experiment history.",
+        "application": "Our application judgment: retain the five-direction portfolio, but link each trial to a parent code/run ID and a reason for its change. A failed child can branch again from a working ancestor instead of endlessly patching a broken workspace. Store exact code, outputs, and errors with that relationship. Do not adopt an unbounded tree just to resemble AIDE.",
+        "strengths": "Experiments, fingerprints, scored artifacts, and version history already support inspectable lineage.",
+        "limitations": "Breadth consumes training time and agent quota. A tree is not inherently cost-efficient.",
+        "action": "Replay failure and repair; reconstruct the exact working ancestor and verify duplicate code does not launch again."
+      },
+      {
+        "title": "Separate coding from feedback configuration",
+        "quote": "LLM used for execution review and startup metric selection",
+        "locator": "README Advanced CLI Options agent.feedback.model row https://github.com/WecoAI/aideml#advanced-cli-options",
+        "meaning": "The implementation distinguishes coding and feedback backends. This is an option, not proof that any cheaper model is adequate.",
+        "application": "Our application judgment: keep deterministic parsing and independent scoring as the first feedback layer. Add model review only for a demonstrated gap and within an explicitly bounded invocation budget. Our subscription CLI is not interchangeable with AIDE API-key configuration. Backend availability must not be interpreted as free access or automatic permission to bill.",
+        "strengths": "Separating generated claims from accepted evidence matches the supervisor.",
+        "limitations": "The current README exposes metered-provider settings. GPU needs depend on the candidate task; no universal GPU minimum is established by this README.",
+        "action": "Compare parser-only feedback with bounded review on identical captured failures; count extra invocations and corrected diagnoses."
+      }
+    ],
+    "compute": {
+      "training": "Task-dependent; no blanket GPU minimum stated in reviewed README.",
+      "agent_inference": "Quick Start asks for an LLM API key; coding and feedback backends are configurable.",
+      "observed_budget": "No dollar or CPU medal-rate claim adopted.",
+      "caveat": "A reference build may differ from the historical evaluated fork."
+    },
+    "evidence_limits": "Use methods as design evidence, not a claim that the current repo reproduces historical results.",
+    "related_links": [
+      "https://github.com/openai/mle-bench/blob/main/agents/README.md"
+    ]
+  },
+  {
+    "id": "mle-star",
+    "title": "MLE STAR Machine Learning Engineering Agent via Search and Targeted Refinement",
+    "authors": "Jaehyun Nam, Jinsung Yoon, Jiefeng Chen, Jinwoo Shin, Sercan O Arik, Tomas Pfister",
+    "url": "https://arxiv.org/html/2506.15692v1",
+    "kind": "Primary research paper v1",
+    "locator": "Sections 3.1 and 3.2",
+    "identity_status": "Confirmed with paper version pinned",
+    "summary": "Targeted refinement uses retrieved initial approaches and component ablations to decide which pipeline block deserves further exploration.",
+    "findings": [
+      {
+        "title": "Refine one identified component deeply",
+        "quote": "The inner loop iteratively refines only this block",
+        "locator": "Section 3 opening framework paragraph https://arxiv.org/html/2506.15692v1#S3",
+        "meaning": "The nested loop chooses a component, explores changes within it, then chooses another component.",
+        "application": "Our application judgment: have each brief name one target component and a bounded hypothesis, such as an encoding or solver neighborhood. Keep folds, scorer, and unrelated preprocessing fixed. A winning change can receive one small ablation to test attribution. Use current smoke, screen, and full stages instead of adding permanent specialist agents.",
+        "strengths": "The one-clear-change contract provides a seam for component-local work.",
+        "limitations": "Ablations require extra training; a full nested search across expensive model families is not free insight.",
+        "action": "Compare unrestricted and component-targeted briefs on two small tabular tasks; track valid-run rate, paired gain, and evaluation count."
+      },
+      {
+        "title": "Retrieved starting points must still be evaluated",
+        "quote": "using web search as a tool",
+        "locator": "Section 3.1 heading https://arxiv.org/html/2506.15692v1#S3.SS1",
+        "meaning": "Retrieved context supplies candidate models and example code; candidates are evaluated before consolidation.",
+        "application": "Our application judgment: turn our source-linked digest into one local hypothesis, then reimplement it under the toolkit contract. Never execute downloaded notebooks or accept public scores as local validation. Gate each branch on modality and resource feasibility: an unavailable GPU dependency should make the idea deferred, not the next launch.",
+        "strengths": "Attributed notes and branch hypotheses can connect an external idea to its independently measured local outcome.",
+        "limitations": "The paper spans modalities outside our scope and uses multiple functional agents. Its headline results do not establish affordable CPU performance.",
+        "action": "Require source, target component, resource estimate, and cheap validation plan before scheduling an externally inspired branch."
+      }
+    ],
+    "compute": {
+      "training": "Reviewed paper covers tabular, image, text, audio; no specific GPU count verified from v1 HTML.",
+      "agent_inference": "Multiple functional LLM modules; backend and benchmark settings are version-dependent.",
+      "observed_budget": "No dollar figure adopted.",
+      "caveat": "Google blog, publication abstract, and arXiv versions have different headline rates; do not mix versions or denominators."
+    },
+    "evidence_limits": "Pin method evidence instead of substituting an unqualified current state-of-the-art or live-medal promise.",
+    "related_links": [
+      "https://research.google/blog/mle-star-a-state-of-the-art-machine-learning-engineering-agents/",
+      "https://github.com/google/adk-samples/tree/main/python/agents/machine-learning-engineering"
+    ]
+  },
+  {
+    "id": "aira-dojo",
+    "title": "AI Research Agents for Machine Learning Search Exploration and Generalization in MLE bench",
+    "authors": "Edan Toledo, Karen Hambardzumyan, Martin Josifoski and coauthors",
+    "url": "https://arxiv.org/html/2507.02554v1",
+    "kind": "Primary research paper v1",
+    "locator": "Sections 2, 3.2, 3.4, 5.3 and Appendix A",
+    "identity_status": "Confirmed",
+    "summary": "AIRA separates operator design, search policy, and execution environment. It studies the gap between proxy validation and held-out performance.",
+    "findings": [
+      {
+        "title": "Evaluate search policy and mutation quality together",
+        "quote": "jointly considering search strategy, operator design, and computational resource availability",
+        "locator": "Appendix A conclusion https://arxiv.org/html/2507.02554v1#A1",
+        "meaning": "A stronger scheduler cannot be evaluated separately from candidate-generating operators and execution resources.",
+        "application": "Our application judgment: instrument draft, repair, component-change, and model-family-change outcomes separately. Compare branch ranking only after controlling operator prompts and resource caps. The portfolio can remain small while logs distinguish implementation failure, an unpromising hypothesis, and a poor selection policy. Otherwise a ranker might look better merely because its candidates received more debugging time.",
+        "strengths": "Branch updates already distinguish execution failures from completed trials, an important separation for such analysis.",
+        "limitations": "Published experiments use an H200 per sandbox. Infrastructure improvements can confound comparisons attributed only to agent intelligence.",
+        "action": "Hold agent, prompts, tasks, and caps fixed while changing one ranker. Report invalid-run rate separately from valid non-improvements."
+      },
+      {
+        "title": "Proxy selection can miss the best final candidate",
+        "quote": "the validation score is not perfectly predictive",
+        "locator": "Section 5.3 first paragraph https://arxiv.org/html/2507.02554v1#S5.SS3",
+        "meaning": "The paper diagnoses a mismatch between search feedback and held-out evaluation. Oracle test selection is diagnostic, not a permissible search tool.",
+        "application": "Our application judgment: retain a small credible shortlist with prediction provenance instead of deleting every non-champion. Predeclare final selection before seeing its reserved evaluation. On small datasets, balance a selection split against sample loss and preserve group or time boundaries. Never expose private Kaggle labels or optimize against a test oracle.",
+        "strengths": "Saved prediction libraries and separate ensemble checks support evaluating alternatives without retraining every candidate.",
+        "limitations": "AIRA2 later refines this paper's overfitting interpretation using evaluation-noise analysis. Retaining more candidates also increases selection bias and storage.",
+        "action": "On a synthetic task, compare the CV winner with a predeclared shortlist policy using a reserved partition; do not feed final scores into search."
+      }
+    ],
+    "compute": {
+      "training": "Section 3.4: one H200 GPU, 24 logical CPU cores, 100 GB RAM, and 1 TB scratch storage per sandbox; a 24-hour window and a 4-hour execution cap.",
+      "agent_inference": "Full DeepSeek R1 self-hosted for throughput; o3 evaluated; GPT-4o parses outputs.",
+      "observed_budget": "Official framework describes up to 1000 parallel agents and 120h; this is scale evidence, not our proposed budget.",
+      "caveat": "Training quotas and inference hosting are separate expenses. CPU transfer of medal rates is unestablished."
+    },
+    "evidence_limits": "Paper v1 pinned. Official repo code is CC BY-NC 4.0, requiring reuse-license review.",
+    "related_links": [
+      "https://github.com/facebookresearch/aira-dojo",
+      "https://arxiv.org/abs/2507.02554"
+    ]
+  },
+  {
+    "id": "aira-review",
+    "title": "Moonlight review of AI Research Agents for Machine Learning",
+    "authors": "Moonlight AI generated review",
+    "url": "https://www.themoonlight.io/en/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench",
+    "kind": "Secondary AI written review with primary paper traced",
+    "locator": "English article body recovered on same article's Spanish locale at paragraphs beginning The core methodology and Scoped memory",
+    "identity_status": "Exact user URL confirmed; English body read through alternate locale",
+    "summary": "The English URL exposed boilerplate through the extractor. The same article's Spanish locale exposed the substantive English review and explicitly labels it AI written. Technical claims should be checked against AIRA's primary paper.",
+    "findings": [
+      {
+        "title": "Separate the scheduler from the operator",
+        "quote": "Nodes in the search graph represent candidate solutions",
+        "locator": "Body paragraph The core methodology at https://www.themoonlight.io/es/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench",
+        "meaning": "The review distinguishes candidate artifacts, selection, operators, and termination. It is a useful map, not independent confirmation of performance.",
+        "application": "Our application judgment: use the review to identify questions, then link an implementation decision to the primary section and exact local component. In our repo, Portfolio.rank chooses a branch while code generation and repair create candidates. Changing both simultaneously would make attribution difficult. Keep this vocabulary in experiment notes rather than copying an entire framework.",
+        "strengths": "The graph vocabulary helps describe existing branches and parent experiments consistently.",
+        "limitations": "The page says the review was AI written. Its concise account omits qualifications and should not substitute for primary methods or resource evidence.",
+        "action": "Require every architecture recommendation extracted from a review to carry a verified primary section and a local code seam."
+      },
+      {
+        "title": "Retrieve context appropriate to the operation",
+        "quote": "ancestral memory for Debug to review prior fix attempts",
+        "locator": "Scoped memory bullet at https://www.themoonlight.io/es/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench; primary cross-check AIRA Section 4.1",
+        "meaning": "The review reports operation-specific context: relevant sibling experience for alternatives and prior repair history for debugging.",
+        "application": "Our application judgment: a repair brief should carry the failing entrypoint, traceback, and previous unsuccessful repairs; a new branch should carry sibling outcomes and novelty constraints. This reduces irrelevant logs and prevents repeating a known failed patch. It is implementable as deterministic brief selection before considering embedding infrastructure or another reasoning agent.",
+        "strengths": "The existing smoke-test repair path and build_brief routine already have different information needs.",
+        "limitations": "A compressed review can misstate thresholds: its complexity-cue ranges leave a boundary case unclear. Consult primary definitions and code before implementing numerical rules.",
+        "action": "Replay two repeated failure traces with operation-scoped context; count repeated patches and compare brief length at equal invocation limits."
+      }
+    ],
+    "compute": {
+      "training": "The review is not an execution system; use the primary paper for hardware requirements.",
+      "agent_inference": "No independent inference-budget measurement established by this review.",
+      "observed_budget": "No cost claim adopted.",
+      "caveat": "Its oracle test-selection discussion is analysis, not permission to search private test labels."
+    },
+    "evidence_limits": "Quotes are from English text on /es/ because /en/ exposed only boilerplate. This locale difference is explicit; no translation is presented as an exact English quotation.",
+    "related_links": [
+      "https://www.themoonlight.io/es/review/ai-research-agents-for-machine-learning-search-exploration-and-generalization-in-mle-bench",
+      "https://arxiv.org/html/2507.02554v1"
+    ]
+  },
+  {
+    "id": "ml-master-2",
+    "title": "Toward Ultra Long Horizon Agentic Science Cognitive Accumulation for Machine Learning Engineering",
+    "authors": "Xinyu Zhu, Yuzhu Cai, Zexi Liu and coauthors",
+    "url": "https://arxiv.org/html/2601.10402v5",
+    "kind": "Primary research paper v5",
+    "locator": "Sections 3.2 to 3.4 and 4.1",
+    "identity_status": "Confirmed ML Master 2.0",
+    "summary": "Hierarchical Cognitive Caching distinguishes execution experience, stabilized knowledge, and transferable prior wisdom, with policies for movement between tiers.",
+    "findings": [
+      {
+        "title": "Organize memory by stability and reuse",
+        "quote": "temporal stability and reuse value",
+        "locator": "Section 3.2 Agent Overview https://arxiv.org/html/2601.10402v5#S3.SS2",
+        "meaning": "Short-lived traces, phase summaries, and cross-task knowledge receive different treatment.",
+        "application": "Our application judgment: keep full logs as artifacts, the active brief short, and evidence-backed lessons in a separate store. Knowledge metadata already includes provenance, domain, evidence, and validation requirements. Add lifecycle states such as tentative, reproduced, contradicted, and expired. A plausible plan must not enter the same tier as a repeated measured result.",
+        "strengths": "SQLite records, raw artifacts, checkpoints, and retrieved discoveries already form useful boundaries; improving organization does not intrinsically require GPUs.",
+        "limitations": "Hierarchical names do not make summaries true. Compression can erase failure conditions or universalize a dataset-specific result.",
+        "action": "Rebuild fresh briefs from three old campaigns; verify known failed changes are avoided and their exact evidence remains retrievable."
+      },
+      {
+        "title": "Govern promotion and eviction explicitly",
+        "quote": "promoted, consolidated, or discarded across these tiers",
+        "locator": "Section 3.2 Agent Overview https://arxiv.org/html/2601.10402v5#S3.SS2",
+        "meaning": "Context management includes rules for abstraction and retention, not only a larger store or semantic search.",
+        "application": "Our application judgment: consolidate after bounded campaigns, not every log line. Link strategic notes to experiment IDs, preserve contradictory evidence, and extract numeric outcomes deterministically. Reuse our own outcomes before building a costly external corpus. A later failure should narrow or demote a lesson rather than overwrite history. An authorized summary can explain rationale, but cannot replace the original score evidence.",
+        "strengths": "Campaign checkpoints and outcome-linked discoveries supply natural consolidation boundaries.",
+        "limitations": "The full experiment includes substantial prior experience and accelerator hardware; a lightweight memory refactor cannot inherit its benchmark result.",
+        "action": "Under a fixed brief token budget, compare current retrieval with lifecycle-aware retrieval on repeated invalid attempts and evidence traceability."
+      }
+    ],
+    "compute": {
+      "training": "Section 4.1: 36 AMD EPYC vCPUs and two RTX 4090 GPUs per agent; every four tasks share 1008 GB memory and 1 TB SSD storage; 24 hours per task.",
+      "agent_inference": "DeepSeek V3.2 Speciale for coding/research; V3.2 thinking sparingly for promotion.",
+      "observed_budget": "407 non-MLE-bench competitions used as warmup; no dollar figure adopted.",
+      "caveat": "Transfer the memory mechanism, not its full warmup corpus, concurrency, or reported medal rate."
+    },
+    "evidence_limits": "Paper v5 pinned; distinct from ML-Master1.0. Some body text refers to ML-ACE, so retain version provenance.",
+    "related_links": [
+      "https://arxiv.org/abs/2601.10402v5",
+      "https://sjtu-sai-agents.github.io/ML-Master/"
+    ]
+  },
+  {
+    "id": "rd-agent",
+    "title": "R and D Agent Automating Data Driven AI Solution Building Through LLM Powered Automated Research Development and Evolution",
+    "authors": "Xu Yang, Xiao Yang, Shikai Fang and coauthors",
+    "url": "https://arxiv.org/html/2505.14738v1",
+    "kind": "Primary technical report v1",
+    "locator": "Sections 2.1, 2.2, 3.1 and 3.2",
+    "identity_status": "Confirmed with report version pinned",
+    "summary": "The method separates performance-driven research decisions from error-driven implementation and exchanges evidence across exploration traces.",
+    "findings": [
+      {
+        "title": "Use different feedback for research and debugging",
+        "quote": "Assigning dedicated R&D roles helps tackle complex problems",
+        "locator": "Section 2.1 Dedicated R&D Role https://arxiv.org/html/2505.14738v1#S2.SS1",
+        "meaning": "A failed implementation and a valid weak hypothesis require different reasoning. Research uses performance feedback; development uses execution errors.",
+        "application": "Our application judgment: keep one selected subscription agent but distinguish prompt modes. Repair receives traceback, entry script, and contract; research review receives comparable scores, hypotheses, resource use, and stagnation. Do not redesign the scientific approach merely because an import failed. The smoke-repair loop and branch portfolio can express this distinction without permanent concurrent agents.",
+        "strengths": "The supervisor records smoke failures separately from scored outcomes, matching these feedback channels.",
+        "limitations": "Heterogeneous models and parallel traces consume additional quota or API spending. Role separation does not require copying that deployment.",
+        "action": "Classify captured failures as implementation or hypothesis failures; compare specialized prompts with generic retry under equal invocation budgets."
+      },
+      {
+        "title": "Share failures before another direction starts",
+        "quote": "avoid repeating ineffective strategies and instead focus on novel directions",
+        "locator": "Section 3.2 multi-trace experiment paragraph https://arxiv.org/html/2505.14738v1#S3.SS2",
+        "meaning": "The second trace receives prior histories and failure cases so diversity is informed by evidence rather than ignorance.",
+        "application": "Our application judgment: implement this serially. The next brief can summarize tested equivalents and precise failure conditions. Recombine only components with compatible row ordering, folds, target encoding, and interfaces. Use independently scored predictions for blends; agent-written fusion must pass the same gates as any candidate. Preserve the source of each borrowed component so a failed combination remains diagnosable.",
+        "strengths": "Stored lessons already reach subsequent briefs, providing a seam for failure-conditioned novelty.",
+        "limitations": "The report calls its results preliminary and leaves some ablations under development. Parallel-fusion results are not a guarantee for our small campaigns.",
+        "action": "Schedule two serial branches with or without prior-failure summaries; count equivalent attempts and accept fusion only after unchanged independent gates."
+      }
+    ],
+    "compute": {
+      "training": "Paper v1, Section 3.1: 12 vCPUs, 220 GB RAM, one V100 GPU, and a 24-hour environment.",
+      "agent_inference": "Azure OpenAI services; examples separate o3 research and GPT-4.1 development.",
+      "observed_budget": "Example uses two up-to-11h exploration traces and final fusion; no dollar claim adopted.",
+      "caveat": "Later financial-agent examples and current repository results are different scenarios and versions."
+    },
+    "evidence_limits": "v1 report explicitly calls results preliminary. Do not substitute current finance-focused README claims for this experiment.",
+    "related_links": [
+      "https://github.com/microsoft/RD-Agent",
+      "https://arxiv.org/abs/2505.14738"
+    ]
+  },
+  {
+    "id": "agent-k",
+    "title": "Kolb Based Experiential Learning for Generalist Agents with Human Level Kaggle Data Science Performance",
+    "authors": "Antoine Grosnit, Alexandre Maraval and seventeen coauthors",
+    "url": "https://arxiv.org/html/2411.03562v3",
+    "kind": "Primary research paper v3 traced from named Agent K research",
+    "locator": "Introduction, Abstract to Act Not Just ReAct, Computational Resources and Table4",
+    "identity_status": "User supplied AITopics record; record inaccessible to extractor, corresponding Agent K research traced by title and arXiv",
+    "summary": "Agent K uses reflection and abstraction to progress from scaffolded execution toward open-ended tasks. The revised paper is retitled and substantially changed from v1.",
+    "findings": [
+      {
+        "title": "Adapt state without retraining the coding model",
+        "quote": "autonomous adaptation through internal state transformations",
+        "locator": "Introduction paragraph Unlike traditional gradient-based approaches https://arxiv.org/html/2411.03562v3",
+        "meaning": "Experience changes internal representations rather than requiring a parameter-training cycle for every lesson.",
+        "application": "Our application judgment: improve briefs and outcome-linked memory rather than fine-tuning the coding agent. Record why a feature helped, which split exposed leakage, or which solver move violated feasibility. Each lesson should reference evidence and applicability conditions. Distinguish training a predictive model from changing the coding agent itself: the former is an experiment cost, while the latter is unnecessary for this context-based adaptation.",
+        "strengths": "External records and a subscription CLI naturally support changing context while retaining the underlying model.",
+        "limitations": "A reflective summary may be wrong. Human-level or medal-equivalent claims use the authors' benchmark, not our repo or hardware.",
+        "action": "Compare fresh-context trials with and without a short evidence-backed prior lesson, controlling agent and caps; measure repeat failures and independent improvement."
+      },
+      {
+        "title": "Make abstraction change the next action",
+        "quote": "Abstract to Act, Not Just ReAct",
+        "locator": "Named ablation-study subsection https://arxiv.org/html/2411.03562v3",
+        "meaning": "A scaffold-to-abstraction stage precedes open-ended search. Reflection is meant to provide reusable guidance, not merely narrate activity.",
+        "application": "Our application judgment: after a campaign, require one falsifiable next-step rule tied to a logged result, then check whether the next experiment follows or challenges it. A useful lesson specifies the group/time boundary under which an encoding was safe; feature engineering worked is too vague. Keep compact decisions, not polished generic prose, in retrieval.",
+        "strengths": "Briefs, hypotheses, and lessons make abstraction operational without another always-on agent.",
+        "limitations": "The published experiment is not CPU-only: each job receives a V10032GB. Its multi-day scaffold and exploration windows differ sharply from our bounded campaigns.",
+        "action": "Audit ten lessons for evidence IDs, conditions, and testable consequences. Feed only qualifying notes to the next brief and inspect the resulting plan."
+      }
+    ],
+    "compute": {
+      "training": "Computational Resources: an isolated Ubuntu 22.04.3 job, one V100 GPU with 32 GB memory, and 9 Xeon CPU cores. Table 4: 1 day plus 1 day for tabular phases; 2 days plus 2 days for CV/NLP phases.",
+      "agent_inference": "Main Agent K uses Qwen2.5-72B; inference-hosting expense not established here.",
+      "observed_budget": "Multi-day resource windows; no total dollar estimate adopted.",
+      "caveat": "Authors' adjective modest is relative to research baselines, not evidence it fits a no-GPU laptop."
+    },
+    "evidence_limits": "Original user AITopics record could not be opened. Preserve that URL and use versioned primary evidence. v1 title, framing, and results are not merged with v3.",
+    "related_links": [
+      "https://aitopics.org/doc/arxivorg:EE9BF2D5",
+      "https://arxiv.org/abs/2411.03562v3"
+    ]
+  },
+  {
+    "id": "aira2",
+    "title": "AIRA 2 Overcoming Bottlenecks in AI Research Agents",
+    "authors": "Karen Hambardzumyan, Nicolas Baldwin, Edan Toledo and coauthors",
+    "url": "https://arxiv.org/html/2603.26499v2",
+    "kind": "Primary followup paper v2",
+    "locator": "Sections 3.2, 3.3 and 4.3.2",
+    "identity_status": "Additional primary long-horizon followup, distinct from screenshot AIRA-dojo",
+    "summary": "The 2026 followup adds hidden consistent evaluation and asynchronous workers. Evaluation reliability is transferable; its accelerator pool is not a fit for our current hardware.",
+    "findings": [
+      {
+        "title": "Externalize the search evaluation",
+        "quote": "Agents never self-report metrics",
+        "locator": "Section3.3 Externalized evaluation https://arxiv.org/html/2603.26499v2#S3.SS3",
+        "meaning": "The orchestrator evaluates candidates independently, separating fixed search feedback from final selection.",
+        "application": "Our application judgment: preserve independent scoring, then audit remaining exposure. If candidate code running as the same Windows user can read labels or modify an evaluator, logical separation is not strong isolation. A final-selection partition may reduce feedback reuse, but group/time restrictions and sample loss require task-specific decisions. Do not blindly copy a random 80/10/10 split into forecasting.",
+        "strengths": "Evaluator fingerprints, independent scores, and frozen profiles already implement important parts of the intended boundary.",
+        "limitations": "Hidden labels require actual access controls, not only prompts. Reserving data can hurt small tasks; their protocol is not identical to our cross-validation.",
+        "action": "Use adversarial synthetic candidate scripts that claim perfect scores, reorder IDs, or try evaluator modification; accepted results must come from protected evidence."
+      },
+      {
+        "title": "Fix evaluation noise before buying more throughput",
+        "quote": "data splits are standardized once and reused across all candidates",
+        "locator": "Introduction HCE paragraph https://arxiv.org/html/2603.26499v2",
+        "meaning": "The authors' ablations attribute prior degradation to inconsistent evaluation rather than proving universal data memorization.",
+        "application": "Our application judgment: check metrics, row identity, fold determinism, and score extraction before adding workers. Every candidate must retain its evaluator version so improvement cannot come from changing the exam. Consider parallel compute only after measuring a bottleneck and obtaining explicit authorization. A laptop should not inherit an eight-H200 architecture because its authors report better scaling.",
+        "strengths": "This reinforces the existing separation between code generation and independently scored artifacts.",
+        "limitations": "The finding concerns studied evaluation regimes. Genuine overfitting remains possible; multi-GPU throughput results exceed our available compute.",
+        "action": "Replay identical predictions twice under a frozen evaluator, then change only reporting text. Scores must remain identical; unexplained drift blocks promotion."
+      }
+    ],
+    "compute": {
+      "training": "Paper v2, Section 4.1: 8 H200 GPUs, one per worker. Section 3.2 allocates 12 CPU cores and 120 GB RAM per worker; the evaluation framework also uses dedicated GPU resources.",
+      "agent_inference": "Gemini 3.0 Pro Preview for the base version; Gemini 3.1 for the dagger variant.",
+      "observed_budget": "24-hour and 72-hour comparisons; no dollar estimate adopted.",
+      "caveat": "Reliable evaluation is the low-cost transfer; the GPU pool and throughput scaling are not."
+    },
+    "evidence_limits": "Keep AIRA2 separate from AIRA-dojo2025. The later paper narrows interpretations of earlier overfitting claims, without promising live medals.",
+    "related_links": [
+      "https://ai.meta.com/research/publications/aira-overcoming-bottlenecks-in-ai-research-agents/"
+    ]
+  }
+]
