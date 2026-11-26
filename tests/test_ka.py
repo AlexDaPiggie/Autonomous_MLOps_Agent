@@ -95,6 +95,15 @@ class KaCommand(unittest.TestCase):
         from kaggle_agent.supervisor.limits import Limits
         self.assertEqual(Limits(ka.store()).get()["threads"], 1)          # Enter kept the earlier answer
 
+    def test_token_count_matches_real_tool_output(self):
+        from kaggle_agent.loop import count_tokens
+        # shapes copied from real sessions on this machine
+        codex = dict(input_tokens=381276, cached_input_tokens=341504, cache_write_input_tokens=0, output_tokens=7558)
+        claude = dict(input_tokens=20, cache_creation_input_tokens=31343, cache_read_input_tokens=376297, output_tokens=3958)
+        self.assertEqual(count_tokens(codex), dict(input=39772, output=7558, cached=341504))
+        self.assertEqual(count_tokens(claude), dict(input=31363, output=3958, cached=376297))
+        self.assertEqual(count_tokens(None), {})
+
     def test_full_everyday_flow(self):
         code, out = self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none", "y"])
         self.assertEqual(code, 0, out)

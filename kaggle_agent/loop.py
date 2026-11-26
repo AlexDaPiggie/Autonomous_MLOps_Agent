@@ -308,6 +308,21 @@ def run_code_campaigns(args, store, directory, profile, controller, agent, on_ev
     return _run(args, store, directory, profile, controller, agent, emit)
 
 
+def count_tokens(usage):
+    """New tokens (input + output) and re-read cached tokens, from what the tool reported.
+    Seen in real runs: codex's input_tokens already includes cached_input_tokens; claude's does not."""
+    if not isinstance(usage, dict):
+        return {}
+    number = lambda name: usage[name] if isinstance(usage.get(name), (int, float)) and not isinstance(usage.get(name), bool) else 0
+    if "cached_input_tokens" in usage:                         # codex
+        cached = number("cached_input_tokens")
+        fresh = max(number("input_tokens") - cached, 0) + number("cache_write_input_tokens")
+    else:                                                      # claude
+        cached = number("cache_read_input_tokens")
+        fresh = number("input_tokens") + number("cache_creation_input_tokens")
+    return dict(input=int(fresh), output=int(number("output_tokens")), cached=int(cached))
+
+
 def _run(args, store, directory, profile, controller, agent, emit):
     from kaggle_agent.agents.session_manager import checkpoint, rotate
     from kaggle_agent.evaluation.validation import direction
@@ -346,13 +361,8 @@ def _run(args, store, directory, profile, controller, agent, emit):
     def ask(prompt, workspace, **kwargs):
         """agent.run, but counts the tokens the agent reports (claude and codex use different key names)."""
         result = agent.run(prompt, workspace, **kwargs)
-        usage = getattr(result, "usage", None)
-        if isinstance(usage, dict):
-            for name, kind in (("input_tokens", "input"), ("output_tokens", "output"), ("cache_creation_input_tokens", "input"),
-                               ("cache_read_input_tokens", "cached"), ("cached_input_tokens", "cached")):
-                value = usage.get(name)
-                if isinstance(value, (int, float)) and not isinstance(value, bool):
-                    spent[kind] = spent.get(kind, 0) + int(value)
+        for kind, value in count_tokens(getattr(result, "usage", None)).items():
+            spent[kind] = spent.get(kind, 0) + value
         return result
 
     for campaign_index in range(args.campaigns):
