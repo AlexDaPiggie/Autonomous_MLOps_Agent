@@ -374,9 +374,9 @@ def printer(settings, st, directory, profile, competition):
             if best is not None:
                 line += f" · best score {best:.6g}"
             tokens = d.get("tokens") or {}
-            if tokens:
-                short = lambda n: f"{n / 1e6:.1f}M" if n >= 1e6 else f"{n / 1e3:.0f}k" if n >= 1e3 else str(n)
-                line += " · tokens: " + ", ".join(f"{short(tokens[k])} {k}" for k in ("input", "output", "cached") if tokens.get(k))
+            total = tokens.get("input", 0) + tokens.get("output", 0)   # cache re-reads are left out: they are huge and cheap
+            if total:
+                line += f" · tokens: {f'{total / 1e6:.1f}M' if total >= 1e6 else f'{total / 1e3:.0f}k' if total >= 1e3 else total}"
             print(line, flush=True)
             if state["champion"]:
                 state["champion"] = False

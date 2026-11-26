@@ -129,7 +129,7 @@ class KaCommand(unittest.TestCase):
         self.assertIn("trial 1/2", live)
         self.assertIn("Campaign 1/1 done", live)
         self.assertIn("best score", live)
-        self.assertIn("tokens: 2k input, 600 output, 100k cached", live)
+        self.assertIn("tokens: 3k", live)
         self.assertIn("NEW CHAMPION", live)
         self.assertIn("auto-submitted", live)
         sent = self.submitted()
