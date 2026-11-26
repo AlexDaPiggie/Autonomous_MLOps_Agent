@@ -104,6 +104,32 @@ def extract_json(text):
 EFFORTS = ("minimal", "low", "medium", "high", "xhigh", "max")
 
 
+# Short names people type -> the exact model id each tool needs. Checked against the vendors' published ids.
+MODEL_NAMES = (("sonnet", "claude", "claude-sonnet-5-5"), ("opus", "claude", "claude-opus-5-5"),
+               ("haiku", "claude", "claude-haiku-5-5"), ("fable", "claude", "claude-fable-5-2"),
+               ("luna", "codex", "gpt-6-luna"), ("sol", "codex", "gpt-6.1-sol"))
+
+
+def resolve_model(agent, text):
+    """'sonnet' -> claude-sonnet-5-5, 'Sol' -> gpt-6.1-sol. Full ids and unknown names pass through unchanged."""
+    text = (text or "").strip()
+    lower = text.lower()
+    if not lower or lower.startswith(("claude-", "gpt-")) or "/" in lower:
+        found = (lower, "claude" if lower.startswith("claude-") else "codex" if lower.startswith("gpt-") else agent)
+    else:
+        found = None
+        for word, owner, full in MODEL_NAMES:
+            if word in lower:
+                found = (full, owner)
+                break
+        if found is None:
+            return text
+    model, owner = found
+    if owner != agent:
+        raise ValueError(f"'{text}' is a {owner} model; the {agent} agent can't use it. Pick the {owner} agent or another model.")
+    return model
+
+
 class CLIAdapter:
     def __init__(self, name, model=None, effort=None):
         if name not in {"codex","claude"}:
@@ -112,7 +138,7 @@ class CLIAdapter:
         if effort and effort not in EFFORTS:
             raise ValueError("Effort must be one of: " + ", ".join(EFFORTS))
         self.name = name
-        self.model = (model or "").strip() or None   # None = the tool's own default
+        self.model = resolve_model(name, model) or None   # None = the tool's own default
         self.effort = effort                         # None = the tool's own default
         self.cancelled = False
         self.last_result = None

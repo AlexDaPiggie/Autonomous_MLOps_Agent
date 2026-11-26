@@ -122,8 +122,11 @@ def cmd_setup(args, ask):
         current = agents.get(agent) or {}
         model = ask(f"{agent} model (empty = {agent}'s own default)", current.get("model", ""))
         effort = ask(f"{agent} effort: low, medium, high, xhigh (empty = default)", current.get("effort", ""))
-        CLIAdapter(agent, model=model, effort=effort)   # validates the effort word
-        agents[agent] = {k: v for k, v in dict(model=model.strip(), effort=effort.strip().lower()).items() if v}
+        try:
+            model = CLIAdapter(agent, model=model, effort=effort).model or ""   # validates effort, turns "sonnet" into the full id
+        except ValueError as error:
+            raise GateError(str(error))
+        agents[agent] = {k: v for k, v in dict(model=model, effort=effort.strip().lower()).items() if v}
         threads = int(ask(f"CPU threads per run (this machine has {machine_threads()})", str(current_limits.get("threads") or max(1, machine_threads() // 2))))
         memory = int(ask(f"Memory per run in MB (machine {machine_memory_mb()}, max {memory_ceiling_mb()})", str(current_limits.get("memory_mb") or min(8192, memory_ceiling_mb()))))
         hours = float(ask("Max hours per run", f"{(current_limits.get('seconds') or 3600) / 3600:g}"))
@@ -480,8 +483,13 @@ def cmd_agent(args, ask):
         if not args.name:
             raise GateError("Say which agent: ka agent claude --effort high  (or codex)")
         from kaggle_agent.agents.base import CLIAdapter
-        CLIAdapter(args.name, **changes)   # validates the effort word
+        try:
+            checked = CLIAdapter(args.name, **changes)   # validates effort, turns "sonnet" into the full id
+        except ValueError as error:
+            raise GateError(str(error))
         changes = {k: v.strip().lower() if k == "effort" else v.strip() for k, v in changes.items()}
+        if changes.get("model"):
+            changes["model"] = checked.model
         if args.use_global:
             agents = settings.get("agents") or {}
             agents.setdefault(args.name, {}).update(changes)

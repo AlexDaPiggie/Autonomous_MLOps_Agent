@@ -104,6 +104,19 @@ class KaCommand(unittest.TestCase):
         self.assertEqual(count_tokens(claude), dict(input=31363, output=3958, cached=376297))
         self.assertEqual(count_tokens(None), {})
 
+    def test_short_model_names(self):
+        from kaggle_agent.agents.base import resolve_model
+        for agent, typed, full in [("claude", "Sonnet", "claude-sonnet-5-5"), ("claude", "Sonnet-5.5", "claude-sonnet-5-5"),
+                                   ("claude", "opus", "claude-opus-5-5"), ("codex", "Sol", "gpt-6.1-sol"),
+                                   ("codex", "luna", "gpt-6-luna"), ("codex", "gpt-6-sol", "gpt-6-sol"),
+                                   ("claude", "claude-opus-5-5", "claude-opus-5-5"), ("claude", "", ""),
+                                   ("claude", "my-custom-model", "my-custom-model")]:
+            self.assertEqual(resolve_model(agent, typed), full, typed)
+        with self.assertRaises(ValueError):
+            resolve_model("claude", "sol")      # a codex model on the claude agent
+        with self.assertRaises(ValueError):
+            resolve_model("codex", "opus")
+
     def test_full_everyday_flow(self):
         code, out = self.ka(["setup"], ["claude", "", "", "1", "1024", "0.1", "1", "3", "none", "y"])
         self.assertEqual(code, 0, out)
@@ -242,7 +255,7 @@ class KaCommand(unittest.TestCase):
         with patch.object(CLIAdapter, "binary", return_value="claude"):
             command = CLIAdapter("claude", model="opus", effort="high").command("p", mode="code")
             plain = CLIAdapter("claude").command("p", mode="code")
-        self.assertEqual(command[command.index("--model") + 1], "opus")
+        self.assertEqual(command[command.index("--model") + 1], "claude-opus-5-5")
         self.assertNotIn("--model", plain)
         with self.assertRaises(ValueError):
             CLIAdapter("codex", effort="turbo")
@@ -257,7 +270,7 @@ class KaCommand(unittest.TestCase):
                 self.assertEqual(ka.main(["agent", "claude", "--model", "opus", "--global"]), 0)
             settings = ka.load_settings()
             self.assertEqual(ka.agent_choice(settings, folder, "codex"), {"effort": "high"})
-            self.assertEqual(ka.agent_choice(settings, folder, "claude"), {"model": "opus"})
+            self.assertEqual(ka.agent_choice(settings, folder, "claude"), {"model": "claude-opus-5-5"})
             self.assertEqual(ka.agent_choice(settings, None, "codex"), {})
             os.environ.pop("KAGGLE_AGENT_HOME")
 
