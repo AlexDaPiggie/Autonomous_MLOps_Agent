@@ -69,6 +69,19 @@ Run these inside the competition folder. Use a second terminal while `ka go` is 
 
 **Command not found?** Replace `ka` with `python -m kaggle_agent.ka`, for example `python -m kaggle_agent.ka setup`. [More troubleshooting](docs/setup.md#troubleshooting).
 
+## 5. Hand over to a teammate
+
+Both of you must be on the same Kaggle team. Both need the same version of this project, installed as in step 2.
+
+| Who | Do |
+|---|---|
+| You, inside the competition folder | `ka stop`, wait for it to finish, then `ka export` |
+| You | Send the zip privately (it holds your code and data) |
+| Teammate | `ka setup`, then `ka import <zip>` |
+| Teammate | Fix anything marked `MISSING`, run `ka check`, then `ka go` |
+
+The folder can live anywhere. Auto-submit starts off (`ka submit --auto on`). Only one of you should run the loop at a time, because two histories cannot be merged.
+
 ## Cloud GPUs and more commands
 
 - **[Cloud workflow](docs/setup.md#cloud-gpus-optional)** — run your own training job on Modal/Vast, then import predictions. `ka go` itself runs locally.

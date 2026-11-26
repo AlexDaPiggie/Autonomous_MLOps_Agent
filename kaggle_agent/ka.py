@@ -13,8 +13,11 @@
     ka history               code version of every scored run (git)
     ka diff [run-id]         what changed versus the champion
     ka restore <run-id>      copy a past run's code into restored/<run-id>/
+    ka export [--out x.zip]  zip folder + history to hand to a teammate
+    ka import <zip>          unpack it on any PC (--to <folder>); auto-submit starts off
+    ka check                 is this PC ready to run this competition?
 
-Run every command except setup and new from inside the competition folder.
+Run every command except setup, new and import from inside the competition folder.
 The long `python -m kaggle_agent ...` commands still work for advanced use.
 """
 import argparse
@@ -740,8 +743,43 @@ def cmd_submit(args, ask):
     return 0
 
 
+def cmd_export(args, ask):
+    from kaggle_agent import share
+    result = share.export(store(), find_competition(args.dir), args.out)
+    print(f"Wrote {result['zip']} ({result['megabytes']:.0f} MB, {result['files']} files, {result['runs']} runs).")
+    if result["interrupted"]:
+        print(f"Interrupted run(s) {', '.join(result['interrupted'])} are marked failed in the zip; your history is unchanged.")
+    print("Send it privately, to Kaggle teammates only. They run: ka import <zip>")
+    return 0
+
+
+def show_check(directory):
+    from kaggle_agent import share
+    results = share.check(store(), directory, load_settings()["agent"])
+    for ok, item, fix in results:
+        print(f"  {'OK     ' if ok else 'MISSING'} {item}" + (f"  -> {fix}" if fix else ""))
+    return 0 if all(ok for ok, _, _ in results) else 1
+
+
+def cmd_check(args, ask):
+    return show_check(find_competition(args.dir))
+
+
+def cmd_import(args, ask):
+    from kaggle_agent import share
+    print("Only import a zip from someone you trust: it contains code that `ka go` will run.")
+    result = share.import_(store(), args.zip, args.to, load_settings()["competitions_root"])
+    print(f"Imported {result['runs']} runs into {result['folder']}. Auto-submit is OFF (ka submit --auto on).")
+    for warning in result["warnings"]:
+        print("Warning: " + warning)
+    print("Checking this PC:")
+    ready = show_check(result["folder"]) == 0
+    print(f"Next: cd \"{result['folder']}\"  then  " + ("ka go" if ready else "fix the items above, run ka check, then ka go"))
+    return 0
+
+
 def parser():
-    p = argparse.ArgumentParser(prog="ka", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p =argparse.ArgumentParser(prog="ka", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
     sub.add_parser("setup", help="one-time settings")
     new = sub.add_parser("new", help="set up a competition from its Kaggle URL")
@@ -770,6 +808,10 @@ def parser():
     s = sub.add_parser("submit", help="submit the best run now, or turn auto-submit on/off")
     s.add_argument("run", nargs="?");s.add_argument("--auto", choices=["on", "off"]);s.add_argument("--yes", action="store_true")
     s.add_argument("--limit", type=int, help="this competition's daily submission limit");s.add_argument("--reserve", type=int, help="daily slots auto-submit leaves for you")
+    sub.add_parser("export", help="zip a competition and its history").add_argument("--out", help="zip file to write")
+    imp = sub.add_parser("import", help="unpack a `ka export` zip")
+    imp.add_argument("zip");imp.add_argument("--to", help="new competition folder (default: next to _kaggle_shared)")
+    sub.add_parser("check", help="check this PC can run the competition")
     for name, command in sub.choices.items():
         command.add_argument("--dir", help="competition folder (default: current folder)")
         if name == "dash":
@@ -778,7 +820,9 @@ def parser():
 
 
 COMMANDS = dict(setup=cmd_setup, new=cmd_new, go=cmd_go, status=cmd_status, dash=cmd_dash, stop=cmd_stop, usage=cmd_usage, agent=cmd_agent, research=cmd_research,
-                submit=cmd_submit, history=cmd_history, diff=cmd_diff, restore=cmd_restore)
+                submit=cmd_submit, history=cmd_history, diff=cmd_diff, restore=cmd_restore,
+                export=cmd_export, check=cmd_check)
+COMMANDS["import"] = cmd_import
 
 
 def main(argv=None, ask=ask_console):
